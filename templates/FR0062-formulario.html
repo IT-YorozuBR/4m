@@ -8,6 +8,7 @@
     <title>RELATÓRIO MUDANÇA 4M - FR0062</title>
     <link rel="stylesheet" href="../css/FR0062-estilos.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="../src/scripts/FR0062-formulario.js"></script>
     <script>
 
 
@@ -255,8 +256,8 @@
                             id="material_itemModificado1" name="material_itemModificado1"
                             data-field="material_item_modificado_1"></span></div>
                     <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
-                            id="metodo_itemModificado1" name="metodo_itemModificado1"
-                            data-field="metodo_item_modificado_1"></span></div>
+                            id="method_itemModificado1" name="method_itemModificado1"
+                            data-field="method_item_modificado_1"></span></div>
 
                     <div class="celula-4m"><label>NOME</label><span class="input-line" contenteditable="true"
                             id="man_nome1" name="man_nome1" data-field="man_nome_1"></span>
@@ -268,11 +269,11 @@
                             id="material_motivo1" name="material_motivo1" data-field="material_motivo_1"></span>
                     </div>
                     <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
-                            id="metodo_motivo1" name="metodo_motivo1" data-field="metodo_motivo_1"></span>
+                            id="method_motivo1" name="method_motivo1" data-field="method_motivo_1"></span>
                     </div>
 
                     <div class="celula-4m"><label>ORGAN./RAMAL</label><span class="input-line" contenteditable="true"
-                            id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1"></span></div>
+                            id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1" name="manOrganRamal1"></span></div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
                             id="machine_projeto1" name="machine_projeto1" data-field="machine_projeto_1"></span>
                     </div>
@@ -280,7 +281,7 @@
                             id="material_projeto1" name="material_projeto1" data-field="material_projeto_1"></span>
                     </div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
-                            id="metodo_projeto1" name="metodo_projeto1" data-field="metodo_projeto_1"></span>
+                            id="method_projeto1" name="method_projeto1" data-field="method_projeto_1"></span>
                     </div>
 
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
@@ -292,8 +293,8 @@
                             id="material_numOperacao1" name="material_numOperacao1"
                             data-field="material_num_operacao_1"></span></div>
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
-                            id="metodo_numOperacao1" name="metodo_numOperacao1"
-                            data-field="metodo_num_operacao_1"></span></div>
+                            id="method_numOperacao1" name="method_numOperacao1"
+                            data-field="method_num_operacao_1"></span></div>
 
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
@@ -325,12 +326,12 @@
                     </div>
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
-                        <label><input type="checkbox" aria-label="MÉTODO Importância Normal"
-                                id="metodo_importanciaNormal" name="metodo_importanciaNormal"
-                                data-field="metodo_importancia_normal"> NORMAL</label>
-                        <label><input type="checkbox" aria-label="MÉTODO Importância Importante A/S"
-                                id="metodo_importanciaAS" name="metodo_importanciaAS"
-                                data-field="metodo_importancia_as"> IMPORTANTE
+                        <label><input type="checkbox" aria-label="METHOD Importância Normal"
+                                id="method_importanciaNormal" name="method_importanciaNormal"
+                                data-field="method_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="METHOD Importância Importante A/S"
+                                id="method_importanciaAS" name="method_importanciaAS"
+                                data-field="method_importancia_as"> IMPORTANTE
                             A/S</label>
                     </div>
 
@@ -369,14 +370,14 @@
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="metodo_dataTurno1" name="metodo_dataTurno1"
-                            data-field="metodo_data_turno_1"> / / </span>
-                        <label><input type="checkbox" aria-label="MÉTODO Turno 1T" id="metodo_turno1T"
-                                name="metodo_turno1T" data-field="metodo_turno_1t"> 1T</label>
-                        <label><input type="checkbox" aria-label="MÉTODO Turno 2T" id="metodo_turno2T"
-                                name="metodo_turno2T" data-field="metodo_turno_2t"> 2T</label>
-                        <label><input type="checkbox" aria-label="MÉTODO Turno 3T" id="metodo_turno3T"
-                                name="metodo_turno3T" data-field="metodo_turno_3t"> 3T</label>
+                        <span class="input-line" contenteditable="true" id="method_dataTurno1" name="method_dataTurno1"
+                            data-field="method_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="METHOD Turno 1T" id="method_turno1T"
+                                name="method_turno1T" data-field="method_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="METHOD Turno 2T" id="method_turno2T"
+                                name="method_turno2T" data-field="method_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="METHOD Turno 3T" id="method_turno3T"
+                                name="method_turno3T" data-field="method_turno_3t"> 3T</label>
                     </div>
                 </div>
 
@@ -999,7 +1000,7 @@
 
             <div class="celula cabecalho-direita">
                 <span class="label-bold">● HORÁRIO DE APLICAÇÃO DA 4M:</span>
-                <span class="input-line" contenteditable="true" aria-label="Horário Aplicação 4M"></span>
+                <span class="input-line" contenteditable="true" aria-label="Horário Aplicação 4M" name="horarioAplicacao"></span>
             </div>
 
 
