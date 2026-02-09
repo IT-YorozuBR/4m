@@ -168,8 +168,6 @@ class SistemaChecklist4M {
         this.modoEdicao = false;
     }
 
-
-
     // Adicione este método à classe SistemaChecklist4M
     encontrarElementoPorTexto(selector, texto) {
         const elementos = document.querySelectorAll(selector);
@@ -180,6 +178,7 @@ class SistemaChecklist4M {
         }
         return null;
     }
+
     // Gerar número de controle único
     gerarNumeroControle() {
         const now = new Date();
@@ -231,8 +230,6 @@ class SistemaChecklist4M {
                 motivo: tipo !== 'MAN' ? this.getTexto(`#${idPrefix}_motivo1`) : '',
                 projeto: this.getTexto(`#${idPrefix}_projeto1`),
                 numero_operacao: this.getTexto(`#${idPrefix}_numOperacao1`),
-
-                
 
                 // Importância
                 importancia_normal: this.isChecked(`input[aria-label*="${tipo} Importância Normal"]`),
@@ -310,49 +307,24 @@ class SistemaChecklist4M {
     getTextoPorSeletores(container, isFirstColumn, isNba = false) {
         if (!container) return '';
 
-        // Para a primeira coluna (MAN), os labels são diferentes
-        if (isFirstColumn) {
-            // Procurar a seção que contém os campos QTD YAB e NBA
-            const labels = container.querySelectorAll('.label-bold');
-            let targetLabel = null;
+        // Buscar o label específico (QTD YAB ou QTD NBA)
+        const labelTexto = isNba ? 'QTD NBA' : 'QTD YAB';
+        const labels = container.querySelectorAll('.label-bold');
 
-            for (let label of labels) {
-                if ((isNba && label.textContent.includes('QTD NBA')) ||
-                    (!isNba && label.textContent.includes('QTD YAB'))) {
-                    targetLabel = label;
-                    break;
+        for (let label of labels) {
+            if (label.textContent.trim() === labelTexto) {
+                // O próximo elemento após o label deve ser o input-line
+                let nextElement = label.nextElementSibling;
+                while (nextElement && nextElement.nodeType === 3) { // Pular text nodes
+                    nextElement = nextElement.nextElementSibling;
+                }
+                if (nextElement && nextElement.classList.contains('input-line')) {
+                    return nextElement.textContent.trim();
                 }
             }
-
-            if (targetLabel) {
-                const secao = targetLabel.closest('.secao');
-                if (secao) {
-                    // Encontrar todos os input-lines nesta seção
-                    const inputLines = secao.querySelectorAll('.input-line');
-                    if (isNba && inputLines.length >= 2) {
-                        return inputLines[1].textContent.trim(); // Segundo input-line é NBA
-                    } else if (!isNba && inputLines.length >= 1) {
-                        return inputLines[0].textContent.trim(); // Primeiro input-line é YAB
-                    }
-                }
-            }
-        } else {
-            // Para outras colunas, usar o método por label
-            const labelText = isNba ? "QTD NBA" : "QTD YAB";
-            return this.getTextoPorLabel(container, labelText);
         }
 
         return '';
-    }
-
-    encontrarElementoPorTexto(selector, texto) {
-        const elementos = document.querySelectorAll(selector);
-        for (let elemento of elementos) {
-            if (elemento.textContent.includes(texto)) {
-                return elemento;
-            }
-        }
-        return null;
     }
 
     encontrarElementoPorLabel(container, textoLabel) {
@@ -378,8 +350,6 @@ class SistemaChecklist4M {
         }
         return '';
     }
-
-
 
     // Coletar dados do formulário
     coletarDados() {
@@ -432,7 +402,6 @@ class SistemaChecklist4M {
         };
     }
 
-
     coletarListaVerificacao() {
         return {
             registro_treinam_operador: this.isChecked('input[aria-label*="Registro Treinam Operador"]'),
@@ -465,18 +434,41 @@ class SistemaChecklist4M {
         const acompanhamento = [];
         const rows = document.querySelectorAll('.sidebar-table tbody tr');
 
-        rows.forEach(row => {
-            const nomeNorma = row.querySelector('td:first-child')?.textContent.trim();
-            const responsavel = row.querySelector('td:nth-child(2)')?.textContent.trim();
-            const necessario = row.querySelector('td:nth-child(3) input')?.checked || false;
-            const confirmado = row.querySelector('td:nth-child(4) input')?.checked || false;
+        let nomeNormaAtual = '';
 
-            if (nomeNorma) {
+        rows.forEach(row => {
+            // Verificar se a primeira célula tem rowspan (novo grupo)
+            const primeiraColuna = row.querySelector('td:first-child');
+            if (primeiraColuna) {
+                // Se tem rowspan ou é uma nova linha sem rowspan, atualizar o nome
+                if (primeiraColuna.hasAttribute('rowspan') || row.cells.length >= 4) {
+                    nomeNormaAtual = primeiraColuna.textContent.trim();
+                }
+            }
+
+            // Buscar a célula de responsável (pode ser a segunda ou primeira, dependendo do rowspan)
+            let responsavel = '';
+            let checkboxNecessario = null;
+            let checkboxConfirmado = null;
+
+            if (row.cells.length === 4) {
+                // Linha normal com todas as 4 colunas
+                responsavel = row.querySelector('td:nth-child(2)')?.textContent.trim() || '';
+                checkboxNecessario = row.querySelector('td:nth-child(3) input');
+                checkboxConfirmado = row.querySelector('td:nth-child(4) input');
+            } else if (row.cells.length === 3) {
+                // Linha com rowspan (sem a primeira coluna)
+                responsavel = row.querySelector('td:nth-child(1)')?.textContent.trim() || '';
+                checkboxNecessario = row.querySelector('td:nth-child(2) input');
+                checkboxConfirmado = row.querySelector('td:nth-child(3) input');
+            }
+
+            if (nomeNormaAtual) {
                 acompanhamento.push({
-                    nome_norma: nomeNorma,
+                    nome_norma: nomeNormaAtual,
                     responsavel: responsavel,
-                    necessario_inov: necessario,
-                    confirmado: confirmado
+                    necessario_inov: checkboxNecessario?.checked || false,
+                    confirmado: checkboxConfirmado?.checked || false
                 });
             }
         });
@@ -575,6 +567,7 @@ class SistemaChecklist4M {
 
         return justificativas;
     }
+
     getTexto(selector) {
         const element = document.querySelector(selector);
         return element ? element.textContent.trim() : '';
@@ -658,16 +651,93 @@ class SistemaChecklist4M {
         }
     }
 
+    preencherAcompanhamento(dadosAcompanhamento) {
+        if (!dadosAcompanhamento || dadosAcompanhamento.length === 0) {
+            console.log('⚠️ Nenhum dado de acompanhamento para preencher');
+            return;
+        }
+
+        console.log('📋 Preenchendo dados de acompanhamento:', dadosAcompanhamento);
+
+        const rows = document.querySelectorAll('.sidebar-table tbody tr');
+        let acompanhamentoIndex = 0;
+        let nomeNormaAtual = '';
+
+        rows.forEach((row, rowIndex) => {
+            // Verificar se a primeira célula tem rowspan (novo grupo)
+            const primeiraColuna = row.querySelector('td:first-child');
+            if (primeiraColuna) {
+                // Se tem rowspan ou é uma nova linha sem rowspan, atualizar o nome
+                if (primeiraColuna.hasAttribute('rowspan') || row.cells.length >= 4) {
+                    nomeNormaAtual = primeiraColuna.textContent.trim();
+                }
+            }
+
+            // Determinar o item de acompanhamento correto
+            let item = null;
+
+            if (acompanhamentoIndex < dadosAcompanhamento.length) {
+                item = dadosAcompanhamento[acompanhamentoIndex];
+
+                // Verificar se este item corresponde a esta linha
+                // Procurando pelo nome da norma na linha atual
+                let nomeNaLinha = '';
+                if (primeiraColuna && (primeiraColuna.hasAttribute('rowspan') || row.cells.length >= 4)) {
+                    nomeNaLinha = primeiraColuna.textContent.trim();
+                } else {
+                    // Se não tem primeira coluna, usar o último nomeNormaAtual
+                    nomeNaLinha = nomeNormaAtual;
+                }
+
+                // Buscar responsável na linha
+                let responsavelNaLinha = '';
+                if (row.cells.length === 4) {
+                    responsavelNaLinha = row.querySelector('td:nth-child(2)')?.textContent.trim() || '';
+                } else if (row.cells.length === 3) {
+                    responsavelNaLinha = row.querySelector('td:nth-child(1)')?.textContent.trim() || '';
+                }
+
+                // Verificar se o item corresponde à linha
+                if (item.nome_norma === nomeNaLinha && item.responsavel === responsavelNaLinha) {
+                    // Encontrar os checkboxes e preencher
+                    let checkboxNecessario = null;
+                    let checkboxConfirmado = null;
+
+                    if (row.cells.length === 4) {
+                        checkboxNecessario = row.querySelector('td:nth-child(3) input');
+                        checkboxConfirmado = row.querySelector('td:nth-child(4) input');
+                    } else if (row.cells.length === 3) {
+                        checkboxNecessario = row.querySelector('td:nth-child(2) input');
+                        checkboxConfirmado = row.querySelector('td:nth-child(3) input');
+                    }
+
+                    if (checkboxNecessario) {
+                        checkboxNecessario.checked = item.necessario_inov || false;
+                        console.log(`✅ Preenchido Necessário: ${item.nome_norma} - ${item.responsavel}: ${item.necessario_inov}`);
+                    }
+
+                    if (checkboxConfirmado) {
+                        checkboxConfirmado.checked = item.confirmado || false;
+                        console.log(`✅ Preenchido Confirmado: ${item.nome_norma} - ${item.responsavel}: ${item.confirmado}`);
+                    }
+
+                    acompanhamentoIndex++;
+                }
+            }
+        });
+
+        console.log(`✅ Preenchimento de acompanhamento concluído: ${acompanhamentoIndex} itens processados`);
+    }
+
     // Preencher formulário com dados
     preencherFormulario(dados) {
-
-        //campos extras
-        this.setTexto('#controleElaboradoPor', dados.controle_elaborado_por)
+        // Campos extras
+        this.setTexto('#controleElaboradoPor', dados.controle_elaborado_por);
 
         // Preencher cabeçalho
         if (dados.cabecalho) {
-            this.setTexto('#solicitadoPor', dados.solicitado_por)
-            this.setTexto('#qualidadeAprovado', dados.aprovado_por)
+            this.setTexto('#solicitadoPor', dados.solicitado_por);
+            this.setTexto('#qualidadeAprovado', dados.aprovado_por);
             this.setTexto('#vistoRetencaoQA', dados.cabecalho.visto_retencao_qa);
             this.setTexto('#setorProducao', dados.cabecalho.setor_producao);
             this.setTexto('#setorLogistica', dados.cabecalho.setor_logistica_pc);
@@ -690,7 +760,6 @@ class SistemaChecklist4M {
         }
 
         // Preencher Mudanças 4M
-        // No método preencherFormulario, atualize a parte de Mudanças 4M:
         if (dados.mudancas_4m && dados.mudancas_4m.length > 0) {
             dados.mudancas_4m.forEach((mudanca, i) => {
                 const tipo = mudanca.tipo;
@@ -742,26 +811,6 @@ class SistemaChecklist4M {
                         }
                     }
 
-                    // QTD YAB (todas as colunas)
-                    const yabLabel = this.encontrarElementoPorLabel(colunaElement, "QTD YAB");
-                    if (yabLabel) {
-                        const secao = yabLabel.closest('.secao');
-                        if (secao) {
-                            const inputLine = secao.querySelector('.input-line');
-                            if (inputLine) inputLine.textContent = (mudanca.qtd_yab !== undefined && mudanca.qtd_yab !== null) ? String(mudanca.qtd_yab) : '';
-                        }
-                    }
-
-                    // QTD NBA (todas as colunas)
-                    const nbaLabel = this.encontrarElementoPorLabel(colunaElement, "QTD NBA");
-                    if (nbaLabel) {
-                        const secao = nbaLabel.closest('.secao');
-                        if (secao) {
-                            const inputLine = secao.querySelector('.input-line');
-                            if (inputLine) inputLine.textContent = (mudanca.qtd_nba !== undefined && mudanca.qtd_nba !== null) ? String(mudanca.qtd_nba) : '';
-                        }
-                    }
-
                     // Acompanhamento QA
                     if (mudanca.acompanhamento_qa) {
                         const qaLabel = this.encontrarElementoPorLabel(colunaElement, "ACOMPANHAMENTO Q.A.");
@@ -780,6 +829,41 @@ class SistemaChecklist4M {
                     this.setChecked(`input[aria-label*="${tipo} Avaliação MACRO"]`, mudanca.avaliacao_macro);
                     this.setChecked(`input[aria-label*="${tipo} Avaliação Outros"]`, mudanca.avaliacao_outros);
                     this.setTexto(`${colunaSelector} .secao-meios .input-line`, mudanca.avaliacao_outros_texto);
+                }
+
+                // QTD YAB e QTD NBA - Para TODAS as colunas (incluindo MAN)
+                if (mudanca.qtd_yab !== undefined && mudanca.qtd_yab !== null && mudanca.qtd_yab !== '') {
+                    const labels = colunaElement.querySelectorAll('.label-bold');
+                    for (let label of labels) {
+                        if (label.textContent.trim() === 'QTD YAB') {
+                            // O próximo elemento após o label deve ser o input-line
+                            let nextElement = label.nextElementSibling;
+                            while (nextElement && nextElement.nodeType === 3) { // Pular text nodes
+                                nextElement = nextElement.nextElementSibling;
+                            }
+                            if (nextElement && nextElement.classList.contains('input-line')) {
+                                nextElement.textContent = String(mudanca.qtd_yab);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                if (mudanca.qtd_nba !== undefined && mudanca.qtd_nba !== null && mudanca.qtd_nba !== '') {
+                    const labels = colunaElement.querySelectorAll('.label-bold');
+                    for (let label of labels) {
+                        if (label.textContent.trim() === 'QTD NBA') {
+                            // O próximo elemento após o label deve ser o input-line
+                            let nextElement = label.nextElementSibling;
+                            while (nextElement && nextElement.nodeType === 3) { // Pular text nodes
+                                nextElement = nextElement.nextElementSibling;
+                            }
+                            if (nextElement && nextElement.classList.contains('input-line')) {
+                                nextElement.textContent = String(mudanca.qtd_nba);
+                            }
+                            break;
+                        }
+                    }
                 }
 
                 // Sakanobori para todas as colunas
@@ -843,6 +927,11 @@ class SistemaChecklist4M {
             this.setChecked('input[aria-label*="PR092 Não"]', dados.procedimento_normalidade.pr092_nao);
 
             this.setTexto('.secao-justificativa .input-line', dados.procedimento_normalidade.justificativa);
+        }
+
+        // Preencher Acompanhamento usando o método específico
+        if (dados.acompanhamento && dados.acompanhamento.length > 0) {
+            this.preencherAcompanhamento(dados.acompanhamento);
         }
 
         // Preencher Resultados de Avaliação
@@ -914,8 +1003,6 @@ class SistemaChecklist4M {
             element.checked = !!valor;
         }
     }
-
-
 
     // Limpar formulário
     limparFormulario() {
