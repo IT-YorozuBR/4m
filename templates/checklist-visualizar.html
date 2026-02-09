@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizar Checklist - FR0062</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .back-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-button {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+
+        .action-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .action-button.primary {
+            background: #0066cc;
+            border: 1px solid #0066cc;
+        }
+
+        .action-button.primary:hover {
+            background: #0052a3;
+        }
+
+        .info-bar {
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-em_andamento {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status-concluido {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+
+        .status-aprovado {
+            background: rgba(0, 123, 255, 0.2);
+            color: #007bff;
+        }
+
+        .status-reprovado {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin: 30px 0 15px 0;
+            color: #fff;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-card {
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .data-table th {
+            text-align: left;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            vertical-align: top;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .checkbox-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checkbox-status .material-icons {
+            font-size: 20px;
+        }
+
+        .checkbox-status.checked {
+            color: #28a745;
+        }
+
+        .checkbox-status.unchecked {
+            color: #dc3545;
+        }
+
+        .no-data {
+            background: rgba(30, 30, 30, 0.8);
+            border-radius: 12px;
+            padding: 60px 25px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .no-data-icon {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.2);
+            margin-bottom: 20px;
+        }
+
+        .no-data h2 {
+            font-size: 1.8rem;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .no-data p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 25px;
+        }
+
+        .loading-spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #0066cc;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 2px 4px 2px 0;
+        }
+
+        .grid-4m {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .column-4m {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .column-title {
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: #fff;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .field {
+            margin-bottom: 12px;
+        }
+
+        .field-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .field-value {
+            color: #fff;
+            font-size: 1rem;
+            word-break: break-word;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .action-button {
+                width: 100%;
+                justify-content: center;
+                margin: 5px 0;
+            }
+            
+            .grid-4m {
+                grid-template-columns: 1fr;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="pageTitle">Visualizar Checklist</h1>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <button class="back-button" id="btnVoltar">
+                    <span class="material-icons">arrow_back</span>
+                    Voltar
+                </button>
+                <button class="action-button" id="btnEditar">
+                    <span class="material-icons">edit</span>
+                    Editar Checklist
+                </button>
+                <a href="./checklist-detalhes.html" class="action-button" id="btnDetalhes">
+                    <span class="material-icons">list_alt</span>
+                    Ver Detalhes
+                </a>
+                <a href="./4m-checklist.html" class="action-button">
+                    <span class="material-icons">list</span>
+                    Todos os Checklists
+                </a>
+                <a href="./FR0062-formulario.html" class="action-button primary">
+                    <span class="material-icons">add</span>
+                    Novo Checklist
+                </a>
+            </div>
+        </div>
+
+        <div id="infoBar" class="info-bar" style="display: none;">
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Número de Controle</div>
+                    <div class="info-value" id="infoNumeroControle">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Status</div>
+                    <div class="info-value">
+                        <span class="status-badge" id="infoStatus">-</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Solicitado por</div>
+                    <div class="info-value" id="infoSolicitadoPor">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Data de Criação</div>
+                    <div class="info-value" id="infoDataCriacao">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="contentContainer">
+            <!-- Conteúdo será carregado dinamicamente -->
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Carregando checklist...</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentContainer = document.getElementById('contentContainer');
+            const infoBar = document.getElementById('infoBar');
+            const loading = document.getElementById('loading');
+            const btnVoltar = document.getElementById('btnVoltar');
+            const btnEditar = document.getElementById('btnEditar');
+            const btnDetalhes = document.getElementById('btnDetalhes');
+            
+            // Obter número do checklist da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const numeroControle = urlParams.get('numero');
+            
+            if (!numeroControle) {
+                mostrarErro('Número do checklist não especificado.');
+                return;
+            }
+            
+            // Atualizar título da página
+            document.getElementById('pageTitle').textContent = `Visualizar: ${numeroControle}`;
+            
+            // Botão voltar
+            btnVoltar.addEventListener('click', () => {
+                window.history.back();
+            });
+            
+            // Botão editar
+            btnEditar.addEventListener('click', () => {
+                window.location.href = `FR0062-formulario.html?edit=${numeroControle}`;
+            });
+            
+            // Botão detalhes
+            btnDetalhes.href = `checklist-detalhes.html?numero=${numeroControle}`;
+            
+            // Carregar dados do checklist
+            async function carregarChecklist() {
+                try {
+                    loading.style.display = 'block';
+                    contentContainer.innerHTML = '';
+                    infoBar.style.display = 'none';
+                    
+                    const response = await fetch(`http://localhost:3001/api/fr0062/${numeroControle}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        exibirChecklist(result.data);
+                    } else {
+                        mostrarErro(result.message || 'Checklist não encontrado.');
+                    }
+                } catch (error) {
+                    console.error('Erro ao carregar checklist:', error);
+                    mostrarErro('Erro ao conectar com o servidor.');
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+            
+            function exibirChecklist(checklist) {
+                // Atualizar barra de informações
+                document.getElementById('infoNumeroControle').textContent = checklist.numero_controle;
+                document.getElementById('infoSolicitadoPor').textContent = checklist.solicitado_por || 'Não informado';
+                
+                const dataCriacao = new Date(checklist.data_criacao).toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('infoDataCriacao').textContent = dataCriacao;
+                
+                const statusClass = checklist.status.toLowerCase().replace(' ', '_');
+                const statusText = checklist.status.replace('_', ' ');
+                document.getElementById('infoStatus').textContent = statusText;
+                document.getElementById('infoStatus').className = `status-badge status-${statusClass}`;
+                
+                infoBar.style.display = 'block';
+                
+                // Construir conteúdo
+                let html = '';
+                
+                // Seção Cabeçalho
+                if (checklist.cabecalho) {
+                    const cab = checklist.cabecalho;
+                    html += `
+                        <h2 class="section-title">Cabeçalho</h2>
+                        <div class="section-card">
+                            <div class="info-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                                <div class="info-item">
+                                    <div class="info-label">Visto Retenção Q.A.</div>
+                                    <div class="info-value">${cab.visto_retencao_qa || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Setor Produção</div>
+                                    <div class="info-value">${cab.setor_producao || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Setor Logística/P.C.</div>
+                                    <div class="info-value">${cab.setor_logistica_pc || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Setor Engenharia</div>
+                                    <div class="info-value">${cab.setor_engenharia || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Qualidade Aprovado</div>
+                                    <div class="info-value">${cab.qualidade_aprovado || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Qualidade Confirmado</div>
+                                    <div class="info-value">${cab.qualidade_confirmado || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Qualidade Executado por</div>
+                                    <div class="info-value">${cab.qualidade_executado_por || '-'}</div>
+                                </div>
+                                <div class="info-item">
+                                    <div class="info-label">Recebimento Q.A.</div>
+                                    <div class="info-value">${cab.recebimento_qa || '-'}</div>
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin: 25px 0 15px 0; color: #fff; font-size: 1.2rem;">Mudanças 4M</h3>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                <div class="checkbox-status ${cab.mudanca_engenharia ? 'checked' : 'unchecked'}">
+                                    <span class="material-icons">${cab.mudanca_engenharia ? 'check_box' : 'check_box_outline_blank'}</span>
+                                    Engenharia
+                                </div>
+                                <div class="checkbox-status ${cab.mudanca_controle_prod ? 'checked' : 'unchecked'}">
+                                    <span class="material-icons">${cab.mudanca_controle_prod ? 'check_box' : 'check_box_outline_blank'}</span>
+                                    Controle Prod.
+                                </div>
+                                <div class="checkbox-status ${cab.mudanca_producao ? 'checked' : 'unchecked'}">
+                                    <span class="material-icons">${cab.mudanca_producao ? 'check_box' : 'check_box_outline_blank'}</span>
+                                    Produção
+                                </div>
+                            </div>
+                            
+                            <h3 style="margin: 25px 0 15px 0; color: #fff; font-size: 1.2rem;">Análise de Risco</h3>
+                            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                                ${cab.analise_risco_processo ? '<span class="pill">Processo</span>' : ''}
+                                ${cab.analise_risco_produto ? '<span class="pill">Produto</span>' : ''}
+                                ${cab.analise_risco_nao_aplicavel ? '<span class="pill">Não Aplicável</span>' : ''}
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <div class="info-label">Horário de Aplicação da 4M</div>
+                                <div class="info-value">${cab.horario_aplicacao_4m || '-'}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Seção Mudanças 4M
+                if (checklist.mudancas_4m && checklist.mudancas_4m.length > 0) {
+                    html += `
+                        <h2 class="section-title">Mudanças 4M</h2>
+                        <div class="section-card">
+                            <div class="grid-4m">
+                    `;
+                    
+                    const tipos = ['MAN', 'MACHINE', 'MATERIAL', 'METHOD'];
+                    
+                    tipos.forEach((tipo, index) => {
+                        const mudanca = checklist.mudancas_4m.find(m => m.tipo === tipo) || {};
+                        html += `
+                            <div class="column-4m">
+                                <div class="column-title">${tipo}</div>
+                                <div class="field">
+                                    <div class="field-label">Item Modificado</div>
+                                    <div class="field-value">${mudanca.item_modificado || '-'}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="field-label">Nome</div>
+                                    <div class="field-value">${mudanca.nome || '-'}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="field-label">Motivo</div>
+                                    <div class="field-value">${mudanca.motivo || '-'}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="field-label">Projeto</div>
+                                    <div class="field-value">${mudanca.projeto || '-'}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="field-label">Número Operação</div>
+                                    <div class="field-value">${mudanca.numero_operacao || '-'}</div>
+                                </div>
+                                <div class="field">
+                                    <div class="field-label">Importância</div>
+                                    <div class="field-value">
+                                        ${mudanca.importancia_normal ? '<span class="pill">Normal</span>' : ''}
+                                        ${mudanca.importancia_importante_as ? '<span class="pill">Importante A/S</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Seção Lista de Verificação
+                if (checklist.lista_verificacao) {
+                    const lista = checklist.lista_verificacao;
+                    html += `
+                        <h2 class="section-title">Lista de Verificação</h2>
+                        <div class="section-card">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th width="70%">Item</th>
+                                        <th width="30%">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Registro Treinam Operador</td>
+                                        <td>
+                                            <div class="checkbox-status ${lista.registro_treinam_operador ? 'checked' : 'unchecked'}">
+                                                <span class="material-icons">${lista.registro_treinam_operador ? 'check_circle' : 'cancel'}</span>
+                                                ${lista.registro_treinam_operador ? 'Sim' : 'Não'}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Avaliação Treinam Operador</td>
+                                        <td>
+                                            <div class="checkbox-status ${lista.avaliacao_treinam_operador ? 'checked' : 'unchecked'}">
+                                                <span class="material-icons">${lista.avaliacao_treinam_operador ? 'check_circle' : 'cancel'}</span>
+                                                ${lista.avaliacao_treinam_operador ? 'Sim' : 'Não'}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Registro Garantia 200%</td>
+                                        <td>
+                                            <div class="checkbox-status ${lista.registro_garantia_200 ? 'checked' : 'unchecked'}">
+                                                <span class="material-icons">${lista.registro_garantia_200 ? 'check_circle' : 'cancel'}</span>
+                                                ${lista.registro_garantia_200 ? 'Sim' : 'Não'}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Certificado Habilitação</td>
+                                        <td>
+                                            <div class="checkbox-status ${lista.certificado_habilitacao ? 'checked' : 'unchecked'}">
+                                                <span class="material-icons">${lista.certificado_habilitacao ? 'check_circle' : 'cancel'}</span>
+                                                ${lista.certificado_habilitacao ? 'Sim' : 'Não'}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Importante A</td>
+                                        <td>
+                                            <div class="checkbox-status ${lista.importante_a ? 'checked' : 'unchecked'}">
+                                                <span class="material-icons">${lista.importante_a ? 'check_circle' : 'cancel'}</span>
+                                                ${lista.importante_a ? 'Sim' : 'Não'}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // Seção Acompanhamento
+                if (checklist.acompanhamento && checklist.acompanhamento.length > 0) {
+                    html += `
+                        <h2 class="section-title">Acompanhamento</h2>
+                        <div class="section-card">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th width="40%">Nome Norma</th>
+                                        <th width="20%">Responsável</th>
+                                        <th width="20%">Necessário Inov.</th>
+                                        <th width="20%">Confirmado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    checklist.acompanhamento.forEach(item => {
+                        html += `
+                            <tr>
+                                <td>${item.nome_norma || '-'}</td>
+                                <td>${item.responsavel || '-'}</td>
+                                <td>
+                                    <div class="checkbox-status ${item.necessario_inov ? 'checked' : 'unchecked'}">
+                                        <span class="material-icons">${item.necessario_inov ? 'check_circle' : 'cancel'}</span>
+                                        ${item.necessario_inov ? 'Sim' : 'Não'}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="checkbox-status ${item.confirmado ? 'checked' : 'unchecked'}">
+                                        <span class="material-icons">${item.confirmado ? 'check_circle' : 'cancel'}</span>
+                                        ${item.confirmado ? 'Sim' : 'Não'}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+                
+                // Se não houver dados adicionais
+                if (!html) {
+                    html = `
+                        <div class="section-card">
+                            <p style="color: rgba(255, 255, 255, 0.7); text-align: center;">
+                                Não há dados adicionais disponíveis para este checklist.
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                contentContainer.innerHTML = html;
+            }
+            
+            function mostrarErro(mensagem) {
+                contentContainer.innerHTML = `
+                    <div class="no-data">
+                        <div class="no-data-icon">
+                            <span class="material-icons">error</span>
+                        </div>
+                        <h2>Erro ao Carregar Checklist</h2>
+                        <p>${mensagem}</p>
+                        <div style="margin-top: 30px;">
+                            <a href="./4m-checklist.html" class="action-button">
+                                <span class="material-icons">list</span>
+                                Ver Todos os Checklists
+                            </a>
+                            <a href="./FR0062-formulario.html" class="action-button primary">
+                                <span class="material-icons">add</span>
+                                Criar Novo Checklist
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Iniciar carregamento
+            carregarChecklist();
+            
+            // Atalhos de teclado
+            document.addEventListener('keydown', function(e) {
+                // ESC para voltar
+                if (e.key === 'Escape') {
+                    window.history.back();
+                }
+                // Ctrl+E para editar
+                if (e.ctrlKey && e.key === 'e') {
+                    e.preventDefault();
+                    window.location.href = `FR0062-formulario.html?edit=${numeroControle}`;
+                }
+                // Ctrl+L para lista
+                if (e.ctrlKey && e.key === 'l') {
+                    e.preventDefault();
+                    window.location.href = '4m-checklist.html';
+                }
+                // Ctrl+D para detalhes
+                if (e.ctrlKey && e.key === 'd') {
+                    e.preventDefault();
+                    window.location.href = `checklist-detalhes.html?numero=${numeroControle}`;
+                }
+            });
+        });
+    </script>
+</body>
+</html>

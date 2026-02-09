@@ -1,0 +1,261 @@
+<!-- 
+====================================================
+ADICIONAR ESTES BOTÕES NO SEU HTML
+Arquivo: templates/FR0062-formulario.html
+Adicione dentro do <body>, próximo aos outros botões
+====================================================
+-->
+
+<div id="botoes-formulario" style="position: fixed; top: 10px; right: 10px; z-index: 10000; display: flex; gap: 10px; flex-direction: column; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+    
+    <!-- Botão Salvar (já existe) -->
+    <button id="btnSalvarCheck" style="
+        background: #4CAF50;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: all 0.3s;
+    ">
+        💾 SALVAR FORMULÁRIO
+    </button>
+    
+    <!-- Botão Carregar -->
+    <button id="btnCarregarForm" onclick="abrirModalCarregar()" style="
+        background: #2196F3;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: all 0.3s;
+    ">
+        📂 CARREGAR FORMULÁRIO
+    </button>
+    
+    <!-- Botão Listar -->
+    <button id="btnListarForms" onclick="abrirModalListar()" style="
+        background: #FF9800;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        transition: all 0.3s;
+    ">
+        📋 LISTAR FORMULÁRIOS
+    </button>
+    
+</div>
+
+<!-- Modal para carregar formulário -->
+<div id="modalCarregar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h2 style="margin-top: 0;">📂 Carregar Formulário</h2>
+        <p style="color: #666;">Digite o número de controle do formulário que deseja carregar:</p>
+        
+        <input 
+            type="text" 
+            id="inputNumeroControle" 
+            placeholder="Ex: FR0062-20260205-090029536"
+            style="
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-size: 14px;
+                margin: 15px 0;
+                box-sizing: border-box;
+            "
+        />
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button onclick="fecharModalCarregar()" style="
+                background: #999;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+            ">
+                Cancelar
+            </button>
+            <button onclick="executarCarregar()" style="
+                background: #2196F3;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: bold;
+            ">
+                Carregar
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para listar formulários -->
+<div id="modalListar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto;">
+        <h2 style="margin-top: 0;">📋 Formulários Salvos</h2>
+        <div id="listaFormularios" style="margin: 20px 0;">
+            <p style="text-align: center; color: #999;">Carregando...</p>
+        </div>
+        <button onclick="fecharModalListar()" style="
+            background: #999;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+        ">
+            Fechar
+        </button>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// FUNÇÕES PARA OS MODAIS
+// ==========================================
+
+function abrirModalCarregar() {
+    const modal = document.getElementById('modalCarregar');
+    modal.style.display = 'flex';
+    document.getElementById('inputNumeroControle').focus();
+}
+
+function fecharModalCarregar() {
+    document.getElementById('modalCarregar').style.display = 'none';
+    document.getElementById('inputNumeroControle').value = '';
+}
+
+async function executarCarregar() {
+    const numeroControle = document.getElementById('inputNumeroControle').value.trim();
+    
+    if (!numeroControle) {
+        alert('❌ Digite um número de controle válido');
+        return;
+    }
+    
+    fecharModalCarregar();
+    
+    try {
+        await window.formularioFR0062.carregarFormulario(numeroControle);
+    } catch (error) {
+        console.error('Erro:', error);
+    }
+}
+
+async function abrirModalListar() {
+    const modal = document.getElementById('modalListar');
+    modal.style.display = 'flex';
+    
+    await carregarListaFormularios();
+}
+
+function fecharModalListar() {
+    document.getElementById('modalListar').style.display = 'none';
+}
+
+async function carregarListaFormularios() {
+    const container = document.getElementById('listaFormularios');
+    container.innerHTML = '<p style="text-align: center; color: #999;">Carregando...</p>';
+    
+    try {
+        const response = await fetch('http://localhost:3001/api/fr0062/listar');
+        const result = await response.json();
+        
+        if (!result.success || result.formularios.length === 0) {
+            container.innerHTML = '<p style="text-align: center; color: #999;">Nenhum formulário salvo ainda</p>';
+            return;
+        }
+        
+        let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+        
+        result.formularios.forEach(form => {
+            const data = new Date(form.criado_em).toLocaleString('pt-BR');
+            
+            html += `
+                <div style="
+                    border: 1px solid #ddd;
+                    padding: 15px;
+                    border-radius: 8px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: #f8f9fa;
+                ">
+                    <div>
+                        <div style="font-weight: bold; color: #333; margin-bottom: 5px;">
+                            ${form.numero_controle}
+                        </div>
+                        <div style="font-size: 12px; color: #666;">
+                            📅 ${data} | 👤 ${form.solicitado_por || 'N/A'}
+                        </div>
+                    </div>
+                    <button 
+                        onclick="carregarFormularioRapido('${form.numero_controle}')"
+                        style="
+                            background: #2196F3;
+                            color: white;
+                            border: none;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: bold;
+                        "
+                    >
+                        📂 Carregar
+                    </button>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Erro ao listar:', error);
+        container.innerHTML = '<p style="text-align: center; color: #f44336;">❌ Erro ao carregar lista</p>';
+    }
+}
+
+async function carregarFormularioRapido(numeroControle) {
+    fecharModalListar();
+    await window.formularioFR0062.carregarFormulario(numeroControle);
+}
+
+// Permitir carregar pressionando Enter
+document.addEventListener('DOMContentLoaded', () => {
+    const input = document.getElementById('inputNumeroControle');
+    if (input) {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                executarCarregar();
+            }
+        });
+    }
+});
+</script>
+
+<style>
+/* Efeitos hover nos botões */
+#botoes-formulario button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#botoes-formulario button:active {
+    transform: translateY(0);
+}
+</style>

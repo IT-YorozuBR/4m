@@ -1,0 +1,1144 @@
+/* RESET E CONFIGURAÇÕES GLOBAIS */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    padding: 10px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+/* Estilos para melhor visualização durante geração */
+body.gerando-pdf {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+body.gerando-pdf .formulario-completo {
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+}
+
+.formulario-completo {
+    width: 100%;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+
+/* CABEÇALHO SUPERIOR */
+.cabecalho-superior {
+    display: flex;
+    width: 100%;
+    border: 2px solid black;
+    background-color: #ffffff;
+    position: relative;
+    padding-bottom: 25px;
+}
+
+.bloco-titulo {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+.texto-grande {
+    font-size: 20px;
+}
+
+.sublinhado {
+    text-decoration: underline;
+}
+
+.bloco-visto {
+    display: flex;
+    flex-direction: column;
+    width: 8%;
+}
+
+.bloco-setor {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    width: 20%;
+    position: relative;
+    margin-top: 15px;
+    border-top: 2px solid black;
+}
+
+.label-flutuante {
+    position: absolute;
+    top: -12px;
+    left: 8px;
+    background-color: #ffffff;
+    padding: 0 4px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.bloco-qualidade {
+    display: flex;
+    flex-direction: column;
+    width: 20%;
+}
+
+.bloco-documento {
+    display: flex;
+    flex-direction: column;
+    width: 8%;
+}
+
+.bloco-setas {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 0 5px;
+    font-size: 14px;
+}
+
+.bloco-mudanca {
+    display: flex;
+    flex-direction: column;
+    width: 12%;
+}
+
+.bloco-envie {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    align-self: center;
+    padding: 0 10px;
+    line-height: 1.5;
+}
+
+.bloco-controle {
+    display: flex;
+    flex-direction: column;
+    width: 25%;
+    flex-grow: 1;
+}
+
+.celula {
+    border: 1px solid black;
+    text-align: center;
+    min-height: 16px;
+    /* era 20 */
+    padding: 2px 4px;
+}
+
+.celula.cabecalho {
+    background-color: #f0f0f0;
+}
+
+.celula.vazia {
+    min-height: 35px;
+}
+
+.no-border-top {
+    border-top: none;
+}
+
+.no-border-left {
+    border-left: none;
+}
+
+.origem {
+    text-align: left;
+    padding-left: 10px;
+    font-weight: bold;
+    border: none;
+    border-top: 1px solid black;
+    min-height: 25px;
+    display: flex;
+    align-items: center;
+}
+
+.grid-qualidade {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    flex-grow: 1;
+    grid-template-rows: auto 1fr;
+}
+
+.grid-mudanca {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    flex-grow: 1;
+}
+
+.grid-controle-externo {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    flex-grow: 1;
+}
+
+.grid-controle-interno {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex-grow: 1;
+}
+
+.coluna-controle-esq {
+    display: flex;
+    flex-direction: column;
+}
+
+.coluna-controle-dir {
+    display: flex;
+    flex-direction: column;
+}
+
+.texto-esquerda {
+    text-align: left;
+}
+
+.texto-pequeno {
+    font-size: 8px;
+    font-weight: normal;
+}
+
+.dotted-line-container {
+    position: absolute;
+    bottom: 12px;
+    left: 36%;
+    right: 15%;
+    border-bottom: 2px dotted black;
+    z-index: 5;
+    height: 1px;
+}
+
+.dotted-line-start-dot {
+    position: absolute;
+    top: -3px;
+    left: -4px;
+    width: 8px;
+    height: 8px;
+    background-color: black;
+    border-radius: 50%;
+}
+
+/* CORPO PRINCIPAL COM LATERAIS */
+.corpo-principal {
+    display: flex;
+    width: 100%;
+    gap: 5px;
+}
+
+/* BARRA LATERAL ESQUERDA */
+.barra-lateral-esquerda {
+    width: 100px;
+    display: flex;
+    flex-direction: column;
+}
+
+.header-table {
+    border-collapse: collapse;
+    border: 2px solid black;
+    width: 100%;
+}
+
+.header-table td {
+    border: 2px solid black;
+    padding: 0;
+    color: #0000CD;
+    text-transform: uppercase;
+    font-weight: bold;
+    position: relative;
+    vertical-align: middle;
+}
+
+.departamento-cell,
+.item-cell {
+    height: 80px;
+    text-align: center;
+    padding: 5px 2px;
+}
+
+.departamento-cell {
+    font-size: 9px;
+}
+
+.item-cell {
+    font-size: 11px;
+}
+
+.vertical-text-cell {
+    padding: 0;
+}
+
+.vertical-text-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    white-space: nowrap;
+    transform-origin: center center;
+    text-align: center;
+}
+
+.vertical-text {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    line-height: 1.3em;
+}
+
+.item-text {
+    font-size: 9px;
+}
+
+/* CONTEÚDO CENTRAL */
+.conteudo-central {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* FILEIRA 1 - 4M */
+.quadro-container-1 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+    border: 2px solid black;
+    background-color: #ffffff;
+}
+
+.cabecalho-4m {
+    font-weight: bold;
+    text-align: center;
+    padding: 8px;
+    border-bottom: 2px solid black;
+}
+
+.cabecalho-4m:not(:last-child) {
+    border-right: 2px solid black;
+}
+
+.celula-4m {
+    padding: 4px 8px;
+    border-bottom: 1px solid black;
+    min-height: 50px;
+}
+
+.celula-4m:not(:nth-child(4n)) {
+    border-right: 2px solid black;
+}
+
+.celula-4m:nth-last-child(-n+4) {
+    border-bottom: none;
+}
+
+.celula-4m label {
+    font-size: 10px;
+    font-weight: bold;
+    display: block;
+}
+
+.celula.importancia,
+.celula.data-turno {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    align-items: center;
+    font-size: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.label-bold {
+    font-weight: bold;
+    font-size: 10px;
+}
+
+.celula.data-turno span:not(.label-bold) {
+    font-weight: bold;
+}
+
+.celula.importancia label,
+.celula.data-turno label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+/* FILEIRA 2 E 3 JUNTAS */
+.fileiras-2-3 {
+    display: flex;
+    width: 100%;
+    gap: 5px;
+}
+
+.conteudo-fileiras {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* FILEIRA 2 */
+.quadro-container-2 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    width: 100%;
+    border: 2px solid black;
+    background-color: #ffffff;
+}
+
+.coluna {
+    display: flex;
+    flex-direction: column;
+}
+
+.coluna:not(:last-child) {
+    border-right: 2px solid black;
+}
+
+.secao {
+    border-bottom: 1px solid black;
+    box-sizing: border-box;
+    min-height: 20px;
+    /* era 25 */
+    padding: 3px 6px;
+}
+
+.coluna>.secao:last-child {
+    border-bottom: none;
+}
+
+.secao-instrucao {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 30px;
+}
+
+.empty-box {
+    width: 80px;
+    height: 15px;
+    border: 1px solid black;
+    margin-left: 10px;
+}
+
+.secao-tall {
+    min-height: 50px;
+    /* REDUZIDO ainda mais para economizar espaço */
+    display: flex;
+    flex-direction: column;
+}
+
+.static-line {
+    border-bottom: 1px solid black;
+    margin-top: 8px;
+    width: 100%;
+}
+
+.input-line {
+    border: none;
+    border-bottom: 1px solid black;
+    flex-grow: 1;
+    min-width: 50px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 10px;
+    margin-top: 5px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: normal;
+}
+
+.secao-garantia,
+.secao-sakanobori {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 15px;
+    min-height: 35px;
+    /* REDUZIDO */
+}
+
+.secao-meios {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.text-red {
+    color: #E60000;
+    background-color: #CCFFFF;
+    font-size: 8px;
+    font-weight: bold;
+    display: block;
+}
+
+.fill-space {
+    flex-grow: 1;
+    border-bottom: none;
+}
+
+/* FILEIRA 3 */
+.quadro-container-3 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto;
+    width: 100%;
+    border: 2px solid black;
+    background-color: #ffffff;
+}
+
+.celula-3:not(:nth-child(4n)) {
+    border-right: 2px solid black;
+}
+
+.celula-3:nth-child(-n+4) {
+    border-bottom: 2px solid black;
+}
+
+.secao-lista-verificacao {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* REDUZIDO o espaçamento */
+    height: 100%;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px;
+    min-height: 22px;
+    /* AUMENTADO para acomodar checkbox maior */
+}
+
+.list-item span:first-child {
+    font-weight: bold;
+    font-size: 9px;
+    /* FONTE REDUZIDA */
+    flex-grow: 1;
+    /* Faz o texto ocupar o espaço disponível */
+    padding-right: 10px;
+    /* Espaço entre texto e checkbox */
+}
+
+.list-item span:last-child {
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.secao-resultado {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* REDUZIDO */
+    height: 100%;
+}
+
+.resultado-duas-colunas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    /* REDUZIDO */
+}
+
+.resultado-col-interna {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    /* REDUZIDO */
+}
+
+.input-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.secao-tratativa {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    height: 100%;
+}
+
+.secao-tratativa>.label-bold {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    font-size: 9px;
+    /* FONTE REDUZIDA */
+}
+
+.tratativa-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid black;
+    padding: 3px;
+    /* REDUZIDO */
+    min-height: 25px;
+    /* ALTURA REDUZIDA */
+}
+
+.tratativa-item span {
+    font-size: 9px;
+    /* FONTE REDUZIDA */
+    font-weight: bold;
+}
+
+.sim-nao {
+    display: flex;
+    gap: 10px;
+    background-color: #eeeeee;
+    padding: 2px 4px;
+    border: 1px solid #999;
+}
+
+.secao-justificativa {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.secao-justificativa .checkbox-group {
+    margin-top: 10px;
+    /* REDUZIDO */
+}
+
+.justificativa-linha {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    /* REDUZIDO */
+}
+
+/* BARRA LATERAL DIREITA - ACOMPANHAMENTO */
+.sidebar-acompanhamento {
+    width: 300px;
+    background-color: #E6E6FA;
+    border: 2px solid black;
+    color: #0000FF;
+    font-weight: bold;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    background-color: #FFFFFF;
+    border: 2px solid black;
+    text-align: center;
+    padding: 5px;
+    margin: -2px -2px 0 -2px;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 14px;
+}
+
+.sidebar-header span {
+    font-size: 10px;
+}
+
+.sidebar-table {
+    width: 100%;
+    border-collapse: collapse;
+    flex-grow: 1;
+}
+
+.sidebar-table th,
+.sidebar-table td {
+    border: 1px solid black;
+    padding: 3px;
+    text-align: center;
+    vertical-align: middle;
+    background-color: #FFFFFF;
+}
+
+.sidebar-table thead th {
+    font-size: 9px;
+    padding: 5px 2px;
+    white-space: nowrap;
+    /* Evita quebra de linha */
+}
+
+/* REMOVIDO: .th-vertical - Não vamos mais usar texto vertical */
+
+.sidebar-table tbody td:first-child {
+    text-align: left;
+    padding-left: 5px;
+    font-size: 9px;
+    /* FONTE REDUZIDA */
+}
+
+.sidebar-table tbody td {
+    height: 18px;
+    /* ALTURA REDUZIDA */
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 18px;
+    height: 18px;
+    background-color: #FFFFFF;
+    border: 1px solid black;
+    cursor: pointer;
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '\2713';
+    font-size: 14px;
+    font-weight: bold;
+    color: #0000FF;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.sidebar-note {
+    padding: 8px;
+    font-size: 10px;
+    text-align: center;
+    border-top: 2px solid black;
+}
+
+.sidebar-note span {
+    font-size: 16px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sidebar-example {
+    padding: 5px;
+    border-top: 2px solid black;
+    background-color: #FFFFFF;
+}
+
+.sidebar-example .example-title {
+    font-size: 10px;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.sidebar-example .example-grid {
+    display: grid;
+    grid-template-columns: 2fr 0.8fr 1fr;
+    border: 1px solid black;
+    font-size: 10px;
+}
+
+.sidebar-example .example-grid>div {
+    padding: 4px;
+    border-left: 1px solid black;
+    text-align: center;
+}
+
+.sidebar-example .example-grid>div:first-child {
+    border-left: none;
+    text-align: left;
+    padding-left: 5px;
+}
+
+.sidebar-footer-id {
+    text-align: center;
+    padding: 5px;
+    background-color: #FFFFFF;
+    color: black;
+    font-size: 12px;
+    border-top: 2px solid black;
+    margin-top: auto;
+}
+
+/* FILEIRA 4 */
+.quadro-container-4 {
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1.6fr 1.6fr 1.8fr;
+    grid-template-rows: auto auto;
+    width: 100%;
+    border: 2px solid black;
+    background-color: #ffffff;
+}
+
+.borda-direita {
+    border-right: 2px solid black;
+}
+
+.cabecalho-esquerda {
+    grid-column: 1 / 2;
+    grid-row: 1;
+}
+
+.cabecalho-direita {
+    grid-column: 2 / 6;
+    grid-row: 1;
+}
+
+.conteudo-coluna {
+    grid-row: 2;
+    border-top: 1px solid black;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.lista-itens p {
+    margin: 0 0 4px 0;
+    /* REDUZIDO */
+    line-height: 1.2;
+    /* REDUZIDO */
+    font-weight: bold;
+    font-size: 9px;
+    /* FONTE REDUZIDA */
+}
+
+.texto-rodape {
+    font-size: 8px;
+    color: #333;
+    margin-top: 10px;
+    /* REDUZIDO */
+}
+
+/* NOVOS ESTILOS PARA AS MODIFICAÇÕES SOLICITADAS */
+
+/* Ajuste para expandir o PR092, NOK e Justificativa */
+.celula-3.secao-tratativa,
+.celula-3.secao-justificativa {
+    min-height: 260px;
+    /* REDUZIDO ligeiramente */
+}
+
+/* Botão Gerar PDF */
+.btn-gerar-pdf {
+    background-color: yellow;
+    color: red;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 10px;
+    text-align: center;
+}
+
+/* Botão Limpar Dados */
+.btn-limpar-dados {
+    background-color: red;
+    color: white;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 10px;
+    text-align: center;
+}
+
+/* Botão Salvar Check - NOVO */
+.btn-salvar-check {
+    background-color: #0000FF;
+    /* Azul */
+    color: white;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 10px;
+    text-align: center;
+}
+
+/* Ajuste para alinhar o ORIGEM */
+.bloco-visto .origem {
+    margin-top: 5px;
+}
+
+/* Estilos para campos de input-line (garante que sejam editáveis) */
+.input-line {
+    min-height: 15px;
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* NOVO ESTILO: Reduzir altura das seções do quadro-container-3 para evitar quebra de página */
+.celula-3.secao-lista-verificacao,
+.celula-3.secao-resultado {
+    padding: 3px;
+    /* REDUZIDO padding */
+}
+
+/* Ajuste adicional para texto nas células da lista de verificação */
+.list-item .input-line {
+    width: 40px;
+    /* Largura fixa para as caixas de input */
+    text-align: center;
+}
+
+/* AJUSTES PARA SIMETRIA DA BARRA LATERAL ESQUERDA */
+.header-table {
+    height: 100%;
+    /* Garante que a tabela ocupe toda a altura */
+}
+
+.vertical-text-cell {
+    height: auto;
+    /* Remove alturas fixas que estavam causando desalinhamento */
+}
+
+/* Ajuste específico para a célula "SETOR DE GARANTIA DE QUALIDADE" */
+.header-table tr:nth-child(3) td.vertical-text-cell {
+    height: 520px;
+    /* Aumentado para ficar simétrico com o conteúdo à direita */
+}
+
+/* Ajuste para a célula "PROCEDIMENTO DE NORMALIDADE" */
+.header-table tr:nth-child(4) td.vertical-text-cell {
+    height: 200px;
+    /* Ajustado proporcionalmente */
+}
+
+/* NOVO ESTILO PARA CHECKBOXES MAIORES NA LISTA DE VERIFICAÇÃO */
+.checkbox-lista-verificacao {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 25px;
+    /* MAIOR que os checkboxes normais */
+    height: 25px;
+    /* MAIOR que os checkboxes normais */
+    background-color: #FFFFFF;
+    border: 2px solid black;
+    /* Borda mais grossa */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    /* Impede que o checkbox encolha */
+    margin-left: 5px;
+    /* Espaço mínimo entre texto e checkbox */
+}
+
+.checkbox-lista-verificacao:checked::after {
+    content: 'X';
+    font-size: 18px;
+    /* FONTE MAIOR */
+    font-weight: bold;
+    color: #0000FF;
+}
+
+/* Container para o checkbox na lista */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ============================================================================
+   ESTILOS OTIMIZADOS PARA PDF - ADICIONADOS NO FINAL
+   ============================================================================ */
+
+
+/* Garantir que tudo fique dentro do contêiner */
+.formulario-completo {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+
+/* ESTILOS DE COMPACTAÇÃO PARA PDF */
+
+/* ============================================================================
+   CONFIGURAÇÃO DE IMPRESSÃO NATIVA (PERFEITA)
+   ============================================================================ */
+/* ============================================================================
+   MODO IMPRESSÃO COMPACTO (FIT TO PAGE)
+   ============================================================================ */
+/* ============================================================================
+   MODO IMPRESSÃO: AJUSTE HORIZONTAL (Mantendo altura das linhas)
+   ============================================================================ */
+
+@media print {
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .formulario-completo {
+        transform: scale(0.92); /* 👈 ajuste fino */
+        transform-origin: top left;
+        width: 100% !important;
+        page-break-inside: avoid !important;
+    }
+}
+
+
+/* ESTILOS PARA O BOTÃO VOLTAR (adicionado pelo JavaScript) */
+.btn-voltar {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: #333;
+    color: white;
+    border: 1px solid black;
+    padding: 8px 15px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 1000;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn-voltar:hover {
+    background-color: #555;
+}
+
+
+/* ADICIONE ESTES ESTILOS AO FINAL DO SEU ARQUIVO CSS */
+
+/* Estilos para otimização de PDF */
+
+
+/* Botão Salvar HTML */
+.btn-salvar-html {
+    background-color: #28a745;
+    /* Verde */
+    color: white;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+.btn-salvar-html:hover {
+    background-color: #218838;
+}
+
+
+/* ============================================================================
+   MODO IMPRESSÃO / GERAÇÃO DE PDF (ESTILO IDÊNTICO AO ORIGINAL)
+   ============================================================================ */
+
+/* Quando a classe .gerando-pdf estiver no body (adicionada pelo JS) */
+body.gerando-pdf {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+body.gerando-pdf .formulario-completo {
+    transform: scale(0.92);
+    transform-origin: top left;
+}
+
+
+/* Remove gaps dos containers flex e grid para as linhas se tocarem */
+.gerando-pdf .corpo-principal,
+.gerando-pdf .conteudo-central,
+.gerando-pdf .fileiras-2-3,
+.gerando-pdf .conteudo-fileiras,
+.gerando-pdf .quadro-container-1,
+.gerando-pdf .quadro-container-2,
+.gerando-pdf .quadro-container-3,
+.gerando-pdf .quadro-container-4 {
+    gap: 0 !important;
+}
+
+/* Ajuste de bordas para evitar linhas duplas quando o gap é 0 */
+.gerando-pdf .quadro-container-1,
+.gerando-pdf .quadro-container-2,
+.gerando-pdf .quadro-container-3,
+.gerando-pdf .quadro-container-4 {
+    border-bottom: 2px solid black;
+    /* Separação horizontal grossa */
+    border-left: none;
+    border-right: none;
+    border-top: none;
+}
+
+/* Fonte ajustada para caber */
+.gerando-pdf * {
+    font-family: 'Arial Narrow', Arial, sans-serif !important;
+    /* Fonte mais estreita ajuda a caber */
+}
+
+.gerando-pdf .texto-grande {
+    font-size: 16px !important;
+}
+
+.gerando-pdf .celula,
+.gerando-pdf .label-bold,
+.gerando-pdf span {
+    font-size: 9px !important;
+}
+
+.gerando-pdf input[type="checkbox"] {
+    transform: scale(0.8);
+}
+
+/* Ajuste da Barra Lateral (Acompanhamento) para colar na direita */
+.gerando-pdf .sidebar-acompanhamento {
+    width: 240px !important;
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+    border-left: 2px solid black;
+}
+
+.gerando-pdf .barra-lateral-esquerda {
+    width: 80px !important;
+}
+
+/* Esconde botões na impressão */
+.gerando-pdf .btn-salvar-check,
+.gerando-pdf .btn-gerar-pdf,
+.gerando-pdf .btn-limpar-dados,
+.gerando-pdf .btn-voltar {
+    display: none !important;
+}
+
+/* Força altura para preencher a página se necessário */
+.gerando-pdf .celula-3.secao-tratativa,
+.gerando-pdf .celula-3.secao-justificativa {
+    min-height: 180px !important;
+    /* Reduz altura para não estourar a página */
+}

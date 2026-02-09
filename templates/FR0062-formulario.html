@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="pdf-optimization" content="true">
+    <title>RELATÓRIO MUDANÇA 4M - FR0062</title>
+    <link rel="stylesheet" href="../css/FR0062-estilos.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+
+
+   
+        function adicionarDataCampoAutomatico() {
+            // Inputs e textareas
+            document.querySelectorAll('input, textarea').forEach(element => {
+                if (!element.hasAttribute('data-campo')) {
+                    const campo = element.name || element.id;
+                    if (campo) {
+                        element.setAttribute('data-campo', campo);
+                    }
+                }
+            });
+
+            // Contenteditable
+            document.querySelectorAll('[contenteditable="true"]').forEach((element, index) => {
+                if (!element.hasAttribute('data-campo')) {
+                    const campo = element.id || `editavel_${index}`;
+                    element.setAttribute('data-campo', campo);
+                }
+            });
+
+            // Células
+            document.querySelectorAll('.celula.vazia, .celula:not(.cabecalho):not(.origem)').forEach((element, index) => {
+                if (!element.hasAttribute('data-campo')) {
+                    // Tentar usar alguma identificação única
+                    const linha = element.closest('tr')?.rowIndex || 'x';
+                    const coluna = element.cellIndex || index;
+                    element.setAttribute('data-campo', `celula_l${linha}_c${coluna}`);
+                }
+            });
+
+            console.log('✅ Data-campo adicionados automaticamente');
+        }
+
+    </script>
+</head>
+
+<body>
+
+    <form id="formularioFR0062" class="formulario-completo" data-form-type="FR0062">
+        <div class="cabecalho-superior">
+            <div class="bloco-titulo">
+                <span class="texto-grande sublinhado">RELATÓRIO</span>
+                <span class="texto-grande sublinhado">MUDANÇA 4M</span>
+            </div>
+
+            <div class="bloco-visto">
+                <div class="celula cabecalho">VISTO</div>
+                <div class="celula no-border-top" contenteditable="true" aria-label="Visto Retenção QA"
+                    id="vistoRetencaoQA" name="vistoRetencaoQA" data-field="visto_retencao_qa"></div>
+                <button class="btn-salvar-check" id="btnSalvarCheck">SALVAR CHECK</button>
+                <button class="btn-gerar-pdf" id="btnGerarPDF">GERAR PDF</button>
+                <button class="btn-limpar-dados" id="btnLimparDados">LIMPAR DADOS</button>
+                <div class="origem">ORIGEM &larr;</div>
+            </div>
+
+            <div class="bloco-setor">
+                <span class="label-flutuante">Se programado</span>
+
+                <div class="celula cabecalho">PRODUÇÃO</div>
+                <div class="celula cabecalho">Log. / P.C</div>
+                <div class="celula cabecalho">ENGENHARIA</div>
+
+                <div class="celula" contenteditable="true" aria-label="Setor Produção" id="setorProducao"
+                    name="setorProducao" data-field="setor_producao"></div>
+                <div class="celula" contenteditable="true" aria-label="Setor Logística PC" id="setorLogistica"
+                    name="setorLogistica" data-field="setor_logistica"></div>
+                <div class="celula vazia" contenteditable="true" aria-label="Setor Engenharia" id="setorEngenharia"
+                    name="setorEngenharia" data-field="setor_engenharia"></div>
+
+                <div class="origem">ORIGEM &larr;</div>
+                <div class="origem">ORIGEM &larr;</div>
+                <div class="origem">ORIGEM &larr;</div>
+            </div>
+
+            <div class="bloco-qualidade">
+                <div class="celula cabecalho">RESULTADO SETOR QUALIDADE</div>
+
+                <div class="grid-qualidade no-border-top">
+                    <div class="celula cabecalho">APROVADO</div>
+                    <div class="celula cabecalho no-border-left">CONFIRMADO</div>
+                    <div class="celula cabecalho no-border-left">EXECUTADO POR</div>
+
+                    <div class="celula no-border-top" contenteditable="true" aria-label="Qualidade Aprovado"
+                        id="qualidadeAprovado" name="qualidadeAprovado" data-field="qualidade_aprovado"></div>
+                    <div class="celula no-border-top no-border-left" contenteditable="true"
+                        aria-label="Qualidade Confirmado" id="qualidadeConfirmado" name="qualidadeConfirmado"
+                        data-field="qualidade_confirmado"></div>
+                    <div class="celula no-border-top no-border-left" contenteditable="true"
+                        aria-label="Qualidade Executado Por" id="qualidadeExecutadoPor" name="qualidadeExecutadoPor"
+                        data-field="qualidade_executado_por"></div>
+                </div>
+
+                <div class="origem">ORIGEM &larr;</div>
+            </div>
+
+            <div class="bloco-documento">
+                <div class="celula cabecalho">RECEBIMENTO</div>
+                <div class="celula no-border-top">Q.A.</div>
+                <div class="celula vazia no-border-top" contenteditable="true" aria-label="Recebimento QA"
+                    id="recebimentoQA" name="recebimentoQA" data-field="recebimento_qa"></div>
+                <div class="origem">ORIGEM &larr;</div>
+            </div>
+
+            <div class="bloco-setas">
+                <span>&larr;</span>
+                <span>&larr;</span>
+                <span>&larr;</span>
+            </div>
+
+            <div class="bloco-mudanca">
+                <div class="celula cabecalho">MUDANÇA 4M</div>
+                <div class="grid-mudanca no-border-top">
+                    <div class="celula texto-esquerda">ENGENHARIA</div>
+                    <div class="celula no-border-left"><input type="checkbox" aria-label="Engenharia Mudança 4M"
+                            id="mudanca4mEngenharia" name="mudanca4mEngenharia" data-field="mudanca_4m_engenharia">
+                    </div>
+                    <div class="celula texto-esquerda no-border-top">CONTROLE PROD.</div>
+                    <div class="celula no-border-top no-border-left"><input type="checkbox"
+                            aria-label="Controle Prod. Mudança 4M" id="mudanca4mControle" name="mudanca4mControle"
+                            data-field="mudanca_4m_controle"></div>
+                    <div class="celula texto-esquerda no-border-top">PRODUÇÃO</div>
+                    <div class="celula no-border-top no-border-left"><input type="checkbox"
+                            aria-label="Produção Mudança 4M" id="mudanca4mProducao" name="mudanca4mProducao"
+                            data-field="mudanca_4m_producao"></div>
+                </div>
+            </div>
+
+            <div class="bloco-envie">
+                <span>Envie</span>
+                <span>para</span>
+                <span>&rarr;</span>
+                <span>&larr;</span>
+            </div>
+
+            <div class="bloco-controle">
+                <div class="celula cabecalho">NÚMERO DE CONTROLE</div>
+
+                <div class="grid-controle-externo no-border-top">
+                    <div class="coluna-controle-esq">
+                        <div class="celula texto-esquerda">Solicitado por: <span class="input-line"
+                                contenteditable="true" aria-label="Solicitado Por" id="solicitadoPor"
+                                name="solicitadoPor" data-field="solicitado_por"></span></div>
+                        <div class="celula cabecalho">APROVADO</div>
+                        <div class="celula vazia no-border-top" contenteditable="true" aria-label="Controle Aprovado"
+                            id="controleAprovado" name="controleAprovado" data-field="controle_aprovado">
+                        </div>
+                    </div>
+
+                    <div class="coluna-controle-dir no-border-left">
+                        <div class="celula cabecalho texto-pequeno">P.C. / PRODUÇÃO / Engenharia</div>
+
+                        <div class="grid-controle-interno no-border-top">
+                            <div class="celula cabecalho">EXECUTADO POR:</div>
+                            <div class="celula cabecalho no-border-left">ELABORADO POR:</div>
+                            <div class="celula vazia no-border-top" contenteditable="true"
+                                aria-label="Controle Executado Por" id="controleExecutadoPor"
+                                name="controleExecutadoPor" data-field="controle_executado_por"></div>
+                            <div class="celula vazia no-border-top no-border-left" contenteditable="true"
+                                aria-label="Controle Elaborado Por" id="controleElaboradoPor"
+                                name="controleElaboradoPor" data-field="controle_elaborado_por"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dotted-line-container">
+                <div class="dotted-line-start-dot"></div>
+            </div>
+        </div>
+
+        <div class="corpo-principal">
+            <div class="barra-lateral-esquerda">
+                <table class="header-table">
+                    <tr>
+                        <td class="departamento-cell">
+                            DEPARTAM<br>
+                            ENTO
+                        </td>
+                        <td class="item-cell">
+                            ITEM
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="vertical-text-cell" rowspan="2">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text">SETOR PRODUÇÃO / CONTROLE</div>
+                            </div>
+                        </td>
+                        <td class="vertical-text-cell">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text item-text">ITEM MODIFICADO</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="vertical-text-cell">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text item-text">GARANTIA E CONFIRMAÇÃO</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="vertical-text-cell" rowspan="2">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text">SETOR DE GARANTIA DE QUALIDADE</div>
+                            </div>
+                        </td>
+                        <td class="vertical-text-cell">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text item-text">RESULTADO</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="vertical-text-cell">
+                            <div class="vertical-text-wrapper">
+                                <div class="vertical-text item-text">PROCEDIMENTO DE<br>NORMALIDADE</div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="conteudo-central">
+                <div class="quadro-container-1">
+                    <div class="cabecalho-4m">OPERADOR (MAN)</div>
+                    <div class="cabecalho-4m">OPERAÇÃO/ESTAMPO/EQUIP./ID. (MACHINE)</div>
+                    <div class="cabecalho-4m">PEÇA/MATERIAL/MUDC.PROJETO (MATERIAL)</div>
+                    <div class="cabecalho-4m">MÉTODO/OUTROS (MÉTODOS)</div>
+
+                    <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
+                            id="man_itemModificado1" name="man_itemModificado1"
+                            data-field="man_item_modificado_1"></span></div>
+                    <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
+                            id="machine_itemModificado1" name="machine_itemModificado1"
+                            data-field="machine_item_modificado_1"></span></div>
+                    <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
+                            id="material_itemModificado1" name="material_itemModificado1"
+                            data-field="material_item_modificado_1"></span></div>
+                    <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
+                            id="metodo_itemModificado1" name="metodo_itemModificado1"
+                            data-field="metodo_item_modificado_1"></span></div>
+
+                    <div class="celula-4m"><label>NOME</label><span class="input-line" contenteditable="true"
+                            id="man_nome1" name="man_nome1" data-field="man_nome_1"></span>
+                    </div>
+                    <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
+                            id="machine_motivo1" name="machine_motivo1" data-field="machine_motivo_1"></span>
+                    </div>
+                    <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
+                            id="material_motivo1" name="material_motivo1" data-field="material_motivo_1"></span>
+                    </div>
+                    <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
+                            id="metodo_motivo1" name="metodo_motivo1" data-field="metodo_motivo_1"></span>
+                    </div>
+
+                    <div class="celula-4m"><label>ORGAN./RAMAL</label><span class="input-line" contenteditable="true"
+                            id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1"></span></div>
+                    <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
+                            id="machine_projeto1" name="machine_projeto1" data-field="machine_projeto_1"></span>
+                    </div>
+                    <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
+                            id="material_projeto1" name="material_projeto1" data-field="material_projeto_1"></span>
+                    </div>
+                    <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
+                            id="metodo_projeto1" name="metodo_projeto1" data-field="metodo_projeto_1"></span>
+                    </div>
+
+                    <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
+                            id="man_numOperacao1" name="man_numOperacao1" data-field="man_num_operacao_1"></span></div>
+                    <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
+                            id="machine_numOperacao1" name="machine_numOperacao1"
+                            data-field="machine_num_operacao_1"></span></div>
+                    <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
+                            id="material_numOperacao1" name="material_numOperacao1"
+                            data-field="material_num_operacao_1"></span></div>
+                    <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
+                            id="metodo_numOperacao1" name="metodo_numOperacao1"
+                            data-field="metodo_num_operacao_1"></span></div>
+
+                    <div class="celula importancia">
+                        <span class="label-bold">IMPORTÂNCIA</span>
+                        <label><input type="checkbox" aria-label="MAN Importância Normal" id="man_importanciaNormal"
+                                name="man_importanciaNormal" data-field="man_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="MAN Importância Importante A/S" id="man_importanciaAS"
+                                name="man_importanciaAS" data-field="man_importancia_as"> IMPORTANTE
+                            A/S</label>
+                    </div>
+                    <div class="celula importancia">
+                        <span class="label-bold">IMPORTÂNCIA</span>
+                        <label><input type="checkbox" aria-label="MACHINE Importância Normal"
+                                id="machine_importanciaNormal" name="machine_importanciaNormal"
+                                data-field="machine_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="MACHINE Importância Importante A/S"
+                                id="machine_importanciaAS" name="machine_importanciaAS"
+                                data-field="machine_importancia_as"> IMPORTANTE
+                            A/S</label>
+                    </div>
+                    <div class="celula importancia">
+                        <span class="label-bold">IMPORTÂNCIA</span>
+                        <label><input type="checkbox" aria-label="MATERIAL Importância Normal"
+                                id="material_importanciaNormal" name="material_importanciaNormal"
+                                data-field="material_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="MATERIAL Importância Importante A/S"
+                                id="material_importanciaAS" name="material_importanciaAS"
+                                data-field="material_importancia_as"> IMPORTANTE
+                            A/S</label>
+                    </div>
+                    <div class="celula importancia">
+                        <span class="label-bold">IMPORTÂNCIA</span>
+                        <label><input type="checkbox" aria-label="MÉTODO Importância Normal"
+                                id="metodo_importanciaNormal" name="metodo_importanciaNormal"
+                                data-field="metodo_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="MÉTODO Importância Importante A/S"
+                                id="metodo_importanciaAS" name="metodo_importanciaAS"
+                                data-field="metodo_importancia_as"> IMPORTANTE
+                            A/S</label>
+                    </div>
+
+                    <div class="celula data-turno">
+                        <span class="label-bold">DATA, TURNO</span>
+                        <span class="input-line" contenteditable="true" id="man_dataTurno1" name="man_dataTurno1"
+                            data-field="man_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="MAN Turno 1T" id="man_turno1T" name="man_turno1T"
+                                data-field="man_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MAN Turno 2T" id="man_turno2T" name="man_turno2T"
+                                data-field="man_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="MAN Turno 3T" id="man_turno3T" name="man_turno3T"
+                                data-field="man_turno_3t"> 3T</label>
+                    </div>
+                    <div class="celula data-turno">
+                        <span class="label-bold">DATA, TURNO</span>
+                        <span class="input-line" contenteditable="true" id="machine_dataTurno1"
+                            name="machine_dataTurno1" data-field="machine_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 1T" id="machine_turno1T"
+                                name="machine_turno1T" data-field="machine_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 2T" id="machine_turno2T"
+                                name="machine_turno2T" data-field="machine_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 3T" id="machine_turno3T"
+                                name="machine_turno3T" data-field="machine_turno_3t"> 3T</label>
+                    </div>
+                    <div class="celula data-turno">
+                        <span class="label-bold">DATA, TURNO</span>
+                        <span class="input-line" contenteditable="true" id="material_dataTurno1"
+                            name="material_dataTurno1" data-field="material_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="MATERIAL Turno 1T" id="material_turno1T"
+                                name="material_turno1T" data-field="material_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MATERIAL Turno 2T" id="material_turno2T"
+                                name="material_turno2T" data-field="material_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="MATERIAL Turno 3T" id="material_turno3T"
+                                name="material_turno3T" data-field="material_turno_3t"> 3T</label>
+                    </div>
+                    <div class="celula data-turno">
+                        <span class="label-bold">DATA, TURNO</span>
+                        <span class="input-line" contenteditable="true" id="metodo_dataTurno1" name="metodo_dataTurno1"
+                            data-field="metodo_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="MÉTODO Turno 1T" id="metodo_turno1T"
+                                name="metodo_turno1T" data-field="metodo_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MÉTODO Turno 2T" id="metodo_turno2T"
+                                name="metodo_turno2T" data-field="metodo_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="MÉTODO Turno 3T" id="metodo_turno3T"
+                                name="metodo_turno3T" data-field="metodo_turno_3t"> 3T</label>
+                    </div>
+                </div>
+
+                <div class="fileiras-2-3">
+                    <div class="conteudo-fileiras">
+                        <div class="quadro-container-2">
+                            <div class="coluna">
+                                <div class="secao secao-instrucao">
+                                    <span>*INSTRUÇÃO DO OPERADOR</span>
+                                    <div class="empty-box"></div>
+                                </div>
+                                <div class="secao secao-instrucao">
+                                    <span>*CAPACID. OPERAC ACIMA DE L?</span>
+                                    <div class="empty-box"></div>
+                                </div>
+                                <div class="secao secao-instrucao">
+                                    <span>*INSTRUIDO SOBRE.CONTR.MED?</span>
+                                    <div class="empty-box"></div>
+                                </div>
+                                <div class="secao secao-instrucao">
+                                    <span>*INSTRUÍDO CONTROLE STOP?</span>
+                                    <div class="empty-box"></div>
+                                </div>
+                                <div class="secao secao-instrucao">
+                                    <span>*INSTRUÍDO SOBRE IMPORT. A ?</span>
+                                    <div class="empty-box"></div>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">*GARANTIA 200%?</span>
+                                </div>
+                                <div class="secao secao-sakanobori">
+                                    <span class="label-bold">SAKANOBORI:</span>
+                                    <label><input type="checkbox" aria-label="Sakanobori Não"> NÃO</label>
+                                    <label><input type="checkbox" aria-label="Sakanobori Sim"> SIM</label>
+                                    <span>QTD:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">QTD YAB</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                    <span class="label-bold" style="margin-left: 10px;">QTD NBA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">*COMUNICAÇÃO C/ OPERADOR(S/ PROBLEMA)</span>
+                                </div>
+                                <div class="secao fill-space"> <span class="label-bold">OPERADOR ENTENDE NORMA DE
+                                        TRABALHO E ESTA CIENTE SOBRE OS PONTOS IMPORTANTES</span>
+                                </div>
+                            </div>
+
+                            <div class="coluna">
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">MODIFICAÇÃO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">REGISTRO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-garantia">
+                                    <span class="label-bold">GARANTIA 200%</span>
+                                    <label><input type="checkbox" aria-label="MACHINE Garantia 200% Sim"> SIM</label>
+                                    <span class="input-line" contenteditable="true"></span>
+                                    <label><input type="checkbox" aria-label="MACHINE Garantia 200% Não"> NÃO</label>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">LOTE DE PROD. GARANTIDO:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-sakanobori">
+                                    <span class="label-bold">SAKANOBORI:</span>
+                                    <label><input type="checkbox" aria-label="MACHINE Sakanobori Não"> NÃO</label>
+                                    <label><input type="checkbox" aria-label="MACHINE Sakanobori Sim"> SIM</label>
+                                    <span>QTD:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">QTD YAB</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                    <span class="label-bold" style="margin-left: 10px;">QTD NBA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">ACOMPANHAMENTO Q.A.</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-meios fill-space"> <span class="label-bold">MEIOS DE AVALIAÇÃO
+                                        (Q.L.)</span>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="MACHINE Avaliação 2D"> 2D</label>
+                                        <label><input type="checkbox" aria-label="MACHINE Avaliação CMM"> CMM</label>
+                                        <label><input type="checkbox" aria-label="MACHINE Avaliação MACRO">
+                                            MACRO</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="MACHINE Avaliação Outros">
+                                            OUTROS:</label>
+                                        <span class="input-line" contenteditable="true"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="coluna">
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">MODIFICAÇÃO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">REGISTRO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-garantia">
+                                    <span class="label-bold">GARANTIA 200%</span>
+                                    <label><input type="checkbox" aria-label="MATERIAL Garantia 200% Sim"> SIM</label>
+                                    <span class="input-line" contenteditable="true"></span>
+                                    <label><input type="checkbox" aria-label="MATERIAL Garantia 200% Não"> NÃO</label>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">LOTE DE PROD. GARANTIDO:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-sakanobori">
+                                    <span class="label-bold">SAKANOBORI:</span>
+                                    <label><input type="checkbox" aria-label="MATERIAL Sakanobori Não"> NÃO</label>
+                                    <label><input type="checkbox" aria-label="MATERIAL Sakanobori Sim"> SIM</label>
+                                    <span>QTD:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">QTD YAB</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                    <span class="label-bold" style="margin-left: 10px;">QTD NBA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-tall">
+                                    <span class="label-bold">ACOMPANHAMENTO Q.A.</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-meios fill-space"> <span class="label-bold">MEIOS DE AVALIAÇÃO
+                                        (Q.L.)</span>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="MATERIAL Avaliação 2D"> 2D</label>
+                                        <label><input type="checkbox" aria-label="MATERIAL Avaliação CMM"> CMM</label>
+                                        <label><input type="checkbox" aria-label="MATERIAL Avaliação MACRO">
+                                            MACRO</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="MATERIAL Avaliação Outros">
+                                            OUTROS:</label>
+                                        <span class="input-line" contenteditable="true"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="coluna">
+                                <div class="secao">
+                                    <span class="label-bold">MODIFICAÇÃO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold">REGISTRO</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-garantia">
+                                    <span class="label-bold">GARANTIA 200%</span>
+                                    <label><input type="checkbox" aria-label="METHOD Garantia 200% Sim"> SIM</label>
+                                    <label><input type="checkbox" aria-label="METHOD Garantia 200% Não"> NÃO</label>
+                                </div>
+                                <div class="secao secao-garantia">
+                                    <span class="label-bold">LOTE DE PROD. GARANTIDO:</span>
+                                    <label><input type="checkbox" aria-label="METHOD Lote Prod. Garantido Não">
+                                        NÃO</label>
+                                </div>
+                                <div class="secao secao-sakanobori">
+                                    <span class="label-bold">SAKANOBORI:</span>
+                                    <label><input type="checkbox" aria-label="METHOD Sakanobori Não"> NÃO</label>
+                                    <label><input type="checkbox" aria-label="METHOD Sakanobori Sim"> SIM</label>
+                                    <span>QTD:</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold" style="color: #00B0F0;">SEGURANÇA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao">
+                                    <span class="label-bold"
+                                        style="color: #E60000; background-color: #CCFFFF;">PRODUTIVIDADE</span>
+                                    <span class="text-red">Yield time</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="secao secao-meios fill-space"> <span class="label-bold">MEIOS DE AVALIAÇÃO
+                                        (Q.L.)</span>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="METHOD Avaliação 2D"> 2D</label>
+                                        <label><input type="checkbox" aria-label="METHOD Avaliação CMM"> CMM</label>
+                                        <label><input type="checkbox" aria-label="METHOD Avaliação MACRO"> MACRO</label>
+                                    </div>
+                                    <div class="checkbox-group">
+                                        <label><input type="checkbox" aria-label="METHOD Avaliação Outros">
+                                            OUTROS:</label>
+                                        <span class="input-line" contenteditable="true"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quadro-container-3">
+                            <div class="celula-3 secao-lista-verificacao">
+                                <div class="list-item">
+                                    <span>REGISTRO TREINAM OPERADOR</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Registro Treinam Operador">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>AVALIAÇÃO TREINAM OPERADOR</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Avaliação Treinam Operador">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>REGISTRO GARANTIA 200%</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Registro Garantia 200%">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>CERTIFICADO HABILITAÇÃO</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Certificado Habilitação">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>IMPORTANTE A</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Importante A">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>INDICADOR DE IMPORTANTE A</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Indicador de Importante A">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>AVALIAÇÃO DE QUALIDADE</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Avaliação de Qualidade">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>NÍVEL TÉCNICO ESTA ACIMA DE I</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Nível Técnico Acima de I">
+                                    </div>
+                                </div>
+                                <div class="list-item">
+                                    <span>QUALIDADE PRODUTO</span>
+                                    <div class="checkbox-container">
+                                        <input type="checkbox" class="checkbox-lista-verificacao"
+                                            aria-label="Qualidade Produto">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="celula-3 secao-resultado">
+                                <div class="checkbox-group">
+                                    <span class="label-bold">RESULTADO AVALIAÇÃO:</span>
+                                    <label><input type="checkbox" aria-label="Resultado Avaliação OK 1"> OK</label>
+                                </div>
+
+                                <div class="resultado-duas-colunas">
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 1 2D"> 2D</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 1 CMM"> CMM</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 1 MACRO">
+                                                MACRO</label><span class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="input-item">
+                                    <label><input type="checkbox" aria-label="Resultado 1 OUTROS"> OUTROS:</label><span
+                                        class="input-line" contenteditable="true"></span>
+                                </div>
+                                <span class="label-bold">GARANTIA 200%</span>
+                                <span class="input-line" contenteditable="true" style="margin-top: auto;"></span>
+                            </div>
+
+                            <div class="celula-3 secao-resultado">
+                                <div class="checkbox-group">
+                                    <span class="label-bold">RESULTADO AVALIAÇÃO:</span>
+                                    <label><input type="checkbox" aria-label="Resultado Avaliação OK 2"> OK</label>
+                                </div>
+
+                                <div class="resultado-duas-colunas">
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 2 2D"> 2D</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 2 CMM"> CMM</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 2 MACRO">
+                                                MACRO</label><span class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="input-item">
+                                    <label><input type="checkbox" aria-label="Resultado 2 OUTROS"> OUTROS:</label><span
+                                        class="input-line" contenteditable="true"></span>
+                                </div>
+                                <span class="label-bold">GARANTIA 200%</span>
+                                <span class="input-line" contenteditable="true" style="margin-top: auto;"></span>
+                            </div>
+
+                            <div class="celula-3 secao-resultado">
+                                <div class="checkbox-group">
+                                    <span class="label-bold">RESULTADO AVALIAÇÃO:</span>
+                                    <label><input type="checkbox" aria-label="Resultado Avaliação OK 3"> OK</label>
+                                </div>
+
+                                <div class="resultado-duas-colunas">
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 3 2D"> 2D</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 3 CMM"> CMM</label><span
+                                                class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                    <div class="resultado-col-interna">
+                                        <div class="input-item">
+                                            <label><input type="checkbox" aria-label="Resultado 3 MACRO">
+                                                MACRO</label><span class="input-line" contenteditable="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="input-item">
+                                    <label><input type="checkbox" aria-label="Resultado 3 OUTROS"> OUTROS:</label><span
+                                        class="input-line" contenteditable="true"></span>
+                                </div>
+                                <span class="label-bold">GARANTIA 200%</span>
+                                <span class="input-line" contenteditable="true" style="margin-top: auto;"></span>
+                            </div>
+
+                            <div class="celula-3 secao-tratativa">
+                                <span class="label-bold">PROCEDIMENTO DE NORMALIDADE</span>
+
+                                <div class="tratativa-item">
+                                    <span>PR008 TRATATIVA DE ANORMALIDADE</span>
+                                    <div class="sim-nao">
+                                        <label><input type="checkbox" aria-label="PR008 Sim"> SIM</label>
+                                        <label><input type="checkbox" aria-label="PR008 Não"> NÃO</label>
+                                    </div>
+                                </div>
+                                <div class="tratativa-item">
+                                    <span>PR990 - Controle de Itens Suspeitos</span>
+                                    <div class="sim-nao">
+                                        <label><input type="checkbox" aria-label="PR990 Sim"> SIM</label>
+                                        <label><input type="checkbox" aria-label="PR990 Não"> NÃO</label>
+                                    </div>
+                                </div>
+                                <div class="tratativa-item">
+                                    <span>PR007 - Ações Corretivas, Preventivas e Melhorias</span>
+                                    <div class="sim-nao">
+                                        <label><input type="checkbox" aria-label="PR007 Sim"> SIM</label>
+                                        <label><input type="checkbox" aria-label="PR007 Não"> NÃO</label>
+                                    </div>
+                                </div>
+                                <div class="tratativa-item">
+                                    <span>PR092 - Controle de Saídas Não Conformes</span>
+                                    <div class="sim-nao">
+                                        <label><input type="checkbox" aria-label="PR092 Sim"> SIM</label>
+                                        <label><input type="checkbox" aria-label="PR092 Não"> NÃO</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="celula-3 secao-justificativa">
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" aria-label="Justificativa 1 NOK"> NOK</label>
+                                </div>
+                                <div class="justificativa-linha">
+                                    <span class="label-bold">JUSTIFICATIVA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="fill-space"></div>
+                                <span class="input-line" contenteditable="true" style="min-height: 50px;"></span>
+                            </div>
+
+                            <div class="celula-3 secao-justificativa">
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" aria-label="Justificativa 2 NOK"> NOK</label>
+                                </div>
+                                <div class="justificativa-linha">
+                                    <span class="label-bold">JUSTIFICATIVA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="fill-space"></div>
+                                <span class="input-line" contenteditable="true" style="min-height: 50px;"></span>
+                            </div>
+
+                            <div class="celula-3 secao-justificativa">
+                                <div class="checkbox-group">
+                                    <label><input type="checkbox" aria-label="Justificativa 3 NOK"> NOK</label>
+                                </div>
+                                <div class="justificativa-linha">
+                                    <span class="label-bold">JUSTIFICATIVA</span>
+                                    <span class="input-line" contenteditable="true"></span>
+                                </div>
+                                <div class="fill-space"></div>
+                                <span class="input-line" contenteditable="true" style="min-height: 50px;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-acompanhamento">
+                <div class="sidebar-header">
+                    <h3>ACOMPANHAMENTO</h3>
+                    <span>(Se aplicável)</span>
+                </div>
+
+                <table class="sidebar-table">
+                    <thead>
+                        <tr>
+                            <th>NOME NORMA</th>
+                            <th>RESPONS.</th>
+                            <th>NECESSÁRIO INOV.</th>
+                            <th>Confirmado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td rowspan="2">DESIGN FMEA</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Design FMEA ENGa Necessário"></td>
+                            <td><input type="checkbox" aria-label="Design FMEA ENGa Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Design FMEA QUAL Necessário"></td>
+                            <td><input type="checkbox" aria-label="Design FMEA QUAL Confirmado"></td>
+                        </tr>
+
+                        <tr>
+                            <td rowspan="2">QUALIDADE KFD</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Qualidade KFD ENGa Necessário"></td>
+                            <td><input type="checkbox" aria-label="Qualidade KFD ENGa Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Qualidade KFD QUAL Necessário"></td>
+                            <td><input type="checkbox" aria-label="Qualidade KFD QUAL Confirmado"></td>
+                        </tr>
+
+                        <tr>
+                            <td rowspan="3">DESENHO PRODUTO</td>
+                            <td>CONTR.</td>
+                            <td><input type="checkbox" aria-label="Desenho Produto CONTR Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Produto CONTR Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Desenho Produto ENGa Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Produto ENGa Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Desenho Produto QUAL Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Produto QUAL Confirmado"></td>
+                        </tr>
+
+                        <tr>
+                            <td>FMEA PROCESSO</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="FMEA Processo Necessário"></td>
+                            <td><input type="checkbox" aria-label="FMEA Processo Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>PADRÃO INSPEÇÃO</td>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Padrão Inspeção Necessário"></td>
+                            <td><input type="checkbox" aria-label="Padrão Inspeção Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>PLANO DE CONTROLE</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Plano de Controle Necessário"></td>
+                            <td><input type="checkbox" aria-label="Plano de Controle Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>DESENHO ESTAMPO</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Desenho Estampo Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Estampo Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>DESENHO JIG</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Desenho Jig Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Jig Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>DESENHO GABARITO</td>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Desenho Gabarito Necessário"></td>
+                            <td><input type="checkbox" aria-label="Desenho Gabarito Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>PARAMETRO MÁQUINA</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Parametro Máquina Necessário"></td>
+                            <td><input type="checkbox" aria-label="Parametro Máquina Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>INSTRUÇÃO DE TRABALHO</td>
+                            <td>PROD.</td>
+                            <td><input type="checkbox" aria-label="Instrução de Trabalho Necessário"></td>
+                            <td><input type="checkbox" aria-label="Instrução de Trabalho Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>PONTO IMPORTANTE</td>
+                            <td>PROD.</td>
+                            <td><input type="checkbox" aria-label="Ponto Importante Necessário"></td>
+                            <td><input type="checkbox" aria-label="Ponto Importante Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>CHECK LIST</td>
+                            <td>QUAL.</td>
+                            <td><input type="checkbox" aria-label="Check List Necessário"></td>
+                            <td><input type="checkbox" aria-label="Check List Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>QUALIDADE<br>EQUIPAMENTO</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Qualidade Equipamento Necessário"></td>
+                            <td><input type="checkbox" aria-label="Qualidade Equipamento Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>POKAYOKE<br>LINHA</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Pokayoke Linha Necessário"></td>
+                            <td><input type="checkbox" aria-label="Pokayoke Linha Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>REGISTR. INSPEÇ<br>POKA YOKE</td>
+                            <td>ENGa</td>
+                            <td><input type="checkbox" aria-label="Registro Inspeção Poka Yoke Necessário"></td>
+                            <td><input type="checkbox" aria-label="Registro Inspeção Poka Yoke Confirmado"></td>
+                        </tr>
+                        <tr>
+                            <td>OUTROS.</td>
+                            <td>CADA<br>SETOR</td>
+                            <td><input type="checkbox" aria-label="Outros Necessário"></td>
+                            <td><input type="checkbox" aria-label="Outros Confirmado"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="sidebar-note">
+                    <span>&#11014;</span> Nos itens com check, incluir<br>
+                    cópia em anexo ao formulário.
+                </div>
+
+                <div class="sidebar-example">
+                    <div class="example-title">Exemplo de preenchimento</div>
+                    <div class="example-grid">
+                        <div>CHECK SHEET QUALIDADE</div>
+                        <div>Q.A.</div>
+                        <div>OK</div>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer-id">
+                    FR0062
+                </div>
+            </div>
+        </div>
+
+        <div class="quadro-container-4">
+            <div class="celula cabecalho-esquerda borda-direita">
+                <span class="label-bold">● ANÁLISE DE RISCO:</span>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" aria-label="Análise Risco Processo"> PROCESSO</label>
+                    <label><input type="checkbox" aria-label="Análise Risco Produto"> PRODUTO</label>
+                    <label><input type="checkbox" aria-label="Análise Risco Não Aplicável"> NÃO APLICÁVEL</label>
+                </div>
+            </div>
+
+            <div class="celula cabecalho-direita">
+                <span class="label-bold">● HORÁRIO DE APLICAÇÃO DA 4M:</span>
+                <span class="input-line" contenteditable="true" aria-label="Horário Aplicação 4M"></span>
+            </div>
+
+
+            <div class="celula conteudo-coluna borda-direita">
+                <div> <span class="label-bold">SE ALGUM DOS ITENS À DIREITA FOR APLICADO:</span>
+                    <span class="label-bold" style="text-align: center; margin: 10px 0;">REALIZAR DOCUMENTO</span>
+                </div>
+                <span class="texto-rodape">350W_S_0WT_0130(L)_G4B.L</span>
+            </div>
+
+            <div class="celula conteudo-coluna borda-direita">
+                <div class="lista-itens">
+                    <p>OPERADOR SEM EXPERIÊNCIA NA OPERAÇÃO</p>
+                    <p>OPERADOR QUE NÃO SEJA NÍVEL 'L'</p>
+                    <p>*EM CASO DE ESTAR AFASTADO DA OPER. SEGURANÇA 3meses ou Outros 6meses</p>
+                    <p>*APOIO DE OPERADOR QUE NÃO SEJA FUNC.CADASTRADO</p>
+                </div>
+            </div>
+
+            <div class="celula conteudo-coluna borda-direita">
+                <div class="lista-itens">
+                    <p>* NOVO PROCESSO, EXPANDIDO OU TRANSFERIDO</p>
+                    <p>* NOVA INSTALAÇÃO, EXPANSÃO OU TRANSFERÊNCIA</p>
+                    <p>* REMODELAÇÃO, REPARO OU MODIFICAÇÃO NO FERRAMENTAL, EQUIPAMENTO, ISNTRUMENTOS E FERRAMENTAS QUE
+                        AFETEM A QUALIDADE DO PRODUTO</p>
+                </div>
+            </div>
+
+            <div class="celula conteudo-coluna borda-direita">
+                <div class="lista-itens">
+                    <p>*MUDANÇA DE PEÇAS, MATERIAIS, PROCESSOS DE PRODUTOS TRY E PROTÓTIPOS</p>
+                    <p>* PRODUÇÃO INICIAL DE UM NOVO PRODUTO</p>
+                    <p>* TROCA DE ÓLEO DE EQUIPAMENTOS</p>
+                    <p>* RETRABALHO EM PEÇAS NÃO CONFORME</p>
+                </div>
+            </div>
+
+            <div class="celula conteudo-coluna">
+                <div class="lista-itens">
+                    <p>*MUDANÇA DO LOCAL DE PROCESSO, MÉTODO MANUFATURA E CONDIÇÕES</p>
+                    <p>*MUDANÇAS DE SISTEMA APÓS MUDANÇAS DE PADRÃO E INSTRUMENTOS</p>
+                    <p>*IMPLEMENTAÇÃO DE MEDIÇÕES CONTRA NÃO CONFORMIDADE</p>
+                    <p>*MUDANÇA DE MÉTODO DE TRABALHO/SEQUÊNCIA</p>
+                    <p>*MUDANÇA DE EMBALAGEM</p>
+                </div>
+            </div>
+        </div>
+        <!-- No bloco-visto, adicione este botão -->
+        <button class="btn-salvar-html" id="btnSalvarHTML">SALVAR HTML</button>
+    </form>
+</body>
+
+</html>

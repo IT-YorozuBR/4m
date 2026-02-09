@@ -1,0 +1,25 @@
+{
+  "name": "sistema-4m-fr0062",
+  "version": "1.0.0",
+  "description": "Sistema de Gerenciamento de Formulários 4M - FR0062",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [
+    "4m",
+    "checklist",
+    "formulario",
+    "qualidade"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

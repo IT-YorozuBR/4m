@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check+ Logo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000000;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .check-text {
+            display: flex;
+            font-size: 120px;
+            font-weight: 700;
+            letter-spacing: -2px;
+        }
+
+        .letter {
+            color: #d1d5db;
+            text-shadow: 0 0 30px rgba(209, 213, 219, 0.4),
+                         0 0 60px rgba(209, 213, 219, 0.2);
+            opacity: 0;
+            animation: fadeInLetter 0.3s forwards;
+        }
+
+        .letter:nth-child(1) { animation-delay: 0.1s; }
+        .letter:nth-child(2) { animation-delay: 0.25s; }
+        .letter:nth-child(3) { animation-delay: 0.4s; }
+        .letter:nth-child(4) { animation-delay: 0.55s; }
+        .letter:nth-child(5) { animation-delay: 0.7s; }
+
+        @keyframes fadeInLetter {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.8);
+                filter: blur(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .plus-icon {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            opacity: 0;
+            animation: fadeInPlus 0.5s forwards;
+            animation-delay: 0.9s;
+        }
+
+        @keyframes fadeInPlus {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(-90deg);
+                filter: blur(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+                filter: blur(0);
+            }
+        }
+
+        .plus-icon::before,
+        .plus-icon::after {
+            content: '';
+            position: absolute;
+            background: linear-gradient(180deg, 
+                rgba(168, 85, 247, 0.9) 0%,
+                rgba(96, 165, 250, 0.95) 25%,
+                rgba(147, 197, 253, 0.85) 50%,
+                rgba(96, 165, 250, 0.95) 75%,
+                rgba(168, 85, 247, 0.9) 100%);
+            border-radius: 50px;
+            box-shadow: 
+                0 0 30px rgba(168, 85, 247, 0.8),
+                0 0 60px rgba(96, 165, 250, 0.6),
+                0 0 90px rgba(147, 197, 253, 0.4),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .plus-icon::before {
+            width: 24px;
+            height: 100px;
+            left: 50%;
+            top: 0;
+            transform: translateX(-50%);
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        .plus-icon::after {
+            width: 100px;
+            height: 24px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            animation: glowPulse 2s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                box-shadow: 
+                    0 0 30px rgba(168, 85, 247, 0.8),
+                    0 0 60px rgba(96, 165, 250, 0.6),
+                    0 0 90px rgba(147, 197, 253, 0.4),
+                    inset 0 0 20px rgba(255, 255, 255, 0.2);
+            }
+            50% {
+                box-shadow: 
+                    0 0 50px rgba(168, 85, 247, 1),
+                    0 0 80px rgba(96, 165, 250, 0.8),
+                    0 0 120px rgba(147, 197, 253, 0.5),
+                    inset 0 0 30px rgba(255, 255, 255, 0.3);
+            }
+        }
+
+        /* Efeito de partículas ao redor */
+        .glow-bg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, 
+                rgba(147, 51, 234, 0.08) 0%, 
+                transparent 70%);
+            animation: rotateBg 20s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes rotateBg {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        /* Redirecionamento automático após animação */
+        #redirect-message {
+            position: fixed;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            opacity: 0;
+            animation: fadeInMessage 0.5s forwards;
+            animation-delay: 2s;
+        }
+        
+        @keyframes fadeInMessage {
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    
+    <div class="logo-container">
+        <div class="check-text">
+            <span class="letter">C</span>
+            <span class="letter">h</span>
+            <span class="letter">e</span>
+            <span class="letter">c</span>
+            <span class="letter">k</span>
+        </div>
+        <div class="plus-icon"></div>
+    </div>
+    
+    <div id="redirect-message">
+        Redirecionando para o sistema 4M...
+    </div>
+
+    <script>
+        // Redirecionar para a página 4M após 3 segundos
+        setTimeout(() => {
+            window.location.href = '4m.html';
+        }, 3000);
+        
+        // Ou permitir clique para ir mais rápido
+        document.addEventListener('click', () => {
+            window.location.href = '4m.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDFs Salvos - FR0062</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4c6ef5 0%, #3b5bdb 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #4c6ef5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3b5bdb;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(59, 91, 219, 0.4);
+        }
+
+        .btn-success {
+            background: #40c057;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #2f9e44;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #fa5252;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e03131;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        .stats-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .pdf-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .pdf-item {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .pdf-item:hover {
+            border-color: #4c6ef5;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(76, 110, 245, 0.15);
+        }
+
+        .pdf-info {
+            flex: 1;
+        }
+
+        .pdf-title {
+            font-size: 1.3rem;
+            color: #212529;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .pdf-details {
+            display: flex;
+            gap: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .pdf-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-icon {
+            padding: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: #e9ecef;
+            transform: scale(1.1);
+        }
+
+        .btn-download {
+            color: #228be6;
+        }
+
+        .btn-view {
+            color: #40c057;
+        }
+
+        .btn-delete {
+            color: #fa5252;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #4c6ef5;
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4c6ef5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            border-top: 1px solid #e9ecef;
+            font-size: 0.9rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal h2 {
+            margin-bottom: 15px;
+            color: #212529;
+        }
+
+        .modal p {
+            margin-bottom: 25px;
+            color: #6c757d;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .pdf-item {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+            
+            .pdf-actions {
+                align-self: flex-end;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <i class="fas fa-file-pdf"></i>
+                PDFs Salvos - FR0062
+            </h1>
+            <p>Gerencie todos os formulários 4M salvos como PDF</p>
+        </div>
+
+        <div class="controls">
+            <div class="stats">
+                <div class="stats-item" id="total-pdfs">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Total: 0 PDFs</span>
+                </div>
+                <div class="stats-item" id="total-size">
+                    <i class="fas fa-hdd"></i>
+                    <span>Tamanho: 0 MB</span>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="window.location.href='/FR0062-formulario.html'">
+                    <i class="fas fa-plus"></i>
+                    Novo Formulário
+                </button>
+                <button class="btn btn-success" onclick="carregarPDFs()">
+                    <i class="fas fa-sync-alt"></i>
+                    Atualizar Lista
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="pdf-list-container" class="pdf-list">
+                <!-- PDFs serão carregados aqui -->
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Carregando PDFs...
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Sistema FR0062 - Relatório Mudança 4M</p>
+            <p>Arquivos salvos em: data/uploads/</p>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão</h2>
+            <p id="modalMessage">Tem certeza que deseja excluir este PDF?</p>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="confirmarExclusao()">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+                <button class="btn" onclick="fecharModal()" style="background: #e9ecef;">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api';
+        let pdfParaExcluir = null;
+
+        // Carregar PDFs ao abrir a página
+        document.addEventListener('DOMContentLoaded', carregarPDFs);
+
+        async function carregarPDFs() {
+            const container = document.getElementById('pdf-list-container');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    Carregando PDFs...
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_URL}/listar-pdfs`);
+                const data = await response.json();
+
+                if (data.success) {
+                    exibirPDFs(data.pdfs);
+                    atualizarEstatisticas(data.pdfs);
+                } else {
+                    exibirMensagemErro('Erro ao carregar PDFs: ' + data.message);
+                }
+            } catch (error) {
+                exibirMensagemErro('Erro de conexão: ' + error.message);
+            }
+        }
+
+        function exibirPDFs(pdfs) {
+            const container = document.getElementById('pdf-list-container');
+            
+            if (pdfs.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>Nenhum PDF salvo ainda</h3>
+                        <p>Crie um novo formulário para gerar seu primeiro PDF</p>
+                        <button class="btn btn-primary" onclick="window.location.href='/FR0062-formulario.html'">
+                            <i class="fas fa-plus"></i>
+                            Criar Novo
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            
+            pdfs.forEach(pdf => {
+                const dataFormatada = new Date(pdf.data_criacao).toLocaleString('pt-BR');
+                
+                html += `
+                    <div class="pdf-item">
+                        <div class="pdf-info">
+                            <div class="pdf-title">
+                                <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 10px;"></i>
+                                ${pdf.numero_controle}
+                            </div>
+                            <div class="pdf-details">
+                                <span><i class="far fa-calendar"></i> ${dataFormatada}</span>
+                                <span><i class="fas fa-file-alt"></i> ${pdf.tamanho_formatado || 'N/A'}</span>
+                                <span><i class="fas fa-user"></i> ${pdf.criado_por || 'Sistema'}</span>
+                            </div>
+                        </div>
+                        <div class="pdf-actions">
+                            <button class="btn-icon btn-view" onclick="visualizarPDF('${pdf.numero_controle}')" 
+                                    title="Visualizar PDF">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-icon btn-download" onclick="baixarPDF('${pdf.numero_controle}')" 
+                                    title="Baixar PDF">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="btn-icon btn-delete" onclick="solicitarExclusao('${pdf.numero_controle}')" 
+                                    title="Excluir PDF">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function atualizarEstatisticas(pdfs) {
+            // Atualizar total
+            document.getElementById('total-pdfs').innerHTML = `
+                <i class="fas fa-file-alt"></i>
+                <span>Total: ${pdfs.length} PDF${pdfs.length !== 1 ? 's' : ''}</span>
+            `;
+
+            // Calcular tamanho total
+            const tamanhoTotalBytes = pdfs.reduce((total, pdf) => total + (pdf.tamanho_bytes || 0), 0);
+            const tamanhoTotalMB = (tamanhoTotalBytes / (1024 * 1024)).toFixed(2);
+            
+            document.getElementById('total-size').innerHTML = `
+                <i class="fas fa-hdd"></i>
+                <span>Tamanho: ${tamanhoTotalMB} MB</span>
+            `;
+        }
+
+        function exibirMensagemErro(mensagem) {
+            const container = document.getElementById('pdf-list-container');
+            container.innerHTML = `
+                <div class="empty-state" style="color: #e74c3c;">
+                    <div class="empty-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <h3>Erro ao carregar PDFs</h3>
+                    <p>${mensagem}</p>
+                    <button class="btn btn-primary" onclick="carregarPDFs()">
+                        <i class="fas fa-sync-alt"></i>
+                        Tentar Novamente
+                    </button>
+                </div>
+            `;
+        }
+
+        function visualizarPDF(numeroControle) {
+            const url = `${API_URL}/visualizar-pdf/${numeroControle}`;
+            window.open(url, '_blank');
+        }
+
+        function baixarPDF(numeroControle) {
+            const url = `${API_URL}/baixar-pdf/${numeroControle}`;
+            window.location.href = url;
+        }
+
+        function solicitarExclusao(numeroControle) {
+            pdfParaExcluir = numeroControle;
+            document.getElementById('modalMessage').textContent = 
+                `Tem certeza que deseja excluir o PDF "${numeroControle}"? Esta ação não pode ser desfeita.`;
+            document.getElementById('confirmModal').style.display = 'flex';
+        }
+
+        async function confirmarExclusao() {
+            if (!pdfParaExcluir) return;
+
+            try {
+                const response = await fetch(`${API_URL}/excluir-pdf/${pdfParaExcluir}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    exibirNotificacao('✅ PDF excluído com sucesso!', 'success');
+                    carregarPDFs();
+                } else {
+                    exibirNotificacao('❌ Erro ao excluir PDF: ' + data.message, 'error');
+                }
+            } catch (error) {
+                exibirNotificacao('❌ Erro de conexão: ' + error.message, 'error');
+            }
+            
+            fecharModal();
+        }
+
+        function fecharModal() {
+            pdfParaExcluir = null;
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function exibirNotificacao(mensagem, tipo) {
+            // Criar elemento de notificação
+            const notificacao = document.createElement('div');
+            notificacao.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 10px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                ${tipo === 'success' ? 'background: #40c057;' : 'background: #fa5252;'}
+            `;
+            notificacao.textContent = mensagem;
+            
+            document.body.appendChild(notificacao);
+            
+            // Remover após 3 segundos
+            setTimeout(() => {
+                notificacao.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notificacao.remove(), 300);
+            }, 3000);
+        }
+
+        // Adicionar estilos de animação
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

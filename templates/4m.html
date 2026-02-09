@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema de Qualidade - Acesso</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      overflow: hidden;
+      background: #000;
+      color: #fff;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      padding: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .card {
+      position: relative;
+      height: 240px;
+      background: rgba(30, 30, 30, 0.7);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      user-select: none;
+    }
+
+    .card.draggable {
+      cursor: grab;
+    }
+
+    .card.draggable:active {
+      cursor: grabbing;
+    }
+
+    .card.dragging {
+      opacity: 0.8;
+      transform: scale(1.05);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .card:hover {
+      transform: translateY(-8px) scale(1.02);
+      background: rgba(40, 40, 40, 0.8);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-title {
+      font-size: 1.4rem;
+      font-weight: 500;
+      transition: all 0.4s ease;
+      z-index: 2;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      letter-spacing: -0.5px;
+      color: rgba(255, 255, 255, 0.9);
+      text-align: center;
+    }
+
+    /* Card 4M - Estilo especial (único colorido) */
+    .card-4m {
+      background: linear-gradient(135deg, rgba(40, 40, 40, 0.8) 0%, rgba(30, 30, 30, 0.9) 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Efeito de energia contínua para o 4M */
+    .card-4m::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        to bottom right,
+        rgba(255, 214, 0, 0.1) 0%,
+        rgba(255, 214, 0, 0.3) 20%,
+        rgba(255, 214, 0, 0.1) 40%,
+        transparent 60%
+      );
+      transform: rotate(30deg);
+      animation: energy-flow 6s linear infinite;
+      z-index: 1;
+    }
+
+    .card-4m .card-title {
+      color: #FFD600;
+      font-weight: 600;
+      font-size: 2.5rem;
+      text-align: left;
+    }
+
+    .card-4m .card-icon {
+      color: #FFD600;
+    }
+
+    /* Efeito Hyperspace para todos os cards ao passar mouse */
+    .card:hover::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 100%
+      );
+      animation: hyperspace 1.5s linear;
+      z-index: 1;
+    }
+
+    /* Efeito especial para o 4M ao passar mouse */
+    .card-4m:hover::after {
+      background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255, 214, 0, 0.2) 50%,
+        transparent 100%
+      );
+    }
+
+    /* Ícones */
+    .card-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      opacity: 0.8;
+      transition: all 0.4s ease;
+      z-index: 2;
+      color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 80px;
+    }
+
+    .card:hover .card-icon {
+      opacity: 1;
+    }
+
+    /* Footer do card */
+    .card-footer {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 2;
+    }
+
+    .card-badge {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #fff;
+    }
+
+    .card-badge.progress {
+      background: rgba(200, 200, 200, 0.2);
+      color: #CCCCCC;
+    }
+
+    .card-4m .card-badge {
+      background: rgba(255, 214, 0, 0.2);
+      color: #FFD600;
+    }
+
+    /* Animações */
+    @keyframes energy-flow {
+      0% { transform: translateX(-50%) translateY(-50%) rotate(30deg); }
+      100% { transform: translateX(0%) translateY(0%) rotate(30deg); }
+    }
+
+    @keyframes hyperspace {
+      0% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
+      50% { transform: translateX(0) skewX(-20deg); opacity: 0.8; }
+      100% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
+    }
+
+    /* Efeito de reflexo */
+    .card-reflection {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.03) 0%,
+        transparent 30%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.8) 0%,
+        transparent 70%
+      );
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.8) 0%,
+        transparent 70%
+      );
+      z-index: 1;
+    }
+
+    /* Tooltip */
+    .tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      z-index: 100;
+    }
+
+    .card:hover .tooltip {
+      opacity: 1;
+    }
+
+    /* Overlay para módulos em progresso */
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal {
+      background: rgba(30, 30, 30, 0.98);
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      width: 90%;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+    }
+
+    .overlay.active .modal {
+      transform: translateY(0);
+    }
+
+    .modal-icon {
+      font-size: 3.5rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #CCCCCC;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 70px;
+    }
+
+    .modal-title {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #FFFFFF;
+      font-weight: 500;
+    }
+
+    .modal-message {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.85);
+      line-height: 1.6;
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+
+    .modal-button {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    .modal-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Info bar */
+    .info-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(30, 30, 30, 0.8);
+      padding: 10px 20px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Notificação */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      background: rgba(30, 30, 30, 0.95);
+      color: white;
+      border-radius: 10px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      .dashboard {
+        padding: 20px;
+        gap: 20px;
+      }
+      
+      .card {
+        height: 200px;
+        padding: 20px;
+      }
+      
+      .card-4m .card-title {
+        font-size: 2rem;
+      }
+      
+      .card-icon {
+        font-size: 2.5rem;
+      }
+      
+      .info-bar {
+        width: 90%;
+        text-align: center;
+        padding: 8px 15px;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Card 4M com animação especial -->
+    <div class="card card-4m" id="card-4m">
+      <div class="card-reflection"></div>
+      <div class="tooltip">Clique para ver checklists</div>
+      <div>
+        <div class="card-title">4M</div>
+        <div class="card-icon"><span class="material-icons">checklist</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Checklist 4M</span>
+        <span class="card-badge">Ativo</span>
+      </div>
+    </div>
+
+    <!-- Outros cards do sistema - todos com "Módulo em Progresso" e mesmo ícone -->
+    <div class="card draggable" data-module="modulo1">
+      <div class="card-reflection"></div>
+      <div>
+        <div class="card-title">Módulo em Progresso</div>
+        <div class="card-icon"><span class="material-icons">description</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Em desenvolvimento</span>
+        <span class="card-badge progress">Em breve</span>
+      </div>
+    </div>
+
+    <div class="card draggable" data-module="modulo2">
+      <div class="card-reflection"></div>
+      <div>
+        <div class="card-title">Módulo em Progresso</div>
+        <div class="card-icon"><span class="material-icons">description</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Em desenvolvimento</span>
+        <span class="card-badge progress">Em breve</span>
+      </div>
+    </div>
+
+    <div class="card draggable" data-module="modulo3">
+      <div class="card-reflection"></div>
+      <div>
+        <div class="card-title">Módulo em Progresso</div>
+        <div class="card-icon"><span class="material-icons">description</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Em desenvolvimento</span>
+        <span class="card-badge progress">Em breve</span>
+      </div>
+    </div>
+
+    <div class="card draggable" data-module="modulo4">
+      <div class="card-reflection"></div>
+      <div>
+        <div class="card-title">Módulo em Progresso</div>
+        <div class="card-icon"><span class="material-icons">description</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Em desenvolvimento</span>
+        <span class="card-badge progress">Em breve</span>
+      </div>
+    </div>
+
+    <div class="card draggable" data-module="modulo5">
+      <div class="card-reflection"></div>
+      <div>
+        <div class="card-title">Módulo em Progresso</div>
+        <div class="card-icon"><span class="material-icons">description</span></div>
+      </div>
+      <div class="card-footer">
+        <span>Em desenvolvimento</span>
+        <span class="card-badge progress">Em breve</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info bar -->
+  <div class="info-bar">
+    <span class="material-icons" style="font-size: 16px;">info</span>
+    <span>Sistema 4M v1.0 | Qualidade </span>
+  </div>
+
+  <!-- Modal para módulos em progresso -->
+  <div class="overlay" id="progressOverlay">
+    <div class="modal">
+      <div class="modal-icon"><span class="material-icons">hourglass_empty</span></div>
+      <div class="modal-title">Módulo em Desenvolvimento</div>
+      <div class="modal-message">
+        Este módulo está em fase de desenvolvimento e não está disponível no momento.<br>
+        Nossa equipe está trabalhando para liberá-lo em breve.
+      </div>
+      <button class="modal-button" id="closeModal">Entendido</button>
+    </div>
+  </div>
+
+  <script>
+    // Configurações
+    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3000' : '';
+    let clickTimer = null;
+    let clickCount = 0;
+    let draggedItem = null;
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', function() {
+      configurarCard4M();
+      configurarDragAndDrop();
+      configurarEfeitos3D();
+      configurarModal();
+      configurarAtalhosTeclado();
+      verificarTransicaoIntro();
+    });
+
+    // Configurar card 4M com funcionalidades avançadas
+    function configurarCard4M() {
+      const card4m = document.getElementById('card-4m');
+      const card4mTitle = card4m.querySelector('.card-title');
+      const card4mIcon = card4m.querySelector('.card-icon');
+      
+      // Clique simples - abrir lista de checklists
+      card4m.addEventListener('click', function(e) {
+        clickCount++;
+        
+        if (clickCount === 1) {
+          clickTimer = setTimeout(() => {
+            // Clique simples
+            window.location.href = '4m-checklist.html';
+            clickCount = 0;
+          }, 250);
+        }
+      });
+
+      // Clique com botão direito - menu rápido
+      card4m.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        mostrarMenuRapido(e);
+      });
+
+      // Efeito parallax
+      card4m.addEventListener('mousemove', (e) => {
+        const rect = card4m.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / rect.width;
+        const y = (e.clientY - rect.top) / rect.height;
+        
+        const moveX = (x - 0.5) * 20;
+        const moveY = (y - 0.5) * 20;
+        
+        card4mTitle.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        card4mIcon.style.transform = `translate(${-moveX}px, ${-moveY}px) scale(1.1)`;
+      });
+      
+      card4m.addEventListener('mouseleave', () => {
+        card4mTitle.style.transform = 'translate(0, 0)';
+        card4mIcon.style.transform = 'translate(0, 0) scale(1)';
+      });
+    }
+
+    // Configurar drag and drop
+    function configurarDragAndDrop() {
+      const dashboard = document.querySelector('.dashboard');
+      
+      document.querySelectorAll('.card.draggable').forEach(card => {
+        // Drag start
+        card.addEventListener('dragstart', function(e) {
+          draggedItem = this;
+          setTimeout(() => {
+            this.classList.add('dragging');
+          }, 0);
+          e.dataTransfer.setData('text/plain', '');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+
+        // Drag end
+        card.addEventListener('dragend', function() {
+          this.classList.remove('dragging');
+          draggedItem = null;
+          salvarLayout();
+        });
+      });
+
+      // Drag over
+      dashboard.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        if (!draggedItem) return;
+        
+        const afterElement = getDragAfterElement(this, e.clientY);
+        if (afterElement == null) {
+          this.appendChild(draggedItem);
+        } else {
+          this.insertBefore(draggedItem, afterElement);
+        }
+      });
+
+      // Touch support
+      document.querySelectorAll('.card.draggable').forEach(card => {
+        let touchStartY = 0;
+        
+        card.addEventListener('touchstart', function(e) {
+          touchStartY = e.touches[0].clientY;
+          this.classList.add('dragging');
+          draggedItem = this;
+        });
+        
+        card.addEventListener('touchmove', function(e) {
+          e.preventDefault();
+          const touchY = e.touches[0].clientY;
+          const deltaY = touchY - touchStartY;
+          
+          if (Math.abs(deltaY) > 10) {
+            this.style.transform = `translateY(${deltaY}px)`;
+          }
+        });
+        
+        card.addEventListener('touchend', function() {
+          this.classList.remove('dragging');
+          this.style.transform = '';
+          draggedItem = null;
+          salvarLayout();
+        });
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.card.draggable:not(.dragging)')];
+      
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Configurar efeitos 3D
+    function configurarEfeitos3D() {
+      document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          if (card.classList.contains('dragging')) return;
+          
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const angleX = (y - centerY) / 20;
+          const angleY = (centerX - x) / 20;
+          
+          card.style.transform = `
+            perspective(1000px) 
+            rotateX(${angleX}deg) 
+            rotateY(${angleY}deg) 
+            translateY(-8px) 
+            scale(1.02)
+          `;
+          
+          // Efeito de brilho
+          const lightX = (x / rect.width) * 100;
+          const lightY = (y / rect.height) * 100;
+          card.style.background = `
+            radial-gradient(circle at ${lightX}% ${lightY}%, 
+              rgba(255,255,255,0.05) 0%,
+              ${card.classList.contains('card-4m') ? 
+                'rgba(40,40,40,0.8)' : 'rgba(30,30,30,0.7)'} 70%
+            )
+          `;
+        });
+        
+        card.addEventListener('mouseleave', () => {
+          if (!card.classList.contains('dragging')) {
+            card.style.transform = 'translateY(-8px) scale(1.02)';
+            card.style.background = card.classList.contains('card-4m') ? 
+              'linear-gradient(135deg, rgba(40,40,40,0.8) 0%, rgba(30,30,30,0.9) 100%)' :
+              'rgba(30, 30, 30, 0.7)';
+          }
+        });
+      });
+    }
+
+    // Configurar modal
+    function configurarModal() {
+      document.querySelectorAll('.card[data-module]').forEach(card => {
+        if (card.id !== 'card-4m') {
+          card.addEventListener('click', () => {
+            document.getElementById('progressOverlay').classList.add('active');
+          });
+        }
+      });
+
+      document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('progressOverlay').classList.remove('active');
+      });
+
+      document.getElementById('progressOverlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('progressOverlay')) {
+          document.getElementById('progressOverlay').classList.remove('active');
+        }
+      });
+    }
+
+    // Configurar atalhos de teclado
+    function configurarAtalhosTeclado() {
+      document.addEventListener('keydown', function(e) {
+        // F1 - Ajuda
+        if (e.key === 'F1') {
+          e.preventDefault();
+          mostrarAjuda();
+        }
+        
+        // Ctrl+1 - Abrir checklist 4M
+        if (e.ctrlKey && e.key === '1') {
+          e.preventDefault();
+          window.location.href = '4m-checklist.html';
+        }
+        
+        // Ctrl+N - Novo checklist
+        if (e.ctrlKey && e.key === 'n') {
+          e.preventDefault();
+          window.location.href = 'FR0062-formulario.html';
+        }
+        
+        // Escape - Fechar modal
+        if (e.key === 'Escape') {
+          document.getElementById('progressOverlay').classList.remove('active');
+        }
+      });
+    }
+
+    // Funções principais
+    function abrirListaChecklists() {
+      window.open(`${API_BASE_URL}/checklist-4m`, '_blank');
+    }
+
+    function criarNovoChecklist() {
+      window.open(`${API_BASE_URL}/novo-checklist`, '_blank');
+    }
+
+    function mostrarMenuRapido(event) {
+      const menu = document.createElement('div');
+      menu.className = 'context-menu';
+      menu.style.cssText = `
+        position: fixed;
+        top: ${event.clientY}px;
+        left: ${event.clientX}px;
+        background: rgba(40, 40, 40, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 10px 0;
+        min-width: 200px;
+        z-index: 1000;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      `;
+      
+      const opcoes = [
+        { 
+          icon: 'list_alt', 
+          text: 'Ver Checklists', 
+          action: () => window.location.href = '4m-checklist.html',
+          color: '#4CAF50'
+        },
+        { 
+          icon: 'add_circle', 
+          text: 'Novo Checklist', 
+          action: () => window.location.href = 'FR0062-formulario.html',
+          color: '#2196F3'
+        },
+        { 
+          icon: 'assessment', 
+          text: 'Estatísticas', 
+          action: mostrarEstatisticas,
+          color: '#FF9800'
+        },
+        { 
+          icon: 'help', 
+          text: 'Ajuda', 
+          action: mostrarAjuda,
+          color: '#9C27B0'
+        }
+      ];
+      
+      opcoes.forEach(opcao => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+          padding: 10px 16px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          cursor: pointer;
+          transition: all 0.2s;
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.9rem;
+        `;
+        item.innerHTML = `
+          <span class="material-icons" style="font-size: 18px; color: ${opcao.color}">${opcao.icon}</span>
+          <span style="flex-grow: 1;">${opcao.text}</span>
+        `;
+        
+        item.addEventListener('mouseenter', () => {
+          item.style.background = 'rgba(255, 255, 255, 0.12)';
+          item.style.paddingLeft = '20px';
+        });
+        
+        item.addEventListener('mouseleave', () => {
+          item.style.background = 'transparent';
+          item.style.paddingLeft = '16px';
+        });
+        
+        item.addEventListener('click', (e) => {
+          e.stopPropagation();
+          opcao.action();
+          document.body.removeChild(menu);
+        });
+        
+        menu.appendChild(item);
+      });
+      
+      document.body.appendChild(menu);
+      
+      const fecharMenu = (e) => {
+        if (!menu.contains(e.target)) {
+          document.body.removeChild(menu);
+          document.removeEventListener('click', fecharMenu);
+        }
+      };
+      
+      setTimeout(() => {
+        document.addEventListener('click', fecharMenu);
+      }, 100);
+    }
+
+    function mostrarAjuda() {
+      const modal = document.getElementById('progressOverlay');
+      const modalContent = modal.querySelector('.modal');
+      
+      modalContent.innerHTML = `
+        <div class="modal-icon"><span class="material-icons" style="color: #4CAF50;">help</span></div>
+        <div class="modal-title">Ajuda - Sistema 4M</div>
+        <div class="modal-message" style="text-align: left; line-height: 1.6;">
+          <strong>Atalhos do Teclado:</strong><br>
+          • <kbd>Ctrl + 1</kbd> - Abrir lista de checklists<br>
+          • <kbd>Ctrl + N</kbd> - Novo checklist<br>
+          • <kbd>F1</kbd> - Ajuda<br>
+          • <kbd>ESC</kbd> - Fechar modal<br><br>
+          
+          <strong>Card 4M:</strong><br>
+          • Clique simples: Lista de checklists<br>
+          • Botão direito: Menu rápido<br><br>
+          
+          <strong>Arrastar e Soltar:</strong><br>
+          • Arraste os cards para reorganizar
+        </div>
+        <button class="modal-button" onclick="document.getElementById('progressOverlay').classList.remove('active')">
+          Fechar
+        </button>
+      `;
+      
+      modal.classList.add('active');
+    }
+
+    function mostrarEstatisticas() {
+      const modal = document.getElementById('progressOverlay');
+      const modalContent = modal.querySelector('.modal');
+      
+      modalContent.innerHTML = `
+        <div class="modal-icon"><span class="material-icons" style="color: #2196F3;">assessment</span></div>
+        <div class="modal-title">Estatísticas do Sistema</div>
+        <div class="modal-message">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 2.5rem; font-weight: bold; color: #4CAF50;">0</div>
+            <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">Total de Checklists</div>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #FFA500; border-radius: 50%;"></span>
+                Pendentes
+              </span>
+              <span style="font-weight: bold;">0</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #4CAF50; border-radius: 50%;"></span>
+                Concluídos
+              </span>
+              <span style="font-weight: bold;">0</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-block; width: 8px; height: 8px; background: #F44336; border-radius: 50%;"></span>
+                Atrasados
+              </span>
+              <span style="font-weight: bold;">0</span>
+            </div>
+          </div>
+        </div>
+        <button class="modal-button" onclick="document.getElementById('progressOverlay').classList.remove('active')">
+          Fechar
+        </button>
+      `;
+      
+      modal.classList.add('active');
+    }
+
+    // Funções auxiliares
+    function salvarLayout() {
+      const cardOrder = Array.from(document.querySelectorAll('.card')).map(card => card.dataset.module || '4m');
+      localStorage.setItem('dashboardLayout', JSON.stringify(cardOrder));
+    }
+
+    function carregarLayout() {
+      const savedLayout = localStorage.getItem('dashboardLayout');
+      if (savedLayout) {
+        const layout = JSON.parse(savedLayout);
+        // Reordenação dos cards conforme layout salvo
+        const dashboard = document.querySelector('.dashboard');
+        const cards = Array.from(dashboard.querySelectorAll('.card'));
+        
+        layout.forEach(moduleId => {
+          const card = cards.find(c => 
+            (moduleId === '4m' && c.id === 'card-4m') || 
+            c.dataset.module === moduleId
+          );
+          if (card) {
+            dashboard.appendChild(card);
+          }
+        });
+      }
+    }
+
+    function verificarTransicaoIntro() {
+      if (document.referrer.includes('intro')) {
+        const card4m = document.getElementById('card-4m');
+        card4m.style.animation = 'pulse 2s ease';
+        
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 214, 0, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 214, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 214, 0, 0); }
+          }
+        `;
+        document.head.appendChild(style);
+        
+        setTimeout(() => {
+          card4m.style.animation = '';
+        }, 2000);
+      }
+    }
+
+    function mostrarNotificacao(mensagem, tipo = 'success') {
+      const notificacaoAnterior = document.querySelector('.notification');
+      if (notificacaoAnterior) {
+        notificacaoAnterior.remove();
+      }
+      
+      const notificacao = document.createElement('div');
+      notificacao.className = 'notification';
+      notificacao.innerHTML = `
+        <span class="material-icons" style="font-size: 20px;">${tipo === 'success' ? 'check_circle' : 'info'}</span>
+        <span style="font-size: 0.9rem;">${mensagem}</span>
+      `;
+      
+      document.body.appendChild(notificacao);
+      
+      setTimeout(() => {
+        notificacao.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+          if (notificacao.parentNode) {
+            notificacao.remove();
+          }
+        }, 300);
+      }, 3000);
+    }
+
+    // Inicialização
+    carregarLayout();
+
+    // Efeito de entrada aos cards
+    document.querySelectorAll('.card').forEach((card, index) => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px)';
+      
+      setTimeout(() => {
+        card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+      }, 100 + (index * 100));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checklists FR0062 - Sistema de Qualidade</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header-left h1 {
+      font-size: 2.5rem;
+      color: #FFFFFF;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .header-left p {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 1.1rem;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 15px;
+    }
+
+    .back-button, .novo-button {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      border: none;
+      font-family: inherit;
+    }
+
+    .novo-button {
+      background: rgba(0, 150, 255, 0.2);
+      border-color: rgba(0, 150, 255, 0.3);
+    }
+
+    .back-button:hover, .novo-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .novo-button:hover {
+      background: rgba(0, 150, 255, 0.3);
+    }
+
+    .filters {
+      background: rgba(30, 30, 30, 0.8);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .filters h2 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .filter-group label {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-group input,
+    .filter-group select {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-group input:focus,
+    .filter-group select:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-group input::placeholder {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
+    .filter-actions {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .filter-button {
+      background: rgba(255, 255, 255, 0.1);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      border: none;
+      font-family: inherit;
+    }
+
+    .filter-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .filter-button.primary {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .filter-button.primary:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .view-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .view-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .view-button {
+      background: rgba(30, 30, 30, 0.8);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+      border: none;
+      font-family: inherit;
+    }
+
+    .view-button:hover {
+      background: rgba(40, 40, 40, 0.8);
+    }
+
+    .view-button.active {
+      background: rgba(255, 255, 255, 0.15);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stat-dot.em_andamento { background: #FFA500; }
+    .stat-dot.concluido { background: #4CAF50; }
+    .stat-dot.aprovado { background: #2196F3; }
+    .stat-dot.reprovado { background: #F44336; }
+
+    .checklist-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 25px;
+    }
+
+    .checklist-grid.list-view {
+      display: block;
+    }
+
+    .checklist-grid.list-view .checklist-card {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 20px;
+    }
+
+    .checklist-grid.list-view .checklist-header {
+      flex: 1;
+      margin-bottom: 0;
+      margin-right: 20px;
+    }
+
+    .checklist-grid.list-view .checklist-info {
+      flex: 2;
+      display: flex;
+      margin-bottom: 0;
+      margin-right: 20px;
+    }
+
+    .checklist-grid.list-view .checklist-info-item {
+      margin-right: 30px;
+      margin-bottom: 0;
+    }
+
+    .checklist-grid.list-view .checklist-status {
+      margin-left: auto;
+    }
+
+    .checklist-card {
+      background: rgba(30, 30, 30, 0.8);
+      border-radius: 12px;
+      padding: 25px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .checklist-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 30px rgba(0, 150, 255, 0.2);
+    }
+
+    .checklist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .checklist-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #FFFFFF;
+    }
+
+    .checklist-badge {
+      background: rgba(0, 150, 255, 0.2);
+      color: rgba(0, 150, 255, 1);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .checklist-info {
+      display: grid;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .checklist-info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 5px;
+    }
+
+    .checklist-info-item span:first-child {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .checklist-info-item span:last-child {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.95rem;
+    }
+
+    .checklist-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.7);
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .loading {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .loading .material-icons {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: rgba(255, 255, 255, 0.2);
+    }
+
+    .loading .material-icons {
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .checklist-card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px 20px;
+      background: #4CAF50;
+      color: white;
+      border-radius: 8px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .notification.error {
+      background: #F44336;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+      }
+      
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .filter-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .checklist-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header-left h1 {
+        font-size: 2rem;
+      }
+
+      .view-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .view-buttons {
+        justify-content: center;
+      }
+
+      .stats {
+        justify-content: center;
+      }
+
+      .checklist-grid.list-view .checklist-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .checklist-grid.list-view .checklist-info {
+        flex-direction: column;
+        margin-right: 0;
+        margin-bottom: 15px;
+      }
+
+      .checklist-grid.list-view .checklist-status {
+        margin-left: 0;
+      }
+    }
+
+    @media (min-width: 768px) and (max-width: 1199px) {
+      .checklist-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .container {
+        padding: 25px;
+      }
+    }
+
+    @media (min-width: 1600px) {
+      .checklist-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      .container {
+        max-width: 1800px;
+      }
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-left">
+        <h1>📋 Checklists FR0062</h1>
+        <p>Gerenciar e visualizar todos os checklists salvos</p>
+      </div>
+      <div class="header-right">
+        <button class="back-button" id="btnVoltar">
+          <span class="material-icons">arrow_back</span>
+          Voltar
+        </button>
+        <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'">
+          <span class="material-icons">add</span>
+          Novo Checklist
+        </button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <h2>
+        <span class="material-icons">filter_list</span>
+        Filtros
+      </h2>
+      <div class="filter-grid">
+        <div class="filter-group">
+          <label for="numero"><span class="material-icons">tag</span> Número de Controle</label>
+          <input type="text" id="numero" name="numero" placeholder="Buscar por número...">
+        </div>
+        
+        <div class="filter-group">
+          <label for="solicitado_por"><span class="material-icons">person</span> Solicitado Por</label>
+          <input type="text" id="solicitado_por" name="solicitado_por" placeholder="Buscar por solicitante...">
+        </div>
+
+        <div class="filter-group">
+          <label for="status"><span class="material-icons">info</span> Status</label>
+          <select id="status" name="status">
+            <option value="">Todos os status</option>
+            <option value="rascunho">Rascunho</option>
+            <option value="pendente">Pendente</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="rejeitado">Rejeitado</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="ano"><span class="material-icons">event</span> Ano</label>
+          <select id="ano" name="ano">
+            <option value="">Todos os anos</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="filter-button primary" id="filtrar">
+          <span class="material-icons">search</span>
+          Filtrar
+        </button>
+        <button class="filter-button" id="limpar">
+          <span class="material-icons">refresh</span>
+          Limpar Filtros
+        </button>
+      </div>
+    </div>
+
+    <div class="view-controls">
+      <div class="view-buttons">
+        <button class="view-button active" id="viewGrid">
+          <span class="material-icons">grid_view</span>
+          Grade
+        </button>
+        <button class="view-button" id="viewList">
+          <span class="material-icons">view_list</span>
+          Lista
+        </button>
+      </div>
+      
+      <div class="stats" id="statsContainer">
+        <div class="stat-item">
+          <span class="material-icons" style="font-size: 16px;">description</span>
+          <span>Total: <span id="countTotal">0</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="material-icons" style="font-size: 16px;">check_circle</span>
+          <span>Aprovados: <span id="countAprovados">0</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="material-icons" style="font-size: 16px;">update</span>
+          <span>Último: <span id="ultimoChecklist">-</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="checklist-grid" id="checklistList">
+      <div class="loading" id="loading">
+        <span class="material-icons">refresh</span>
+        <p>Carregando checklists...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const viewGridBtn = document.getElementById('viewGrid');
+    const viewListBtn = document.getElementById('viewList');
+    const checklistList = document.getElementById('checklistList');
+    const btnVoltar = document.getElementById('btnVoltar');
+    const loadingElement = document.getElementById('loading');
+
+    let todosChecklists = [];
+    const API_URL = 'http://localhost:3001/api';
+
+    document.addEventListener('DOMContentLoaded', function() {
+      configurarEventos();
+      carregarChecklists();
+      const savedViewMode = localStorage.getItem('viewMode') || 'grid';
+      alternarVisualizacao(savedViewMode);
+    });
+
+    function configurarEventos() {
+      viewGridBtn.addEventListener('click', () => alternarVisualizacao('grid'));
+      viewListBtn.addEventListener('click', () => alternarVisualizacao('list'));
+
+      btnVoltar.addEventListener('click', () => {
+        window.location.href = '4m.html';
+      });
+
+      document.getElementById('filtrar').addEventListener('click', aplicarFiltros);
+      document.getElementById('limpar').addEventListener('click', limparFiltros);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'F5') {
+          e.preventDefault();
+          carregarChecklists();
+        }
+        if (e.ctrlKey && e.key === 'n') {
+          e.preventDefault();
+          window.location.href = 'FR0062-formulario.html';
+        }
+        if (e.ctrlKey && e.key === 'f') {
+          e.preventDefault();
+          document.getElementById('numero').focus();
+        }
+        if (e.key === 'Escape') {
+          window.location.href = '4m.html';
+        }
+      });
+    }
+
+    function alternarVisualizacao(tipo) {
+      if (tipo === 'grid') {
+        checklistList.classList.remove('list-view');
+        viewGridBtn.classList.add('active');
+        viewListBtn.classList.remove('active');
+        localStorage.setItem('viewMode', 'grid');
+      } else {
+        checklistList.classList.add('list-view');
+        viewListBtn.classList.add('active');
+        viewGridBtn.classList.remove('active');
+        localStorage.setItem('viewMode', 'list');
+      }
+    }
+
+    async function carregarChecklists() {
+      try {
+        mostrarLoading();
+        
+        const response = await fetch(`${API_URL}/fr0062`);
+        const result = await response.json();
+        
+        if (result.success && result.formularios) {
+          todosChecklists = result.formularios;
+          exibirChecklists(todosChecklists);
+          atualizarEstatisticas(todosChecklists);
+        } else {
+          exibirMensagemSemDados();
+        }
+      } catch (error) {
+        console.error('Erro ao carregar checklists:', error);
+        exibirMensagemErro('Erro ao carregar checklists. Verifique a conexão com o servidor.');
+      }
+    }
+
+    function aplicarFiltros() {
+      const filtroNumero = document.getElementById('numero').value.toLowerCase();
+      const filtroSolicitado = document.getElementById('solicitado_por').value.toLowerCase();
+      const filtroStatus = document.getElementById('status').value;
+      const filtroAno = document.getElementById('ano').value;
+
+      let checklistsFiltrados = todosChecklists;
+
+      if (filtroNumero) {
+        checklistsFiltrados = checklistsFiltrados.filter(cl =>
+          cl.numero_controle.toLowerCase().includes(filtroNumero)
+        );
+      }
+
+      if (filtroSolicitado) {
+        checklistsFiltrados = checklistsFiltrados.filter(cl =>
+          cl.solicitado_por.toLowerCase().includes(filtroSolicitado)
+        );
+      }
+
+      if (filtroStatus) {
+        checklistsFiltrados = checklistsFiltrados.filter(cl =>
+          (cl.status || 'rascunho') === filtroStatus
+        );
+      }
+
+      if (filtroAno) {
+        checklistsFiltrados = checklistsFiltrados.filter(cl => {
+          const dataCriacao = new Date(cl.data_criacao);
+          return dataCriacao.getFullYear() == filtroAno;
+        });
+      }
+
+      exibirChecklists(checklistsFiltrados);
+      atualizarEstatisticas(checklistsFiltrados);
+    }
+
+    function limparFiltros() {
+      document.getElementById('numero').value = '';
+      document.getElementById('solicitado_por').value = '';
+      document.getElementById('status').value = '';
+      document.getElementById('ano').value = '';
+      exibirChecklists(todosChecklists);
+      atualizarEstatisticas(todosChecklists);
+    }
+
+    function exibirChecklists(checklists) {
+      if (checklists.length === 0) {
+        exibirMensagemSemDados();
+        return;
+      }
+
+      checklistList.innerHTML = '';
+      
+      checklists.forEach((checklist, index) => {
+        const card = criarCardChecklist(checklist, index);
+        checklistList.appendChild(card);
+      });
+    }
+
+    function criarCardChecklist(checklist, index) {
+      const card = document.createElement('div');
+      card.className = 'checklist-card';
+      
+      const dataFormatada = formatarData(checklist.data_criacao);
+      const status = checklist.status || 'rascunho';
+      const statusColores = {
+        'rascunho': { cor: '#FFA500', label: 'Rascunho' },
+        'pendente': { cor: '#2196F3', label: 'Pendente' },
+        'aprovado': { cor: '#4CAF50', label: 'Aprovado' },
+        'rejeitado': { cor: '#F44336', label: 'Rejeitado' }
+      };
+      const statusInfo = statusColores[status] || statusColores['rascunho'];
+      
+      card.innerHTML = `
+        <div class="checklist-header">
+          <div class="checklist-title">${checklist.numero_controle}</div>
+          <span class="checklist-badge">${statusInfo.label}</span>
+        </div>
+        <div class="checklist-info">
+          <div class="checklist-info-item">
+            <span>Solicitado por:</span>
+            <span>${checklist.solicitado_por || 'N/A'}</span>
+          </div>
+          <div class="checklist-info-item">
+            <span>Criado em:</span>
+            <span>${dataFormatada}</span>
+          </div>
+          <div class="checklist-info-item">
+            <span>Atualizado em:</span>
+            <span>${formatarData(checklist.data_atualizacao)}</span>
+          </div>
+        </div>
+        <div class="checklist-status">
+          <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">check_circle</span>
+          <span>${statusInfo.label}</span>
+        </div>
+      `;
+      
+      card.addEventListener('click', () => {
+        // Abrir formulário com dados preenchidos
+        window.location.href = `FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
+      });
+      
+      card.style.animationDelay = `${index * 0.1}s`;
+      
+      return card;
+    }
+
+    function atualizarEstatisticas(checklists) {
+      const total = checklists.length;
+      const aprovados = checklists.filter(cl => (cl.status || 'rascunho') === 'aprovado').length;
+      const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
+      const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
+      
+      document.getElementById('countTotal').textContent = total;
+      document.getElementById('countAprovados').textContent = aprovados;
+      document.getElementById('ultimoChecklist').textContent = ultimoData;
+    }
+
+    function mostrarLoading() {
+      if (loadingElement) {
+        loadingElement.style.display = 'block';
+      }
+    }
+
+    function esconderLoading() {
+      if (loadingElement) {
+        loadingElement.style.display = 'none';
+      }
+    }
+
+    function exibirMensagemSemDados() {
+      esconderLoading();
+      checklistList.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5);">
+          <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Nenhum checklist encontrado</h3>
+          <p>Crie um novo checklist para começar</p>
+          <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'" style="margin-top: 20px;">
+            <span class="material-icons">add</span>
+            Novo Checklist
+          </button>
+        </div>
+      `;
+    }
+
+    function exibirMensagemErro(mensagem) {
+      esconderLoading();
+      checklistList.innerHTML = `
+        <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #F44336;">
+          <div style="font-size: 4rem; margin-bottom: 20px;">⚠️</div>
+          <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Erro ao carregar</h3>
+          <p>${mensagem}</p>
+          <button class="filter-button primary" onclick="carregarChecklists()" style="margin-top: 20px;">
+            <span class="material-icons">refresh</span>
+            Tentar Novamente
+          </button>
+        </div>
+      `;
+    }
+
+    function formatarData(dataString) {
+      try {
+        const data = new Date(dataString);
+        return data.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return dataString;
+      }
+    }
+
+    function formatarTamanho(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
