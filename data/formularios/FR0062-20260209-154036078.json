@@ -2,7 +2,7 @@
   "numero_controle": "FR0062-20260209-154036078",
   "cabecalho": {
     "visto_retencao_qa": "",
-    "setor_producao": "",
+    "setor_producao": "dasdasdas",
     "setor_logistica_pc": "",
     "setor_engenharia": "",
     "qualidade_aprovado": "",
@@ -358,13 +358,13 @@
     }
   ],
   "status": "em_andamento",
-  "data_criacao": "2026-02-09T18:40:38.800Z",
+  "data_criacao": "2026-02-09T19:43:36.350Z",
+  "data_atualizacao": "2026-02-09T19:43:36.409Z",
   "solicitado_por": "",
   "aprovado_por": "",
   "confirmado_por": "",
   "elaborado_por": "",
   "executado_por": "",
   "controle_elaborado_por": "",
-  "man_numOperacao1": "",
-  "data_atualizacao": "2026-02-09T18:40:38.839Z"
+  "man_numOperacao1": ""
 }
