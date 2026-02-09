@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Checklists FR0062 - Sistema de Qualidade</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
       width: 100%;
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -52,7 +59,8 @@
       gap: 15px;
     }
 
-    .back-button, .novo-button {
+    .back-button,
+    .novo-button {
       background: rgba(255, 255, 255, 0.1);
       color: #FFFFFF;
       border: 1px solid rgba(255, 255, 255, 0.2);
@@ -74,7 +82,8 @@
       border-color: rgba(0, 150, 255, 0.3);
     }
 
-    .back-button:hover, .novo-button:hover {
+    .back-button:hover,
+    .novo-button:hover {
       background: rgba(255, 255, 255, 0.2);
       transform: translateY(-2px);
     }
@@ -241,10 +250,21 @@
       border-radius: 50%;
     }
 
-    .stat-dot.em_andamento { background: #FFA500; }
-    .stat-dot.concluido { background: #4CAF50; }
-    .stat-dot.aprovado { background: #2196F3; }
-    .stat-dot.reprovado { background: #F44336; }
+    .stat-dot.em_andamento {
+      background: #FFA500;
+    }
+
+    .stat-dot.concluido {
+      background: #4CAF50;
+    }
+
+    .stat-dot.aprovado {
+      background: #2196F3;
+    }
+
+    .stat-dot.reprovado {
+      background: #F44336;
+    }
 
     .checklist-grid {
       display: grid;
@@ -377,13 +397,25 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .checklist-card {
@@ -403,7 +435,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .notification.error {
@@ -411,39 +443,53 @@
     }
 
     @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
 
     @keyframes slideOut {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(100%); opacity: 0; }
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
     }
 
     @media (max-width: 768px) {
       .container {
         padding: 20px;
       }
-      
+
       .header {
         flex-direction: column;
         align-items: flex-start;
         gap: 20px;
       }
-      
+
       .header-right {
         width: 100%;
         justify-content: space-between;
       }
-      
+
       .filter-grid {
         grid-template-columns: 1fr;
       }
-      
+
       .checklist-grid {
         grid-template-columns: 1fr;
       }
-      
+
       .header-left h1 {
         font-size: 2rem;
       }
@@ -481,7 +527,7 @@
       .checklist-grid {
         grid-template-columns: repeat(2, 1fr);
       }
-      
+
       .container {
         padding: 25px;
       }
@@ -491,7 +537,7 @@
       .checklist-grid {
         grid-template-columns: repeat(4, 1fr);
       }
-      
+
       .container {
         max-width: 1800px;
       }
@@ -499,6 +545,7 @@
   </style>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
+
 <body>
   <div class="container">
     <div class="header">
@@ -528,7 +575,7 @@
           <label for="numero"><span class="material-icons">tag</span> Número de Controle</label>
           <input type="text" id="numero" name="numero" placeholder="Buscar por número...">
         </div>
-        
+
         <div class="filter-group">
           <label for="solicitado_por"><span class="material-icons">person</span> Solicitado Por</label>
           <input type="text" id="solicitado_por" name="solicitado_por" placeholder="Buscar por solicitante...">
@@ -544,7 +591,7 @@
             <option value="rejeitado">Rejeitado</option>
           </select>
         </div>
-        
+
         <div class="filter-group">
           <label for="ano"><span class="material-icons">event</span> Ano</label>
           <select id="ano" name="ano">
@@ -555,7 +602,7 @@
           </select>
         </div>
       </div>
-      
+
       <div class="filter-actions">
         <button class="filter-button primary" id="filtrar">
           <span class="material-icons">search</span>
@@ -579,7 +626,7 @@
           Lista
         </button>
       </div>
-      
+
       <div class="stats" id="statsContainer">
         <div class="stat-item">
           <span class="material-icons" style="font-size: 16px;">description</span>
@@ -614,7 +661,7 @@
     let todosChecklists = [];
     const API_URL = 'http://localhost:3001/api';
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       configurarEventos();
       carregarChecklists();
       const savedViewMode = localStorage.getItem('viewMode') || 'grid';
@@ -632,7 +679,7 @@
       document.getElementById('filtrar').addEventListener('click', aplicarFiltros);
       document.getElementById('limpar').addEventListener('click', limparFiltros);
 
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', function (e) {
         if (e.key === 'F5') {
           e.preventDefault();
           carregarChecklists();
@@ -668,10 +715,10 @@
     async function carregarChecklists() {
       try {
         mostrarLoading();
-        
+
         const response = await fetch(`${API_URL}/fr0062`);
         const result = await response.json();
-        
+
         if (result.success && result.formularios) {
           todosChecklists = result.formularios;
           exibirChecklists(todosChecklists);
@@ -738,7 +785,7 @@
       }
 
       checklistList.innerHTML = '';
-      
+
       checklists.forEach((checklist, index) => {
         const card = criarCardChecklist(checklist, index);
         checklistList.appendChild(card);
@@ -748,7 +795,7 @@
     function criarCardChecklist(checklist, index) {
       const card = document.createElement('div');
       card.className = 'checklist-card';
-      
+
       const dataFormatada = formatarData(checklist.data_criacao);
       const status = checklist.status || 'rascunho';
       const statusColores = {
@@ -758,7 +805,7 @@
         'rejeitado': { cor: '#F44336', label: 'Rejeitado' }
       };
       const statusInfo = statusColores[status] || statusColores['rascunho'];
-      
+
       card.innerHTML = `
         <div class="checklist-header">
           <div class="checklist-title">${checklist.numero_controle}</div>
@@ -783,28 +830,32 @@
           <span>${statusInfo.label}</span>
         </div>
       `;
-      
+
       card.addEventListener('click', () => {
         // Abrir formulário com dados preenchidos
         window.location.href = `FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
       });
-      
+
       card.style.animationDelay = `${index * 0.1}s`;
-      
+
       return card;
     }
 
     function atualizarEstatisticas(checklists) {
       const total = checklists.length;
       const aprovados = checklists.filter(cl => (cl.status || 'rascunho') === 'aprovado').length;
+      const finalizados = checklists.filter(cl => cl.status === 'finalizado').length; // Nova contagem
+
       const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
       const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
-      
+
       document.getElementById('countTotal').textContent = total;
       document.getElementById('countAprovados').textContent = aprovados;
       document.getElementById('ultimoChecklist').textContent = ultimoData;
-    }
 
+      // Opcional: adicionar contador de finalizados se quiser
+      // Você pode adicionar um novo elemento HTML ou mostrar junto
+    }
     function mostrarLoading() {
       if (loadingElement) {
         loadingElement.style.display = 'block';
@@ -871,4 +922,5 @@
     }
   </script>
 </body>
+
 </html>

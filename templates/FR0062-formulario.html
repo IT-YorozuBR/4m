@@ -12,7 +12,7 @@
     <script>
 
 
-   
+
         function adicionarDataCampoAutomatico() {
             // Inputs e textareas
             document.querySelectorAll('input, textarea').forEach(element => {
@@ -45,6 +45,13 @@
             console.log('✅ Data-campo adicionados automaticamente');
         }
 
+        const btnCancelar = document.getElementById('btnCancelar');
+        btnCancelar.addEventListener('click', function(e){
+            e.preventDefault();
+            window.location.href('/templates/4m-checklist.html')
+        })
+
+
     </script>
 </head>
 
@@ -62,8 +69,9 @@
                 <div class="celula no-border-top" contenteditable="true" aria-label="Visto Retenção QA"
                     id="vistoRetencaoQA" name="vistoRetencaoQA" data-field="visto_retencao_qa"></div>
                 <button class="btn-salvar-check" id="btnSalvarCheck">SALVAR CHECK</button>
-                <button class="btn-gerar-pdf" id="btnGerarPDF">GERAR PDF</button>
+                <!-- <button class="btn-gerar-pdf" id="btnGerarPDF">GERAR PDF</button> -->
                 <button class="btn-limpar-dados" id="btnLimparDados">LIMPAR DADOS</button>
+                <button class="btn-cancelar" id="btnCancelar">CANCELAR</button>
                 <div class="origem">ORIGEM &larr;</div>
             </div>
 
@@ -273,7 +281,8 @@
                     </div>
 
                     <div class="celula-4m"><label>ORGAN./RAMAL</label><span class="input-line" contenteditable="true"
-                            id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1" name="manOrganRamal1"></span></div>
+                            id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1"
+                            name="manOrganRamal1"></span></div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
                             id="machine_projeto1" name="machine_projeto1" data-field="machine_projeto_1"></span>
                     </div>
@@ -1000,7 +1009,8 @@
 
             <div class="celula cabecalho-direita">
                 <span class="label-bold">● HORÁRIO DE APLICAÇÃO DA 4M:</span>
-                <span class="input-line" contenteditable="true" aria-label="Horário Aplicação 4M" name="horarioAplicacao"></span>
+                <span class="input-line" contenteditable="true" aria-label="Horário Aplicação 4M"
+                    name="horarioAplicacao"></span>
             </div>
 
 
@@ -1048,8 +1058,8 @@
                 </div>
             </div>
         </div>
+        <button class="btn-finalizar" id="btnFinalizarcheck">FINALIZAR CHECKLIST 4M</button>
         <!-- No bloco-visto, adicione este botão -->
-        <button class="btn-salvar-html" id="btnSalvarHTML">SALVAR HTML</button>
     </form>
 </body>
 

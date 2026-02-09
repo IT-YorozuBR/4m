@@ -364,8 +364,9 @@ class SistemaChecklist4M {
             acompanhamento: this.coletarAcompanhamento(),
             resultados_avaliacao: this.coletarResultadosAvaliacao(),
             justificativas: this.coletarJustificativas(),
-            status: 'em_andamento',
-            data_criacao: new Date().toISOString()
+            status: 'em_andamento', // Valor padrão
+            data_criacao: new Date().toISOString(),
+            data_atualizacao: new Date().toISOString()
         };
 
         // Campos extras do formulário
@@ -373,9 +374,9 @@ class SistemaChecklist4M {
         dados.aprovado_por = cabecalho.qualidade_aprovado || '';
         dados.confirmado_por = cabecalho.qualidade_confirmado || '';
         dados.elaborado_por = cabecalho.qualidade_executado_por || '';
-        dados.executado_por = this.getTexto('#controleExecutadoPor')
-        dados.controle_elaborado_por = this.getTexto('#controleElaboradoPor')
-        dados.man_numOperacao1 = this.getTexto('#man_numOperacao1')
+        dados.executado_por = this.getTexto('#controleExecutadoPor');
+        dados.controle_elaborado_por = this.getTexto('#controleElaboradoPor');
+        dados.man_numOperacao1 = this.getTexto('#man_numOperacao1');
 
         console.log('📦 Dados coletados:', dados);
         return dados;
@@ -627,8 +628,6 @@ class SistemaChecklist4M {
     // Carregar dados do formulário
     async carregarFormulario(numeroControle) {
         try {
-            this.mensagens.informacao('Carregando formulário...', 0);
-
             const response = await fetch(`${API_URL}/fr0062/${numeroControle}`);
             const result = await response.json();
 
@@ -636,11 +635,18 @@ class SistemaChecklist4M {
                 this.preencherFormulario(result.formulario);
                 this.numeroControleAtual = numeroControle;
                 this.modoEdicao = true;
-                this.mensagens.sucesso('✓ Formulário carregado com sucesso!');
-                console.log('✅ Dados carregados:', result.formulario);
+
+                // Verificar se o checklist já está finalizado
+                if (result.formulario.status === 'finalizado') {
+                    console.log('⚠️ Checklist carregado em modo FINALIZADO (somente leitura)');
+                    this.desabilitarEdicaoFormulario();
+                } else {
+                    console.log('✅ Checklist carregado em modo de edição');
+                }
+
                 return result.formulario;
             } else {
-                this.mensagens.erro('✗ Formulário não encontrado');
+                this.mensagens.erro('Formulário não encontrado');
                 return null;
             }
 
@@ -650,7 +656,14 @@ class SistemaChecklist4M {
             return null;
         }
     }
-
+    // Adicione este método à classe SistemaChecklist4M
+    verificarPermissoesEdicao(status) {
+        if (status === 'finalizado') {
+            this.desabilitarEdicaoFormulario();
+            return false;
+        }
+        return true;
+    }
     preencherAcompanhamento(dadosAcompanhamento) {
         if (!dadosAcompanhamento || dadosAcompanhamento.length === 0) {
             console.log('⚠️ Nenhum dado de acompanhamento para preencher');
@@ -1025,6 +1038,100 @@ class SistemaChecklist4M {
             this.mensagens.informacao('Formulário limpo com sucesso!');
         }
     }
+    // Adicione este método à classe SistemaChecklist4M
+    async finalizarChecklist() {
+        const confirmacao = confirm("Tem certeza que deseja FINALIZAR este checklist?\n\nApós finalizar, NÃO será mais possível editar os dados.\n\nDeseja continuar?");
+
+        if (!confirmacao) {
+            return;
+        }
+
+        try {
+            this.mensagens.informacao('Finalizando checklist...', 0);
+
+            // Coletar dados atuais
+            const dados = this.coletarDados();
+
+            // Atualizar status para finalizado
+            dados.status = 'finalizado';
+            dados.data_finalizacao = new Date().toISOString();
+
+            const response = await fetch(`${API_URL}/fr0062/${this.numeroControleAtual}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dados)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.mensagens.sucesso('✓ Checklist finalizado com sucesso!');
+
+                // Desabilitar todos os campos editáveis
+                this.desabilitarEdicaoFormulario();
+
+                // Desabilitar o botão de finalizar
+                const btnFinalizar = document.getElementById('btnFinalizarcheck');
+                if (btnFinalizar) {
+                    btnFinalizar.disabled = true;
+                    btnFinalizar.textContent = 'CHECKLIST FINALIZADO';
+                    btnFinalizar.style.backgroundColor = '#666';
+                    btnFinalizar.style.cursor = 'not-allowed';
+                }
+
+                // Redirecionar para a lista após 3 segundos
+                setTimeout(() => {
+                    window.location.href = '4m-checklist.html';
+                }, 3000);
+
+            } else {
+                this.mensagens.erro(`✗ Erro ao finalizar: ${result.message}`);
+            }
+
+        } catch (error) {
+            console.error('❌ Erro ao finalizar checklist:', error);
+            this.mensagens.erro('✗ Erro ao finalizar checklist. Verifique a conexão com o servidor.');
+        }
+    }
+
+    // Adicione este método para desabilitar a edição
+    // Método para desabilitar edição (apenas funcional, sem alterações visuais)
+    desabilitarEdicaoFormulario() {
+        console.log('🔒 Desabilitando edição do formulário...');
+
+        // Desabilitar todos os campos contenteditable (não removemos conteúdo, apenas editabilidade)
+        document.querySelectorAll('[contenteditable="true"]').forEach(element => {
+            element.setAttribute('contenteditable', 'false');
+            // Adicionar atributo personalizado para identificar que era editável
+            element.setAttribute('data-was-editable', 'true');
+        });
+
+        // Desabilitar todos os inputs e textareas
+        document.querySelectorAll('input, textarea').forEach(element => {
+            element.setAttribute('disabled', 'disabled');
+            element.setAttribute('readonly', 'readonly');
+            // Adicionar atributo personalizado para identificar estado original
+            element.setAttribute('data-was-enabled', 'true');
+        });
+
+        // Desabilitar botões de ação específicos
+        const botoesDesabilitar = ['btnSalvarCheck', 'btnLimparDados', 'btnFinalizarcheck'];
+        botoesDesabilitar.forEach(id => {
+            const botao = document.getElementById(id);
+            if (botao) {
+                botao.setAttribute('disabled', 'disabled');
+                // Alterar texto do botão de finalizar se existir
+                if (id === 'btnFinalizarcheck') {
+                    botao.textContent = 'CHECKLIST FINALIZADO';
+                }
+            }
+        });
+
+        console.log('✅ Formulário desabilitado para edição (somente leitura)');
+    }
+
 
     // Inicializar o sistema
     iniciar() {
@@ -1055,11 +1162,98 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnSalvarCheck = document.getElementById('btnSalvarCheck');
     const btnGerarPDF = document.getElementById('btnGerarPDF');
     const btnLimpar = document.getElementById('btnLimparDados');
+    const btnCancelar = document.getElementById('btnCancelar');
+    const btnFinalizarCheck = document.getElementById('btnFinalizarcheck');
 
+
+    if (btnFinalizarCheck) {
+        btnFinalizarCheck.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // Verificar se há um número de controle (checklist deve estar salvo primeiro)
+            if (!window.sistemaChecklist.numeroControleAtual) {
+                window.sistemaChecklist.mensagens.erro('Salve o checklist antes de finalizar!');
+                return;
+            }
+
+            window.sistemaChecklist.finalizarChecklist();
+        });
+    }
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            // Criar modal de confirmação
+            const modalHTML = `
+            <div id="modalCancelar" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 999999;
+            ">
+                <div style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                    max-width: 400px;
+                    width: 90%;
+                ">
+                    <h3 style="color: #d32f2f; margin-top: 0;">ATENÇÃO</h3>
+                    <p>Os dados não salvos serão perdidos!</p>
+                    <p>Deseja realmente voltar para a lista de checklists?</p>
+                    <div style="
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 10px;
+                        margin-top: 20px;
+                    ">
+                        <button id="btnConfirmarVoltar" style="
+                            padding: 8px 16px;
+                            background: #df1b1b;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        ">Cancelar</button>
+                        <button id="btnCancelarModal" style="
+                            padding: 8px 16px;
+                            background: #3a5cb2;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        ">Voltar para checklist</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            // Inserir modal no documento
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+            // Configurar eventos dos botões do modal
+            document.getElementById('btnCancelarModal').addEventListener('click', function () {
+                document.getElementById('modalCancelar').remove();
+            });
+
+            document.getElementById('btnConfirmarVoltar').addEventListener('click', function () {
+                window.location.href = '/templates/4m-checklist.html';
+            });
+        });
+    }
     if (btnSalvarCheck) {
         btnSalvarCheck.addEventListener('click', function (e) {
             e.preventDefault();
+
             window.sistemaChecklist.salvarFormulario();
+            window.location.href = '/templates/4m-checklist.html';
         });
     }
 
@@ -1082,3 +1276,4 @@ document.addEventListener('DOMContentLoaded', function () {
         window.sistemaChecklist.iniciar();
     }, 500);
 });
+

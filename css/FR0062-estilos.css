@@ -862,6 +862,33 @@ input[type="checkbox"]:checked::after {
     font-size: 10px;
     text-align: center;
 }
+.btn-finalizar {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+}
+
+.btn-finalizar:disabled {
+    background: #666;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.btn-cancelar {
+    background-color: rgb(148, 146, 146);
+    color: white;
+    font-weight: bold;
+    border: 1px solid black;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 10px;
+    text-align: center;
+}
 
 /* Botão Salvar Check - NOVO */
 .btn-salvar-check {
@@ -1141,4 +1168,22 @@ body.gerando-pdf .formulario-completo {
 .gerando-pdf .celula-3.secao-justificativa {
     min-height: 180px !important;
     /* Reduz altura para não estourar a página */
+}
+
+.btn-voltar-lista {
+    padding: 8px 16px;
+    background-color: #6c757d;
+    color: white;
+    border: 1px solid #5a6268;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: background-color 0.3s;
+    height: 36px;
+    margin-left: 5px;
+}
+
+.btn-voltar-lista:hover {
+    background-color: #545b62;
 }

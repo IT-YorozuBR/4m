@@ -1,0 +1,371 @@
+{
+  "numero_controle": "FR0062-20260209-161317542",
+  "cabecalho": {
+    "visto_retencao_qa": "",
+    "setor_producao": "",
+    "setor_logistica_pc": "",
+    "setor_engenharia": "",
+    "qualidade_aprovado": "",
+    "qualidade_confirmado": "",
+    "qualidade_executado_por": "",
+    "recebimento_qa": "",
+    "mudanca_engenharia": false,
+    "mudanca_controle_prod": false,
+    "mudanca_producao": false,
+    "analise_risco_processo": false,
+    "analise_risco_produto": false,
+    "analise_risco_nao_aplicavel": false,
+    "horario_aplicacao_4m": ""
+  },
+  "mudancas_4m": [
+    {
+      "tipo": "MAN",
+      "item_modificado": "dasdsad",
+      "nome": "dsadsa",
+      "motivo": "",
+      "projeto": "",
+      "numero_operacao": "",
+      "importancia_normal": false,
+      "importancia_importante_as": false,
+      "data_turno": "/ /",
+      "turno_1t": false,
+      "turno_2t": false,
+      "turno_3t": false,
+      "modificacao": "",
+      "registro": "",
+      "garantia_200_sim": false,
+      "garantia_200_nao": false,
+      "garantia_200_valor": "",
+      "lote_prod_garantido": "",
+      "sakanobori_nao": false,
+      "sakanobori_sim": false,
+      "sakanobori_qtd": "",
+      "qtd_yab": "",
+      "qtd_nba": "",
+      "acompanhamento_qa": "",
+      "avaliacao_2d": false,
+      "avaliacao_cmm": false,
+      "avaliacao_macro": false,
+      "avaliacao_outros": false,
+      "avaliacao_outros_texto": ""
+    },
+    {
+      "tipo": "MACHINE",
+      "item_modificado": "",
+      "nome": "",
+      "motivo": "",
+      "projeto": "",
+      "numero_operacao": "",
+      "importancia_normal": false,
+      "importancia_importante_as": false,
+      "data_turno": "/ /",
+      "turno_1t": false,
+      "turno_2t": false,
+      "turno_3t": false,
+      "modificacao": "",
+      "registro": "",
+      "garantia_200_sim": false,
+      "garantia_200_nao": false,
+      "garantia_200_valor": "",
+      "lote_prod_garantido": "",
+      "sakanobori_nao": false,
+      "sakanobori_sim": false,
+      "sakanobori_qtd": "",
+      "qtd_yab": "",
+      "qtd_nba": "",
+      "acompanhamento_qa": "",
+      "avaliacao_2d": false,
+      "avaliacao_cmm": false,
+      "avaliacao_macro": false,
+      "avaliacao_outros": false,
+      "avaliacao_outros_texto": ""
+    },
+    {
+      "tipo": "MATERIAL",
+      "item_modificado": "",
+      "nome": "",
+      "motivo": "",
+      "projeto": "",
+      "numero_operacao": "",
+      "importancia_normal": false,
+      "importancia_importante_as": false,
+      "data_turno": "/ /",
+      "turno_1t": false,
+      "turno_2t": false,
+      "turno_3t": false,
+      "modificacao": "",
+      "registro": "",
+      "garantia_200_sim": false,
+      "garantia_200_nao": false,
+      "garantia_200_valor": "",
+      "lote_prod_garantido": "",
+      "sakanobori_nao": false,
+      "sakanobori_sim": false,
+      "sakanobori_qtd": "",
+      "qtd_yab": "",
+      "qtd_nba": "",
+      "acompanhamento_qa": "",
+      "avaliacao_2d": false,
+      "avaliacao_cmm": false,
+      "avaliacao_macro": false,
+      "avaliacao_outros": false,
+      "avaliacao_outros_texto": ""
+    },
+    {
+      "tipo": "METHOD",
+      "item_modificado": "",
+      "nome": "",
+      "motivo": "",
+      "projeto": "",
+      "numero_operacao": "",
+      "importancia_normal": false,
+      "importancia_importante_as": false,
+      "data_turno": "/ /",
+      "turno_1t": false,
+      "turno_2t": false,
+      "turno_3t": false,
+      "modificacao": "",
+      "registro": "",
+      "garantia_200_sim": false,
+      "garantia_200_nao": false,
+      "garantia_200_valor": "",
+      "lote_prod_garantido": "",
+      "sakanobori_nao": false,
+      "sakanobori_sim": false,
+      "sakanobori_qtd": "",
+      "qtd_yab": "",
+      "qtd_nba": "",
+      "acompanhamento_qa": "",
+      "avaliacao_2d": false,
+      "avaliacao_cmm": false,
+      "avaliacao_macro": false,
+      "avaliacao_outros": false,
+      "avaliacao_outros_texto": "",
+      "lote_prod_garantido_nao": false,
+      "seguranca": "",
+      "produtividade_yield_time": ""
+    }
+  ],
+  "lista_verificacao": {
+    "registro_treinam_operador": false,
+    "avaliacao_treinam_operador": false,
+    "registro_garantia_200": false,
+    "certificado_habilitacao": false,
+    "importante_a": false,
+    "indicador_importante_a": false,
+    "avaliacao_qualidade": false,
+    "nivel_tecnico_acima_i": false,
+    "qualidade_produto": false
+  },
+  "procedimento_normalidade": {
+    "pr008_sim": false,
+    "pr008_nao": false,
+    "pr990_sim": false,
+    "pr990_nao": false,
+    "pr007_sim": false,
+    "pr007_nao": false,
+    "pr092_sim": false,
+    "pr092_nao": false,
+    "justificativa": ""
+  },
+  "acompanhamento": [
+    {
+      "nome_norma": "DESIGN FMEA",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESIGN FMEA",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "QUALIDADE KFD",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "QUALIDADE KFD",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO PRODUTO",
+      "responsavel": "CONTR.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO PRODUTO",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO PRODUTO",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "FMEA PROCESSO",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "PADRÃO INSPEÇÃO",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "PLANO DE CONTROLE",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO ESTAMPO",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO JIG",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "DESENHO GABARITO",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "PARAMETRO MÁQUINA",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "INSTRUÇÃO DE TRABALHO",
+      "responsavel": "PROD.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "PONTO IMPORTANTE",
+      "responsavel": "PROD.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "CHECK LIST",
+      "responsavel": "QUAL.",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "QUALIDADEEQUIPAMENTO",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "POKAYOKELINHA",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "REGISTR. INSPEÇPOKA YOKE",
+      "responsavel": "ENGa",
+      "necessario_inov": false,
+      "confirmado": false
+    },
+    {
+      "nome_norma": "OUTROS.",
+      "responsavel": "CADASETOR",
+      "necessario_inov": false,
+      "confirmado": false
+    }
+  ],
+  "resultados_avaliacao": [
+    {
+      "numero": 1,
+      "avaliacao_ok": false,
+      "resultado_2d": false,
+      "resultado_2d_texto": "",
+      "resultado_cmm": false,
+      "resultado_cmm_texto": "",
+      "resultado_macro": false,
+      "resultado_macro_texto": "",
+      "resultado_outros": false,
+      "resultado_outros_texto": "",
+      "garantia_200": ""
+    },
+    {
+      "numero": 2,
+      "avaliacao_ok": false,
+      "resultado_2d": false,
+      "resultado_2d_texto": "",
+      "resultado_cmm": false,
+      "resultado_cmm_texto": "",
+      "resultado_macro": false,
+      "resultado_macro_texto": "",
+      "resultado_outros": false,
+      "resultado_outros_texto": "",
+      "garantia_200": ""
+    },
+    {
+      "numero": 3,
+      "avaliacao_ok": false,
+      "resultado_2d": false,
+      "resultado_2d_texto": "",
+      "resultado_cmm": false,
+      "resultado_cmm_texto": "",
+      "resultado_macro": false,
+      "resultado_macro_texto": "",
+      "resultado_outros": false,
+      "resultado_outros_texto": "",
+      "garantia_200": ""
+    }
+  ],
+  "justificativas": [
+    {
+      "numero": 1,
+      "nok": false,
+      "justificativa_texto": "",
+      "observacoes": ""
+    },
+    {
+      "numero": 2,
+      "nok": false,
+      "justificativa_texto": "",
+      "observacoes": ""
+    },
+    {
+      "numero": 3,
+      "nok": false,
+      "justificativa_texto": "",
+      "observacoes": ""
+    }
+  ],
+  "status": "finalizado",
+  "data_criacao": "2026-02-09T19:13:34.164Z",
+  "data_atualizacao": "2026-02-09T19:13:34.194Z",
+  "solicitado_por": "",
+  "aprovado_por": "",
+  "confirmado_por": "",
+  "elaborado_por": "",
+  "executado_por": "",
+  "controle_elaborado_por": "",
+  "man_numOperacao1": "",
+  "data_finalizacao": "2026-02-09T19:13:34.164Z"
+}
