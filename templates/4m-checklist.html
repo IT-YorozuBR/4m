@@ -586,10 +586,8 @@
           <label for="status"><span class="material-icons">info</span> Status</label>
           <select id="status" name="status">
             <option value="">Todos os status</option>
-            <option value="rascunho">Rascunho</option>
-            <option value="pendente">Pendente</option>
-            <option value="aprovado">Aprovado</option>
-            <option value="rejeitado">Rejeitado</option>
+            <option value="em_andamento">Em andamento</option>
+            <option value="finalizado">Finalizado</option>
           </select>
         </div>
 
@@ -799,65 +797,57 @@
       card.className = 'checklist-card';
 
       const dataFormatada = formatarData(checklist.data_criacao);
-      const status = checklist.status || 'rascunho';
-      const statusColores = {
-        'rascunho': { cor: '#FFA500', label: 'Rascunho' },
-        'pendente': { cor: '#2196F3', label: 'Pendente' },
-        'aprovado': { cor: '#4CAF50', label: 'Aprovado' },
-        'rejeitado': { cor: '#F44336', label: 'Rejeitado' }
-      };
-      const statusInfo = statusColores[status] || statusColores['rascunho'];
+      const status = checklist.status || 'em_andamento';
+
+      const statusInfo = status === 'finalizado'
+        ? { cor: '#4CAF50', label: 'Finalizado', icone: 'check_circle' }
+        : { cor: '#FFA500', label: 'Em Andamento', icone: 'pending' };
 
       card.innerHTML = `
         <div class="checklist-header">
-          <div class="checklist-title">${checklist.numero_controle}</div>
-          <span class="checklist-badge">${statusInfo.label}</span>
+            <div class="checklist-title">${checklist.numero_controle}</div>
         </div>
         <div class="checklist-info">
-          <div class="checklist-info-item">
-            <span>Solicitado por:</span>
-            <span>${checklist.solicitado_por || 'N/A'}</span>
-          </div>
-          <div class="checklist-info-item">
-            <span>Criado em:</span>
-            <span>${dataFormatada}</span>
-          </div>
-          <div class="checklist-info-item">
-            <span>Atualizado em:</span>
-            <span>${formatarData(checklist.data_atualizacao)}</span>
-          </div>
+            <div class="checklist-info-item">
+                <span>Solicitado por:</span>
+                <span>${checklist.solicitado_por || 'N/A'}</span>
+            </div>
+            <div class="checklist-info-item">
+                <span>Criado em:</span>
+                <span>${dataFormatada}</span>
+            </div>
+            <div class="checklist-info-item">
+                <span>Atualizado em:</span>
+                <span>${formatarData(checklist.data_atualizacao)}</span>
+            </div>
         </div>
         <div class="checklist-status">
-          <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">check_circle</span>
-          <span>${statusInfo.label}</span>
+            <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
+            <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
         </div>
-      `;
+    `;
 
       card.addEventListener('click', () => {
-        // Abrir formulário com dados preenchidos
         window.location.href = `FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
       });
 
       card.style.animationDelay = `${index * 0.1}s`;
-
       return card;
     }
 
     function atualizarEstatisticas(checklists) {
       const total = checklists.length;
-      const aprovados = checklists.filter(cl => (cl.status || 'rascunho') === 'aprovado').length;
-      const finalizados = checklists.filter(cl => cl.status === 'finalizado').length; // Nova contagem
+      const finalizados = checklists.filter(cl => cl.status === 'finalizado').length;
+      const emAndamento = checklists.filter(cl => cl.status !== 'finalizado').length;
 
       const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
       const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
 
       document.getElementById('countTotal').textContent = total;
-      document.getElementById('countAprovados').textContent = aprovados;
+      document.getElementById('countAprovados').textContent = finalizados; // reutiliza o card existente
       document.getElementById('ultimoChecklist').textContent = ultimoData;
-
-      // Opcional: adicionar contador de finalizados se quiser
-      // Você pode adicionar um novo elemento HTML ou mostrar junto
     }
+
     function mostrarLoading() {
       if (loadingElement) {
         loadingElement.style.display = 'block';

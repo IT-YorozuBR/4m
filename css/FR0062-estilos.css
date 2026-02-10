@@ -1187,3 +1187,382 @@ body.gerando-pdf .formulario-completo {
 .btn-voltar-lista:hover {
     background-color: #545b62;
 }
+
+/* ============================================================================
+   RESPONSIVIDADE - TABLET E MOBILE
+   ============================================================================ */
+
+/* ---- TABLET (até 1200px) ---- */
+@media screen and (max-width: 1200px) {
+
+    body {
+        padding: 8px;
+        font-size: 11px;
+    }
+
+    /* Cabeçalho: permitir quebra de linha */
+    .cabecalho-superior {
+        flex-wrap: wrap;
+    }
+
+    .bloco-titulo {
+        width: 100%;
+        padding: 8px;
+        border-bottom: 1px solid black;
+    }
+
+    .bloco-visto,
+    .bloco-setor,
+    .bloco-qualidade,
+    .bloco-documento,
+    .bloco-mudanca,
+    .bloco-controle {
+        width: 50% !important;
+        min-width: 0;
+    }
+
+    .bloco-envie {
+        width: 100%;
+        padding: 6px;
+    }
+
+    /* Corpo: empilhar laterais */
+    .corpo-principal {
+        flex-direction: column;
+    }
+
+    .barra-lateral-esquerda {
+        width: 100% !important;
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .header-table {
+        min-width: 500px;
+    }
+
+    .sidebar-acompanhamento {
+        width: 100% !important;
+    }
+
+    /* Grids 4 colunas → 2 colunas */
+    .quadro-container-1,
+    .quadro-container-2 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Cabeçalho 4M: cada título ocupa metade */
+    .cabecalho-4m:nth-child(2) {
+        border-right: none;
+    }
+
+    /* Fileiras 2-3 */
+    .fileiras-2-3 {
+        flex-direction: column;
+    }
+
+    .quadro-container-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Quadro 4: empilhar */
+    .quadro-container-4 {
+        grid-template-columns: 1fr 1fr !important;
+        grid-template-rows: auto !important;
+    }
+
+    .cabecalho-esquerda {
+        grid-column: 1 / 2 !important;
+    }
+
+    .cabecalho-direita {
+        grid-column: 2 / 3 !important;
+    }
+
+    .conteudo-coluna {
+        grid-row: auto !important;
+    }
+}
+
+
+/* ---- MOBILE (até 768px) ---- */
+@media screen and (max-width: 768px) {
+
+    body {
+        padding: 4px;
+        font-size: 12px;
+    }
+
+    /* Cabeçalho: tudo em coluna única */
+    .cabecalho-superior {
+        flex-direction: column;
+    }
+
+    .bloco-visto,
+    .bloco-setor,
+    .bloco-qualidade,
+    .bloco-documento,
+    .bloco-mudanca,
+    .bloco-controle,
+    .bloco-envie {
+        width: 100% !important;
+        border-right: none !important;
+    }
+
+    .bloco-setor {
+        grid-template-columns: 1fr !important;
+        margin-top: 0;
+        border-top: 1px solid black;
+    }
+
+    .grid-qualidade {
+        grid-template-columns: 1fr !important;
+    }
+
+    .grid-mudanca,
+    .grid-controle-externo,
+    .grid-controle-interno {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dotted-line-container {
+        display: none;
+    }
+
+    /* Corpo principal: coluna única */
+    .corpo-principal {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .barra-lateral-esquerda {
+        width: 100% !important;
+        overflow-x: auto;
+    }
+
+    .sidebar-acompanhamento {
+        width: 100% !important;
+        font-size: 12px;
+    }
+
+    /* Grids 4 colunas → 1 coluna */
+    .quadro-container-1,
+    .quadro-container-2,
+    .quadro-container-3 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Bordas entre colunas viram bordas inferiores */
+    .coluna:not(:last-child) {
+        border-right: none !important;
+        border-bottom: 2px solid black;
+    }
+
+    .cabecalho-4m:not(:last-child) {
+        border-right: none !important;
+        border-bottom: 1px solid black;
+    }
+
+    /* Células 4M com mais espaço */
+    .celula-4m {
+        min-height: 40px;
+        padding: 6px 10px;
+    }
+
+    .celula-4m:not(:nth-child(4n)) {
+        border-right: none !important;
+    }
+
+    /* Fileiras 2-3 */
+    .fileiras-2-3 {
+        flex-direction: column;
+    }
+
+    /* Quadro 3: células ocupam largura total */
+    .celula-3:not(:nth-child(4n)) {
+        border-right: none !important;
+    }
+
+    .celula-3:nth-child(-n+4) {
+        border-bottom: 1px solid black !important;
+    }
+
+    /* Quadro 4: coluna única */
+    .quadro-container-4 {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: auto !important;
+    }
+
+    .cabecalho-esquerda,
+    .cabecalho-direita {
+        grid-column: 1 / 2 !important;
+        grid-row: auto !important;
+    }
+
+    .conteudo-coluna {
+        grid-column: 1 / 2 !important;
+        grid-row: auto !important;
+        border-right: none !important;
+    }
+
+    .borda-direita {
+        border-right: none !important;
+        border-bottom: 1px solid black;
+    }
+
+    /* Fontes legíveis em mobile */
+    .label-bold {
+        font-size: 12px !important;
+    }
+
+    .celula {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+
+    .list-item span:first-child {
+        font-size: 12px !important;
+    }
+
+    .sidebar-table tbody td:first-child {
+        font-size: 11px !important;
+    }
+
+    /* Checkboxes maiores para toque */
+    input[type="checkbox"] {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    /* Inputs/contenteditable com área de toque adequada */
+    .input-line {
+        min-height: 28px !important;
+        padding: 4px 2px;
+        font-size: 13px;
+    }
+
+    /* Seções com altura mínima maior */
+    .celula-3.secao-tratativa,
+    .celula-3.secao-justificativa {
+        min-height: 180px !important;
+    }
+
+    /* Resultado duas colunas: empilhar */
+    .resultado-duas-colunas {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Botões de ação: largura total, maiores */
+    .btn-finalizar,
+    .btn-salvar-check,
+    .btn-limpar-dados,
+    .btn-gerar-pdf,
+    .btn-cancelar,
+    .btn-voltar-lista {
+        width: 100% !important;
+        padding: 14px 10px !important;
+        font-size: 14px !important;
+        margin-top: 8px !important;
+        border-radius: 6px;
+    }
+
+    /* Notificações: largura ajustada */
+    #sistema-mensagens {
+        max-width: calc(100vw - 20px) !important;
+        left: 10px !important;
+        right: 10px !important;
+    }
+
+    /* Sidebar table: scroll horizontal */
+    .sidebar-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Textos verticais na barra lateral: desrotacionar */
+    .vertical-text-wrapper {
+        position: static !important;
+        transform: none !important;
+        white-space: normal !important;
+        text-align: center;
+        padding: 4px;
+    }
+
+    .vertical-text-cell {
+        height: auto !important;
+    }
+
+    /* Header table: scroll horizontal */
+    .barra-lateral-esquerda {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Checkbox group: mais espaçados */
+    .checkbox-group {
+        gap: 8px 14px;
+    }
+
+    .checkbox-group label {
+        font-size: 12px;
+    }
+
+    .celula.importancia,
+    .celula.data-turno {
+        font-size: 13px;
+        gap: 8px 14px;
+    }
+
+    /* Seção garantia e sakanobori */
+    .secao-garantia,
+    .secao-sakanobori {
+        gap: 8px 16px;
+        min-height: 44px;
+    }
+
+    /* Lista itens */
+    .lista-itens p {
+        font-size: 12px !important;
+        margin-bottom: 6px !important;
+    }
+}
+
+
+/* ---- MOBILE PEQUENO (até 480px) ---- */
+@media screen and (max-width: 480px) {
+
+    body {
+        padding: 2px;
+    }
+
+    .formulario-completo {
+        padding: 2px;
+    }
+
+    .texto-grande {
+        font-size: 14px !important;
+    }
+
+    /* Botões com texto legível */
+    .btn-finalizar,
+    .btn-salvar-check {
+        font-size: 13px !important;
+        padding: 12px 8px !important;
+    }
+
+    /* Header da sidebar */
+    .sidebar-header h3 {
+        font-size: 12px;
+    }
+
+    /* Trativa items */
+    .tratativa-item {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .sim-nao {
+        flex-wrap: wrap;
+    }
+}
