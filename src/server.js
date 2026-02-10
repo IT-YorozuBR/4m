@@ -1,225 +1,256 @@
-// src/server.js - VERSÃO CORRIGIDA
-
-// ==================== CARREGAR VARIÁVEIS DE AMBIENTE ====================
-const path = require('path');
-const fs = require('fs');
-
-// Verificar se o arquivo .env existe
-const envPath = path.join(__dirname, '..', '.env');
-console.log('🔍 Procurando .env em:', envPath);
-
-if (fs.existsSync(envPath)) {
-    console.log('✅ Arquivo .env encontrado');
-    require('dotenv').config({ path: envPath });
-} else {
-    console.error('❌ ERRO: Arquivo .env não encontrado!');
-    console.error('Crie um arquivo .env na raiz do projeto com:');
-    console.error('MONGODB_URI=sua_string_de_conexao');
-    process.exit(1);
-}
-
-// Verificar se MONGODB_URI foi carregada
-if (!process.env.MONGODB_URI) {
-    console.error('❌ ERRO: MONGODB_URI não definida no arquivo .env!');
-    console.error('Adicione esta linha ao arquivo .env:');
-    console.error('MONGODB_URI=mongodb+srv://usuario:senha@cluster0.mongodb.net/4m_checklist?retryWrites=true&w=majority');
-    process.exit(1);
-}
-
-console.log('✅ Variáveis de ambiente carregadas');
-console.log('📝 MONGODB_URI (primeiros 50 caracteres):', 
-    process.env.MONGODB_URI.substring(0, 50) + '...');
-
-// ==================== IMPORTAÇÕES DEPOIS DE CARREGAR .env ====================
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
-// Agora a URI deve estar definida
-const uri = process.env.MONGODB_URI.trim();
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri);
 
-// Verificar se a URI é válida
-if (!uri.startsWith('mongodb://') && !uri.startsWith('mongodb+srv://')) {
-    console.error('❌ ERRO: URI do MongoDB inválida!');
-    console.error('Deve começar com mongodb:// ou mongodb+srv://');
-    process.exit(1);
-}
-
-console.log('🔗 URI do MongoDB é válida');
-
-// ==================== CONFIGURAÇÃO MONGODB ====================
-const client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 10000,
-    socketTimeoutMS: 45000,
-});
-
-// ==================== FUNÇÃO PRINCIPAL ====================
 async function startServer() {
     try {
-        console.log('\n🚀 Iniciando servidor 4M Checklist...\n');
-        
         // Conectar ao MongoDB
-        console.log('🔗 Conectando ao MongoDB...');
         await client.connect();
-        
-        // Testar conexão
-        await client.db().admin().ping();
-        console.log('✅ MongoDB conectado com sucesso!');
-        
         const db = client.db("4m_checklist");
-        console.log(`🗄️  Banco de dados: ${db.databaseName}`);
-        
-        // Verificar/criar coleção
-        const collections = await db.listCollections().toArray();
-        const collectionNames = collections.map(c => c.name);
-        console.log('📚 Coleções disponíveis:', collectionNames);
-        
-        if (!collectionNames.includes('checklists')) {
-            console.log('📝 Criando coleção "checklists"...');
-            await db.createCollection('checklists');
-            console.log('✅ Coleção "checklists" criada');
-        }
-        
-        const collection = db.collection('checklists');
-        
-        // ==================== CONFIGURAÇÃO EXPRESS ====================
+        console.log("✅ Conectado ao MongoDB");
+
         const app = express();
         const port = process.env.PORT || 3001;
-        
-        // Middleware CORS
+
+        // CORS
         app.use(cors({
             origin: [
-                'http://localhost:3000',
-                'http://localhost:5500',
-                'http://127.0.0.1:3000',
                 'http://127.0.0.1:5500',
+                'http://localhost:5500',
+                'http://localhost:3000',
+                'http://127.0.0.1:3000',
+                'http://localhost:3001',
+                'http://127.0.0.1:3001',
                 'https://fourm-znis.onrender.com'
             ],
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
+            allowedHeaders: ['Content-Type'],
             credentials: true
         }));
-        
-        // Middleware JSON
-        app.use(express.json({ limit: '10mb' }));
-        app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-        
-        // Logging
-        app.use((req, res, next) => {
-            console.log(`${new Date().toLocaleTimeString()} ${req.method} ${req.url}`);
-            next();
-        });
-        
-        // Servir arquivos estáticos
+
+        app.use(express.json({ limit: '50mb' }));
+        app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+        // Arquivos estáticos
         app.use(express.static(path.join(__dirname, '..', 'templates')));
         app.use('/css', express.static(path.join(__dirname, '..', 'css')));
         app.use('/scripts', express.static(path.join(__dirname, 'scripts')));
-        
+
         // ==================== ROTAS API ====================
-        
-        // Rota de status
-        app.get('/api/status', (req, res) => {
-            res.json({
-                success: true,
-                message: 'API 4M Checklist funcionando',
-                database: 'MongoDB',
-                version: '1.0.0',
-                timestamp: new Date().toISOString()
-            });
-        });
-        
-        // Rota para salvar formulário
+
+        // Rota para salvar formulário FR0062
         app.post('/api/fr0062', async (req, res) => {
             try {
                 const dados = req.body;
-                
+                console.log('📥 Recebendo dados do formulário:', dados.numero_controle);
+
                 if (!dados.numero_controle) {
                     return res.status(400).json({
                         success: false,
                         message: 'Número de controle é obrigatório'
                     });
                 }
-                
+
                 // Adicionar timestamps
-                dados.data_criacao = new Date().toISOString();
-                dados.data_atualizacao = dados.data_criacao;
-                
-                // Inserir no MongoDB
-                const resultado = await collection.insertOne(dados);
-                
+                const agora = new Date().toISOString();
+                dados.data_criacao = dados.data_criacao || agora;
+                dados.data_atualizacao = agora;
+
+                // Salvar no MongoDB
+                await db.collection('checklists').insertOne(dados);
+
+                console.log('✅ Formulário salvo no MongoDB');
+
                 res.json({
                     success: true,
                     message: 'Formulário salvo com sucesso',
-                    id: resultado.insertedId,
                     numero_controle: dados.numero_controle
                 });
-                
+
             } catch (error) {
-                console.error('Erro ao salvar:', error);
+                console.error('❌ Erro ao salvar formulário:', error);
                 res.status(500).json({
                     success: false,
-                    message: 'Erro ao salvar formulário'
+                    message: 'Erro ao salvar o formulário',
+                    error: error.message
                 });
             }
         });
-        
-        // Rota para listar formulários
+
+        // Rota para listar todos os formulários
         app.get('/api/fr0062', async (req, res) => {
             try {
-                const formularios = await collection
+                const formularios = await db
+                    .collection('checklists')
                     .find()
                     .sort({ data_criacao: -1 })
                     .toArray();
-                
+
                 res.json({
                     success: true,
                     count: formularios.length,
                     formularios
                 });
             } catch (error) {
-                console.error('Erro ao listar:', error);
+                console.error('❌ Erro ao listar formulários:', error);
                 res.status(500).json({
                     success: false,
-                    message: 'Erro ao listar formulários'
+                    message: 'Erro ao listar formulários',
+                    error: error.message
                 });
             }
         });
-        
+
+        // Rota para buscar um formulário específico
+        app.get('/api/fr0062/:numeroControle', async (req, res) => {
+            try {
+                const numeroControle = req.params.numeroControle;
+
+                const formulario = await db
+                    .collection('checklists')
+                    .findOne({ numero_controle: numeroControle });
+
+                if (!formulario) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Formulário não encontrado'
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    formulario
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao buscar formulário:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao buscar formulário',
+                    error: error.message
+                });
+            }
+        });
+
+        // Rota para atualizar um formulário
+        app.put('/api/fr0062/:numeroControle', async (req, res) => {
+            try {
+                const numeroControle = req.params.numeroControle;
+                const dados = req.body;
+
+                dados.data_atualizacao = new Date().toISOString();
+
+                const resultado = await db.collection('checklists').updateOne(
+                    { numero_controle: numeroControle },
+                    { $set: dados }
+                );
+
+                if (resultado.matchedCount === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Formulário não encontrado'
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Formulário atualizado com sucesso',
+                    formulario: dados
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao atualizar formulário:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao atualizar formulário',
+                    error: error.message
+                });
+            }
+        });
+
+        // Rota para deletar um formulário
+        app.delete('/api/fr0062/:numeroControle', async (req, res) => {
+            try {
+                const numeroControle = req.params.numeroControle;
+
+                const resultado = await db.collection('checklists').deleteOne({
+                    numero_controle: numeroControle
+                });
+
+                if (resultado.deletedCount === 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Formulário não encontrado'
+                    });
+                }
+
+                res.json({
+                    success: true,
+                    message: 'Formulário deletado com sucesso'
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao deletar formulário:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao deletar formulário',
+                    error: error.message
+                });
+            }
+        });
+
+        // Rota de status da API
+        app.get('/api/status', (req, res) => {
+            res.json({
+                success: true,
+                message: 'API funcionando corretamente',
+                timestamp: new Date().toISOString(),
+                endpoints: {
+                    'POST /api/fr0062': 'Criar novo formulário',
+                    'GET /api/fr0062': 'Listar todos os formulários',
+                    'GET /api/fr0062/:id': 'Buscar formulário específico',
+                    'PUT /api/fr0062/:id': 'Atualizar formulário',
+                    'DELETE /api/fr0062/:id': 'Deletar formulário'
+                }
+            });
+        });
+
         // Rota raiz
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '..', 'templates', '4m.html'));
         });
-        
-        // Rota para checklist
-        app.get('/checklist', (req, res) => {
-            res.sendFile(path.join(__dirname, '..', 'templates', '4m-checklist.html'));
-        });
-        
+
         // Iniciar servidor
         app.listen(port, () => {
-            console.log('\n═══════════════════════════════════════════════════════');
-            console.log('🚀 Servidor 4M Checklist iniciado com sucesso!');
+            console.log('');
+            console.log('═══════════════════════════════════════════════════════');
+            console.log('🚀 Servidor FR0062 iniciado com sucesso!');
             console.log('═══════════════════════════════════════════════════════');
             console.log(`📡 Porta: ${port}`);
             console.log(`🌐 URL: http://localhost:${port}`);
-            console.log(`🗄️  Banco: MongoDB - 4m_checklist`);
-            console.log(`🏷️  Ambiente: ${process.env.NODE_ENV || 'development'}`);
-            console.log('═══════════════════════════════════════════════════════\n');
+            console.log(`🗄️  Banco de dados: MongoDB - 4m_checklist`);
+            console.log('');
+            console.log('📋 Endpoints disponíveis:');
+            console.log(`   POST   /api/fr0062              - Criar formulário`);
+            console.log(`   GET    /api/fr0062              - Listar formulários`);
+            console.log(`   GET    /api/fr0062/:id          - Buscar formulário`);
+            console.log(`   PUT    /api/fr0062/:id          - Atualizar formulário`);
+            console.log(`   DELETE /api/fr0062/:id          - Deletar formulário`);
+            console.log(`   GET    /api/status              - Status da API`);
+            console.log('═══════════════════════════════════════════════════════');
+            console.log('');
         });
-        
-        // Fechar conexão ao sair
-        process.on('SIGINT', async () => {
-            await client.close();
-            console.log('✅ Conexão com MongoDB fechada');
-            process.exit(0);
-        });
-        
+
     } catch (error) {
-        console.error('❌ Erro ao iniciar servidor:', error.message);
-        console.error('Detalhes:', error);
+        console.error('❌ Erro ao iniciar servidor:', error);
         process.exit(1);
     }
 }
 
-// Iniciar servidor
+// Iniciar o servidor
 startServer();
