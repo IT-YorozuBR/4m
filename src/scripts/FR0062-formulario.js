@@ -1064,7 +1064,26 @@ class SistemaChecklist4M {
             dados.data_atualizacao = new Date().toISOString();
             dados.data_criacao = dados.data_criacao || dados.data_finalizacao;
 
-            const result = await this._upsertChecklist(dados);
+            // 1. Verificar se já existe
+            console.log('🔍 Verificando existência do checklist...');
+            const checkResponse = await fetch(`${API_URL}/fr0062/${dados.numero_controle}`);
+            const existe = checkResponse.ok;
+
+            console.log(existe ? '✅ Existe → PUT' : '🆕 Não existe → POST');
+
+            // 2. Criar ou atualizar conforme resultado
+            const method = existe ? 'PUT' : 'POST';
+            const url = existe
+                ? `${API_URL}/fr0062/${dados.numero_controle}`
+                : `${API_URL}/fr0062`;
+
+            const response = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            const result = await response.json();
 
             if (result.success) {
                 this.mensagens.sucesso('✓ Checklist finalizado com sucesso!');
@@ -1087,61 +1106,7 @@ class SistemaChecklist4M {
             this.mensagens.erro('✗ Erro ao finalizar. Verifique a conexão com o servidor.');
         }
     }
-
     // Método auxiliar: tenta PUT, cria com POST se não existir (upsert manual)
-    async _upsertChecklist(dados) {
-        const url = `${API_URL}/fr0062/${dados.numero_controle}`;
-
-        console.log('🔄 Tentando PUT...');
-        const putResponse = await fetch(url, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dados)
-        });
-
-        console.log(`📡 PUT status: ${putResponse.status}`);
-
-        if (putResponse.ok) {
-            return await putResponse.json();
-        }
-
-        if (putResponse.status === 404) {
-            console.log('📝 404 confirmado → criando via POST...');
-
-            const postResponse = await fetch(`${API_URL}/fr0062`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-
-            console.log(`📡 POST status: ${postResponse.status}`);
-
-            if (postResponse.ok) {
-                return await postResponse.json();
-            }
-
-            // Conflito: já existe mas PUT disse 404 (race condition)
-            if (postResponse.status === 409) {
-                console.log('⚠️ 409 no POST → retry PUT...');
-                const retryResponse = await fetch(url, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dados)
-                });
-                console.log(`📡 PUT retry status: ${retryResponse.status}`);
-                return await retryResponse.json();
-            }
-
-            // Logar corpo do erro para diagnóstico
-            const errorBody = await postResponse.text();
-            console.error('❌ POST falhou:', postResponse.status, errorBody);
-            return { success: false, message: `POST falhou: ${postResponse.status} - ${errorBody}` };
-        }
-
-        const errorBody = await putResponse.text();
-        console.error('❌ PUT falhou com status inesperado:', putResponse.status, errorBody);
-        return { success: false, message: `Erro HTTP ${putResponse.status}` };
-    }
 
 
     // Adicione este método para desabilitar a edição
