@@ -1189,380 +1189,439 @@ body.gerando-pdf .formulario-completo {
 }
 
 /* ============================================================================
-   RESPONSIVIDADE - TABLET E MOBILE
+   RESPONSIVIDADE
    ============================================================================ */
 
-/* ---- TABLET (até 1200px) ---- */
-@media screen and (max-width: 1200px) {
+/* Telas grandes (acima de 1200px) - Layout padrão já definido */
 
+/* Telas médias (992px a 1199px) */
+@media screen and (max-width: 1199px) {
     body {
-        padding: 8px;
-        font-size: 11px;
+        font-size: 9px;
     }
+    
+    .formulario-completo {
+        max-width: 100%;
+        padding: 0 5px;
+    }
+    
+    .texto-grande {
+        font-size: 18px;
+    }
+    
+    .barra-lateral-esquerda {
+        width: 90px;
+    }
+    
+    .sidebar-acompanhamento {
+        width: 250px;
+    }
+    
+    .vertical-text {
+        font-size: 10px;
+    }
+    
+    .item-cell {
+        font-size: 10px;
+    }
+    
+    .departamento-cell {
+        font-size: 8px;
+    }
+    
+    .celula {
+        min-height: 15px;
+        padding: 1px 3px;
+    }
+    
+    .celula-4m {
+        min-height: 45px;
+    }
+    
+    .secao {
+        min-height: 18px;
+        padding: 2px 4px;
+    }
+    
+    input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .checkbox-lista-verificacao {
+        width: 22px;
+        height: 22px;
+    }
+}
 
-    /* Cabeçalho: permitir quebra de linha */
+/* Telas pequenas (768px a 991px) */
+@media screen and (max-width: 991px) {
+    body {
+        font-size: 8px;
+    }
+    
+    .formulario-completo {
+        padding: 0;
+    }
+    
+    .texto-grande {
+        font-size: 16px;
+    }
+    
     .cabecalho-superior {
         flex-wrap: wrap;
+        padding-bottom: 20px;
     }
-
+    
     .bloco-titulo {
-        width: 100%;
-        padding: 8px;
-        border-bottom: 1px solid black;
+        width: 40%;
+        order: 1;
     }
-
-    .bloco-visto,
-    .bloco-setor,
-    .bloco-qualidade,
-    .bloco-documento,
-    .bloco-mudanca,
-    .bloco-controle {
-        width: 50% !important;
-        min-width: 0;
+    
+    .bloco-visto {
+        width: 15%;
+        order: 2;
     }
-
-    .bloco-envie {
-        width: 100%;
-        padding: 6px;
-    }
-
-    /* Corpo: empilhar laterais */
-    .corpo-principal {
-        flex-direction: column;
-    }
-
-    .barra-lateral-esquerda {
-        width: 100% !important;
-        flex-direction: row;
-        overflow-x: auto;
-    }
-
-    .header-table {
-        min-width: 500px;
-    }
-
-    .sidebar-acompanhamento {
-        width: 100% !important;
-    }
-
-    /* Grids 4 colunas → 2 colunas */
-    .quadro-container-1,
-    .quadro-container-2 {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-
-    /* Cabeçalho 4M: cada título ocupa metade */
-    .cabecalho-4m:nth-child(2) {
-        border-right: none;
-    }
-
-    /* Fileiras 2-3 */
-    .fileiras-2-3 {
-        flex-direction: column;
-    }
-
-    .quadro-container-3 {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-
-    /* Quadro 4: empilhar */
-    .quadro-container-4 {
-        grid-template-columns: 1fr 1fr !important;
-        grid-template-rows: auto !important;
-    }
-
-    .cabecalho-esquerda {
-        grid-column: 1 / 2 !important;
-    }
-
-    .cabecalho-direita {
-        grid-column: 2 / 3 !important;
-    }
-
-    .conteudo-coluna {
-        grid-row: auto !important;
-    }
-}
-
-
-/* ---- MOBILE (até 768px) ---- */
-@media screen and (max-width: 768px) {
-
-    body {
-        padding: 4px;
-        font-size: 12px;
-    }
-
-    /* Cabeçalho: tudo em coluna única */
-    .cabecalho-superior {
-        flex-direction: column;
-    }
-
-    .bloco-visto,
-    .bloco-setor,
-    .bloco-qualidade,
-    .bloco-documento,
-    .bloco-mudanca,
-    .bloco-controle,
-    .bloco-envie {
-        width: 100% !important;
-        border-right: none !important;
-    }
-
+    
     .bloco-setor {
-        grid-template-columns: 1fr !important;
-        margin-top: 0;
-        border-top: 1px solid black;
+        width: 45%;
+        order: 3;
+        margin-top: 10px;
     }
-
-    .grid-qualidade {
-        grid-template-columns: 1fr !important;
+    
+    .bloco-qualidade {
+        width: 30%;
+        order: 4;
     }
-
-    .grid-mudanca,
-    .grid-controle-externo,
-    .grid-controle-interno {
-        grid-template-columns: 1fr !important;
+    
+    .bloco-documento {
+        width: 15%;
+        order: 5;
     }
-
-    .dotted-line-container {
-        display: none;
-    }
-
-    /* Corpo principal: coluna única */
-    .corpo-principal {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .barra-lateral-esquerda {
-        width: 100% !important;
-        overflow-x: auto;
-    }
-
-    .sidebar-acompanhamento {
-        width: 100% !important;
+    
+    .bloco-setas {
+        width: 10%;
+        order: 6;
         font-size: 12px;
     }
-
-    /* Grids 4 colunas → 1 coluna */
-    .quadro-container-1,
-    .quadro-container-2,
-    .quadro-container-3 {
-        grid-template-columns: 1fr !important;
+    
+    .bloco-mudanca {
+        width: 20%;
+        order: 7;
     }
-
-    /* Bordas entre colunas viram bordas inferiores */
-    .coluna:not(:last-child) {
-        border-right: none !important;
-        border-bottom: 2px solid black;
+    
+    .bloco-envie {
+        width: 20%;
+        order: 8;
     }
-
-    .cabecalho-4m:not(:last-child) {
-        border-right: none !important;
-        border-bottom: 1px solid black;
+    
+    .bloco-controle {
+        width: 50%;
+        order: 9;
+        margin-top: 10px;
     }
-
-    /* Células 4M com mais espaço */
+    
+    .barra-lateral-esquerda {
+        width: 80px;
+    }
+    
+    .sidebar-acompanhamento {
+        width: 200px;
+    }
+    
+    .vertical-text {
+        font-size: 9px;
+        letter-spacing: 0.3px;
+    }
+    
+    .item-cell {
+        font-size: 9px;
+    }
+    
     .celula-4m {
         min-height: 40px;
-        padding: 6px 10px;
+        padding: 3px 5px;
     }
-
-    .celula-4m:not(:nth-child(4n)) {
-        border-right: none !important;
-    }
-
-    /* Fileiras 2-3 */
-    .fileiras-2-3 {
-        flex-direction: column;
-    }
-
-    /* Quadro 3: células ocupam largura total */
-    .celula-3:not(:nth-child(4n)) {
-        border-right: none !important;
-    }
-
-    .celula-3:nth-child(-n+4) {
-        border-bottom: 1px solid black !important;
-    }
-
-    /* Quadro 4: coluna única */
-    .quadro-container-4 {
-        grid-template-columns: 1fr !important;
-        grid-template-rows: auto !important;
-    }
-
-    .cabecalho-esquerda,
-    .cabecalho-direita {
-        grid-column: 1 / 2 !important;
-        grid-row: auto !important;
-    }
-
-    .conteudo-coluna {
-        grid-column: 1 / 2 !important;
-        grid-row: auto !important;
-        border-right: none !important;
-    }
-
-    .borda-direita {
-        border-right: none !important;
-        border-bottom: 1px solid black;
-    }
-
-    /* Fontes legíveis em mobile */
-    .label-bold {
-        font-size: 12px !important;
-    }
-
-    .celula {
-        font-size: 12px;
-        padding: 6px 8px;
-    }
-
+    
     .list-item span:first-child {
-        font-size: 12px !important;
+        font-size: 8px;
     }
-
-    .sidebar-table tbody td:first-child {
-        font-size: 11px !important;
-    }
-
-    /* Checkboxes maiores para toque */
-    input[type="checkbox"] {
-        width: 22px !important;
-        height: 22px !important;
-    }
-
-    /* Inputs/contenteditable com área de toque adequada */
-    .input-line {
-        min-height: 28px !important;
-        padding: 4px 2px;
-        font-size: 13px;
-    }
-
-    /* Seções com altura mínima maior */
-    .celula-3.secao-tratativa,
-    .celula-3.secao-justificativa {
-        min-height: 180px !important;
-    }
-
-    /* Resultado duas colunas: empilhar */
-    .resultado-duas-colunas {
-        grid-template-columns: 1fr !important;
-    }
-
-    /* Botões de ação: largura total, maiores */
-    .btn-finalizar,
-    .btn-salvar-check,
-    .btn-limpar-dados,
-    .btn-gerar-pdf,
-    .btn-cancelar,
-    .btn-voltar-lista {
-        width: 100% !important;
-        padding: 14px 10px !important;
-        font-size: 14px !important;
-        margin-top: 8px !important;
-        border-radius: 6px;
-    }
-
-    /* Notificações: largura ajustada */
-    #sistema-mensagens {
-        max-width: calc(100vw - 20px) !important;
-        left: 10px !important;
-        right: 10px !important;
-    }
-
-    /* Sidebar table: scroll horizontal */
-    .sidebar-table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Textos verticais na barra lateral: desrotacionar */
-    .vertical-text-wrapper {
-        position: static !important;
-        transform: none !important;
-        white-space: normal !important;
-        text-align: center;
-        padding: 4px;
-    }
-
-    .vertical-text-cell {
-        height: auto !important;
-    }
-
-    /* Header table: scroll horizontal */
-    .barra-lateral-esquerda {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    /* Checkbox group: mais espaçados */
-    .checkbox-group {
-        gap: 8px 14px;
-    }
-
-    .checkbox-group label {
-        font-size: 12px;
-    }
-
-    .celula.importancia,
-    .celula.data-turno {
-        font-size: 13px;
-        gap: 8px 14px;
-    }
-
-    /* Seção garantia e sakanobori */
-    .secao-garantia,
-    .secao-sakanobori {
-        gap: 8px 16px;
-        min-height: 44px;
-    }
-
-    /* Lista itens */
-    .lista-itens p {
-        font-size: 12px !important;
-        margin-bottom: 6px !important;
-    }
-}
-
-
-/* ---- MOBILE PEQUENO (até 480px) ---- */
-@media screen and (max-width: 480px) {
-
-    body {
+    
+    .sidebar-table th,
+    .sidebar-table td {
         padding: 2px;
+        font-size: 8px;
     }
-
-    .formulario-completo {
-        padding: 2px;
-    }
-
-    .texto-grande {
-        font-size: 14px !important;
-    }
-
-    /* Botões com texto legível */
-    .btn-finalizar,
-    .btn-salvar-check {
-        font-size: 13px !important;
-        padding: 12px 8px !important;
-    }
-
-    /* Header da sidebar */
+    
     .sidebar-header h3 {
         font-size: 12px;
     }
+}
 
-    /* Trativa items */
-    .tratativa-item {
-        flex-wrap: wrap;
-        gap: 6px;
+/* Telas muito pequenas (576px a 767px) */
+@media screen and (max-width: 767px) {
+    body {
+        font-size: 7px;
+        padding: 5px;
     }
-
-    .sim-nao {
-        flex-wrap: wrap;
+    
+    .texto-grande {
+        font-size: 14px;
+    }
+    
+    .corpo-principal {
+        flex-direction: column;
+    }
+    
+    .barra-lateral-esquerda {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .header-table {
+        display: flex;
+    }
+    
+    .header-table tr {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .departamento-cell,
+    .item-cell {
+        height: 50px;
+    }
+    
+    .vertical-text-cell {
+        height: 50px;
+    }
+    
+    .vertical-text-wrapper {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    
+    .vertical-text {
+        font-size: 10px;
+        writing-mode: horizontal-tb;
+    }
+    
+    .conteudo-central {
+        order: 1;
+    }
+    
+    .sidebar-acompanhamento {
+        width: 100%;
+        order: 2;
+        margin-top: 5px;
+    }
+    
+    .quadro-container-1,
+    .quadro-container-2,
+    .quadro-container-3,
+    .quadro-container-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .cabecalho-4m,
+    .celula-4m {
+        border: 1px solid black;
+    }
+    
+    .celula-4m:nth-child(odd) {
+        border-right: 2px solid black;
+    }
+    
+    .celula-4m:nth-last-child(-n+2) {
+        border-bottom: none;
+    }
+    
+    .coluna {
+        border: 1px solid black;
+    }
+    
+    .fileiras-2-3 {
+        flex-direction: column;
+    }
+    
+    .bloco-titulo {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .bloco-setor {
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .bloco-controle {
+        width: 100%;
+    }
+    
+    .sidebar-table {
+        font-size: 7px;
+    }
+    
+    .sidebar-header h3 {
+        font-size: 11px;
+    }
+    
+    .sidebar-note {
+        font-size: 8px;
     }
 }
+
+/* Telas extra pequenas (até 575px) */
+@media screen and (max-width: 575px) {
+    body {
+        font-size: 6px;
+    }
+    
+    .texto-grande {
+        font-size: 12px;
+    }
+    
+    .cabecalho-superior {
+        border: 1px solid black;
+    }
+    
+    .bloco-visto,
+    .bloco-documento,
+    .bloco-setas,
+    .bloco-mudanca,
+    .bloco-envie {
+        width: 25%;
+    }
+    
+    .bloco-qualidade {
+        width: 50%;
+    }
+    
+    .bloco-setor {
+        grid-template-columns: 1fr;
+    }
+    
+    .quadro-container-1,
+    .quadro-container-2,
+    .quadro-container-3,
+    .quadro-container-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .celula-4m,
+    .coluna,
+    .celula-3 {
+        border: 1px solid black;
+        border-bottom: none;
+    }
+    
+    .celula-4m:last-child,
+    .coluna:last-child .secao:last-child,
+    .celula-3:last-child {
+        border-bottom: 1px solid black;
+    }
+    
+    .cabecalho-4m {
+        border-bottom: 1px solid black;
+    }
+    
+    .celula-4m:not(:nth-child(4n)),
+    .coluna:not(:last-child),
+    .celula-3:not(:nth-child(4n)) {
+        border-right: 1px solid black;
+    }
+    
+    .sidebar-table thead th {
+        font-size: 7px;
+        padding: 3px 1px;
+    }
+    
+    .sidebar-table tbody td {
+        height: 15px;
+    }
+    
+    input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+    }
+    
+    .checkbox-lista-verificacao {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .btn-voltar {
+        padding: 5px 10px;
+        font-size: 10px;
+    }
+}
+
+/* Ajustes para impressão em telas pequenas */
+@media print and (max-width: 991px) {
+    body.gerando-pdf .formulario-completo {
+        transform: scale(0.85);
+    }
+    
+    body.gerando-pdf .barra-lateral-esquerda {
+        width: 70px !important;
+    }
+    
+    body.gerando-pdf .sidebar-acompanhamento {
+        width: 180px !important;
+    }
+}
+
+/* Para evitar quebra de texto em células importantes */
+.no-wrap {
+    white-space: nowrap;
+}
+
+/* Ajuste para textos longos que podem quebrar layout */
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Container para rolagem horizontal em telas pequenas */
+@media screen and (max-width: 767px) {
+    .container-rolagem-horizontal {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 10px;
+    }
+    
+    .formulario-completo {
+        min-width: 576px; /* Largura mínima para manter layout */
+    }
+}
+
+/* Ajuste específico para a barra lateral esquerda em telas médias */
+@media screen and (min-width: 768px) and (max-width: 991px) {
+    .header-table tr:nth-child(3) td.vertical-text-cell {
+        height: 450px;
+    }
+    
+    .header-table tr:nth-child(4) td.vertical-text-cell {
+        height: 180px;
+    }
+}
+
+/* Manter proporções das colunas em todas as telas */
+.quadro-container-1,
+.quadro-container-2,
+.quadro-container-3,
+.quadro-container-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+/* Garantir que as células não quebrem linha */
+.celula,
+.secao,
+.list-item,
+.tratativa-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+}
+
