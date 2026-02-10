@@ -1053,35 +1053,35 @@ class SistemaChecklist4M {
             // Coletar dados atuais
             const dados = this.coletarDados();
 
-            // Atualizar status para finalizado
-            dados.status = 'finalizado';
-            dados.data_finalizacao = new Date().toISOString();
-
-            // Verificar se o checklist já existe no servidor
-            let checklistExiste = false;
-
-            try {
-                // Tentar buscar o checklist pelo número de controle
-                const response = await fetch(`${API_URL}/fr0062/${this.numeroControleAtual}`);
-                if (response.ok) {
-                    const result = await response.json();
-                    checklistExiste = result.success && result.formulario;
-                }
-            } catch (error) {
-                console.log('Checklist ainda não existe no servidor, será criado...');
+            // Verificar se tem número de controle
+            if (!dados.numero_controle) {
+                this.mensagens.erro('✗ Número de controle é obrigatório para finalizar.');
+                return;
             }
 
+            // Atualizar dados para finalizado
+            dados.status = 'finalizado';
+            dados.data_finalizacao = new Date().toISOString();
+            dados.data_atualizacao = new Date().toISOString();
+
+            // Verificar se já tem data de criação, se não, adicionar
+            if (!dados.data_criacao) {
+                dados.data_criacao = dados.data_finalizacao;
+            }
+
+            let response;
             let result;
 
-            if (!checklistExiste) {
-                // Se não existe, criar primeiro com POST
-                console.log('📝 Criando novo checklist antes de finalizar...');
+            // VERIFICAR SE TEM PARÂMETRO NA URL (checklist já existe)
+            const urlParams = new URLSearchParams(window.location.search);
+            const idFromUrl = urlParams.get('id') || urlParams.get('numero_controle');
 
-                // Garantir dados de criação
-                dados.data_criacao = new Date().toISOString();
-                dados.data_atualizacao = dados.data_criacao;
+            // Se NÃO tem parâmetro na URL → É NOVO → Cria primeiro (POST), depois finaliza (PUT)
+            if (!idFromUrl) {
+                console.log('📝 Criando novo checklist...');
 
-                const postResponse = await fetch(`${API_URL}/fr0062`, {
+                // 1. Primeiro cria o checklist (POST)
+                response = await fetch(`${API_URL}/fr0062`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1089,29 +1089,26 @@ class SistemaChecklist4M {
                     body: JSON.stringify(dados)
                 });
 
-                result = await postResponse.json();
+                result = await response.json();
 
-                if (!postResponse.ok || !result.success) {
-                    throw new Error(result.message || 'Erro ao criar checklist');
+                if (!response.ok || !result.success) {
+                    // Se deu erro no POST, pode ser que já exista, tenta PUT
+                    console.log('🔄 Tentando atualizar (PUT) em vez de criar...');
+                    response = await fetch(`${API_URL}/fr0062/${dados.numero_controle}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(dados)
+                    });
+
+                    result = await response.json();
                 }
-
-                console.log('✅ Checklist criado com sucesso, agora finalizando...');
-
-                // Agora que foi criado, atualizar para garantir o status finalizado
-                const putResponse = await fetch(`${API_URL}/fr0062/${this.numeroControleAtual}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(dados)
-                });
-
-                result = await putResponse.json();
             } else {
-                // Se já existe, apenas atualizar
-                console.log('📝 Checklist já existe, atualizando...');
+                // Se TEM parâmetro na URL → JÁ EXISTE → Apenas atualiza (PUT)
+                console.log('📝 Atualizando checklist existente...');
 
-                const response = await fetch(`${API_URL}/fr0062/${this.numeroControleAtual}`, {
+                response = await fetch(`${API_URL}/fr0062/${dados.numero_controle}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -1148,9 +1145,10 @@ class SistemaChecklist4M {
 
         } catch (error) {
             console.error('❌ Erro ao finalizar checklist:', error);
-            this.mensagens.erro(`✗ Erro ao finalizar checklist: ${error.message}`);
+            this.mensagens.erro('✗ Erro ao finalizar checklist. Verifique a conexão com o servidor.');
         }
     }
+    
     // Adicione este método para desabilitar a edição
     // Método para desabilitar edição (apenas funcional, sem alterações visuais)
     desabilitarEdicaoFormulario() {
