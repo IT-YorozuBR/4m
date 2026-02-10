@@ -1,5 +1,5 @@
-// const API_URL = 'https://fourm-znis.onrender.com/api';
-const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://fourm-znis.onrender.com/api';
+// const API_URL = 'http://localhost:3001/api';
 
 // ========== SISTEMA DE MENSAGENS ==========
 class SistemaMensagens {
@@ -1106,7 +1106,6 @@ class SistemaChecklist4M {
             this.mensagens.erro('✗ Erro ao finalizar. Verifique a conexão com o servidor.');
         }
     }
-    // Método auxiliar: tenta PUT, cria com POST se não existir (upsert manual)
 
 
     // Adicione este método para desabilitar a edição
