@@ -1,4 +1,5 @@
-const API_URL = 'https://fourm-znis.onrender.com/api';
+// const API_URL = 'https://fourm-znis.onrender.com/api';
+const API_URL = 'http://localhost:3001/api';
 
 // ========== SISTEMA DE MENSAGENS ==========
 class SistemaMensagens {
