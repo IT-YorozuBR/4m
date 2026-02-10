@@ -8,10 +8,11 @@
     <title>RELATÓRIO MUDANÇA 4M - FR0062</title>
     <link rel="stylesheet" href="../css/FR0062-estilos.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-  <link rel="icon" href="./4m-logo.png" type="image/x-icon">
+    <link rel="icon" href="./4m-logo.png" type="image/x-icon">
 
     <script>
         const API_URL = 'https://fourm-znis.onrender.com/api';
+        // const API_URL = 'http://localhost:3001/api';
 
         // ========== SISTEMA DE MENSAGENS ==========
         class SistemaMensagens {
@@ -1052,28 +1053,46 @@
                 }
             }
             // Adicione este método à classe SistemaChecklist4M
+            // Adicione este método à classe SistemaChecklist4M
             async finalizarChecklist() {
-                const confirmacao = confirm("Tem certeza que deseja FINALIZAR este checklist?\n\nApós finalizar, NÃO será mais possível editar os dados.\n\nDeseja continuar?");
-
-                if (!confirmacao) {
-                    return;
-                }
+                const confirmacao = confirm(
+                    "Tem certeza que deseja FINALIZAR este checklist?\n\n" +
+                    "Após finalizar, NÃO será mais possível editar os dados.\n\n" +
+                    "Deseja continuar?"
+                );
+                if (!confirmacao) return;
 
                 try {
                     this.mensagens.informacao('Finalizando checklist...', 0);
 
-                    // Coletar dados atuais
                     const dados = this.coletarDados();
 
-                    // Atualizar status para finalizado
+                    if (!dados.numero_controle) {
+                        this.mensagens.erro('✗ Número de controle inválido. Recarregue a página.');
+                        return;
+                    }
+
                     dados.status = 'finalizado';
                     dados.data_finalizacao = new Date().toISOString();
+                    dados.data_atualizacao = new Date().toISOString();
+                    dados.data_criacao = dados.data_criacao || dados.data_finalizacao;
 
-                    const response = await fetch(`${API_URL}/fr0062/${this.numeroControleAtual}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                    // 1. Verificar se já existe
+                    console.log('🔍 Verificando existência do checklist...');
+                    const checkResponse = await fetch(`${API_URL}/fr0062/${dados.numero_controle}`);
+                    const existe = checkResponse.ok;
+
+                    console.log(existe ? '✅ Existe → PUT' : '🆕 Não existe → POST');
+
+                    // 2. Criar ou atualizar conforme resultado
+                    const method = existe ? 'PUT' : 'POST';
+                    const url = existe
+                        ? `${API_URL}/fr0062/${dados.numero_controle}`
+                        : `${API_URL}/fr0062`;
+
+                    const response = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(dados)
                     });
 
@@ -1081,33 +1100,26 @@
 
                     if (result.success) {
                         this.mensagens.sucesso('✓ Checklist finalizado com sucesso!');
-
-                        // Desabilitar todos os campos editáveis
                         this.desabilitarEdicaoFormulario();
 
-                        // Desabilitar o botão de finalizar
                         const btnFinalizar = document.getElementById('btnFinalizarcheck');
                         if (btnFinalizar) {
                             btnFinalizar.disabled = true;
                             btnFinalizar.textContent = 'CHECKLIST FINALIZADO';
-                            btnFinalizar.style.backgroundColor = '#666';
-                            btnFinalizar.style.cursor = 'not-allowed';
+                            btnFinalizar.style.cssText += '; background-color: #666; cursor: not-allowed;';
                         }
 
-                        // Redirecionar para a lista após 3 segundos
-                        setTimeout(() => {
-                            window.location.href = '4m-checklist.html';
-                        }, 3000);
-
+                        setTimeout(() => { window.location.href = '4m-checklist.html'; }, 3000);
                     } else {
-                        this.mensagens.erro(`✗ Erro ao finalizar: ${result.message}`);
+                        this.mensagens.erro(`✗ Erro ao finalizar: ${result.message || 'Erro desconhecido'}`);
                     }
 
                 } catch (error) {
                     console.error('❌ Erro ao finalizar checklist:', error);
-                    this.mensagens.erro('✗ Erro ao finalizar checklist. Verifique a conexão com o servidor.');
+                    this.mensagens.erro('✗ Erro ao finalizar. Verifique a conexão com o servidor.');
                 }
             }
+
 
             // Adicione este método para desabilitar a edição
             // Método para desabilitar edição (apenas funcional, sem alterações visuais)
@@ -1257,7 +1269,7 @@
                     });
 
                     document.getElementById('btnConfirmarVoltar').addEventListener('click', function () {
-                        window.location.href = '/4m-checklist.html';
+                        window.location.href = '/templates/4m-checklist.html';
                     });
                 });
             }
@@ -1266,7 +1278,7 @@
                     e.preventDefault();
 
                     window.sistemaChecklist.salvarFormulario();
-                    window.location.href = '/4m-checklist.html';
+                    window.location.href = '/templates/4m-checklist.html';
                 });
             }
 
@@ -1289,51 +1301,6 @@
                 window.sistemaChecklist.iniciar();
             }, 500);
         });
-
-
-
-
-    </script>
-
-
-    <script>
-        function adicionarDataCampoAutomatico() {
-            // Inputs e textareas
-            document.querySelectorAll('input, textarea').forEach(element => {
-                if (!element.hasAttribute('data-campo')) {
-                    const campo = element.name || element.id;
-                    if (campo) {
-                        element.setAttribute('data-campo', campo);
-                    }
-                }
-            });
-
-            // Contenteditable
-            document.querySelectorAll('[contenteditable="true"]').forEach((element, index) => {
-                if (!element.hasAttribute('data-campo')) {
-                    const campo = element.id || `editavel_${index}`;
-                    element.setAttribute('data-campo', campo);
-                }
-            });
-
-            // Células
-            document.querySelectorAll('.celula.vazia, .celula:not(.cabecalho):not(.origem)').forEach((element, index) => {
-                if (!element.hasAttribute('data-campo')) {
-                    // Tentar usar alguma identificação única
-                    const linha = element.closest('tr')?.rowIndex || 'x';
-                    const coluna = element.cellIndex || index;
-                    element.setAttribute('data-campo', `celula_l${linha}_c${coluna}`);
-                }
-            });
-
-            console.log('✅ Data-campo adicionados automaticamente');
-        }
-
-        const btnCancelar = document.getElementById('btnCancelar');
-        btnCancelar.addEventListener('click', function (e) {
-            e.preventDefault();
-            window.location.href('/4m-checklist.html')
-        })
 
 
     </script>
