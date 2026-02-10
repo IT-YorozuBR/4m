@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="./4m-logo.png" type="image/x-icon">
+
     <title>Check+ Logo</title>
     <style>
         * {
@@ -37,16 +40,30 @@
         .letter {
             color: #d1d5db;
             text-shadow: 0 0 30px rgba(209, 213, 219, 0.4),
-                         0 0 60px rgba(209, 213, 219, 0.2);
+                0 0 60px rgba(209, 213, 219, 0.2);
             opacity: 0;
             animation: fadeInLetter 0.3s forwards;
         }
 
-        .letter:nth-child(1) { animation-delay: 0.1s; }
-        .letter:nth-child(2) { animation-delay: 0.25s; }
-        .letter:nth-child(3) { animation-delay: 0.4s; }
-        .letter:nth-child(4) { animation-delay: 0.55s; }
-        .letter:nth-child(5) { animation-delay: 0.7s; }
+        .letter:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .letter:nth-child(2) {
+            animation-delay: 0.25s;
+        }
+
+        .letter:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .letter:nth-child(4) {
+            animation-delay: 0.55s;
+        }
+
+        .letter:nth-child(5) {
+            animation-delay: 0.7s;
+        }
 
         @keyframes fadeInLetter {
             0% {
@@ -54,6 +71,7 @@
                 transform: translateY(20px) scale(0.8);
                 filter: blur(10px);
             }
+
             100% {
                 opacity: 1;
                 transform: translateY(0) scale(1);
@@ -76,6 +94,7 @@
                 transform: scale(0.5) rotate(-90deg);
                 filter: blur(10px);
             }
+
             100% {
                 opacity: 1;
                 transform: scale(1) rotate(0deg);
@@ -87,14 +106,14 @@
         .plus-icon::after {
             content: '';
             position: absolute;
-            background: linear-gradient(180deg, 
-                rgba(168, 85, 247, 0.9) 0%,
-                rgba(96, 165, 250, 0.95) 25%,
-                rgba(147, 197, 253, 0.85) 50%,
-                rgba(96, 165, 250, 0.95) 75%,
-                rgba(168, 85, 247, 0.9) 100%);
+            background: linear-gradient(180deg,
+                    rgba(168, 85, 247, 0.9) 0%,
+                    rgba(96, 165, 250, 0.95) 25%,
+                    rgba(147, 197, 253, 0.85) 50%,
+                    rgba(96, 165, 250, 0.95) 75%,
+                    rgba(168, 85, 247, 0.9) 100%);
             border-radius: 50px;
-            box-shadow: 
+            box-shadow:
                 0 0 30px rgba(168, 85, 247, 0.8),
                 0 0 60px rgba(96, 165, 250, 0.6),
                 0 0 90px rgba(147, 197, 253, 0.4),
@@ -121,15 +140,18 @@
         }
 
         @keyframes glowPulse {
-            0%, 100% {
-                box-shadow: 
+
+            0%,
+            100% {
+                box-shadow:
                     0 0 30px rgba(168, 85, 247, 0.8),
                     0 0 60px rgba(96, 165, 250, 0.6),
                     0 0 90px rgba(147, 197, 253, 0.4),
                     inset 0 0 20px rgba(255, 255, 255, 0.2);
             }
+
             50% {
-                box-shadow: 
+                box-shadow:
                     0 0 50px rgba(168, 85, 247, 1),
                     0 0 80px rgba(96, 165, 250, 0.8),
                     0 0 120px rgba(147, 197, 253, 0.5),
@@ -145,18 +167,23 @@
             transform: translate(-50%, -50%);
             width: 600px;
             height: 600px;
-            background: radial-gradient(circle, 
-                rgba(147, 51, 234, 0.08) 0%, 
-                transparent 70%);
+            background: radial-gradient(circle,
+                    rgba(147, 51, 234, 0.08) 0%,
+                    transparent 70%);
             animation: rotateBg 20s linear infinite;
             pointer-events: none;
         }
 
         @keyframes rotateBg {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
-        
+
         /* Redirecionamento automático após animação */
         #redirect-message {
             position: fixed;
@@ -170,15 +197,18 @@
             animation: fadeInMessage 0.5s forwards;
             animation-delay: 2s;
         }
-        
+
         @keyframes fadeInMessage {
-            to { opacity: 1; }
+            to {
+                opacity: 1;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="glow-bg"></div>
-    
+
     <div class="logo-container">
         <div class="check-text">
             <span class="letter">C</span>
@@ -189,7 +219,7 @@
         </div>
         <div class="plus-icon"></div>
     </div>
-    
+
     <div id="redirect-message">
         Redirecionando para o sistema 4M...
     </div>
@@ -199,11 +229,12 @@
         setTimeout(() => {
             window.location.href = '4m.html';
         }, 3000);
-        
+
         // Ou permitir clique para ir mais rápido
         document.addEventListener('click', () => {
             window.location.href = '4m.html';
         });
     </script>
 </body>
+
 </html>
