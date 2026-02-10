@@ -862,6 +862,7 @@ input[type="checkbox"]:checked::after {
     font-size: 10px;
     text-align: center;
 }
+
 .btn-finalizar {
     background: linear-gradient(135deg, #4CAF50, #45a049);
     color: white;
@@ -1026,7 +1027,8 @@ input[type="checkbox"]:checked::after {
     }
 
     .formulario-completo {
-        transform: scale(0.92); /* 👈 ajuste fino */
+        transform: scale(0.92);
+        /* 👈 ajuste fino */
         transform-origin: top left;
         width: 100% !important;
         page-break-inside: avoid !important;
@@ -1199,55 +1201,55 @@ body.gerando-pdf .formulario-completo {
     body {
         font-size: 9px;
     }
-    
+
     .formulario-completo {
         max-width: 100%;
         padding: 0 5px;
     }
-    
+
     .texto-grande {
         font-size: 18px;
     }
-    
+
     .barra-lateral-esquerda {
         width: 90px;
     }
-    
+
     .sidebar-acompanhamento {
         width: 250px;
     }
-    
+
     .vertical-text {
         font-size: 10px;
     }
-    
+
     .item-cell {
         font-size: 10px;
     }
-    
+
     .departamento-cell {
         font-size: 8px;
     }
-    
+
     .celula {
         min-height: 15px;
         padding: 1px 3px;
     }
-    
+
     .celula-4m {
         min-height: 45px;
     }
-    
+
     .secao {
         min-height: 18px;
         padding: 2px 4px;
     }
-    
+
     input[type="checkbox"] {
         width: 16px;
         height: 16px;
     }
-    
+
     .checkbox-lista-verificacao {
         width: 22px;
         height: 22px;
@@ -1259,100 +1261,100 @@ body.gerando-pdf .formulario-completo {
     body {
         font-size: 8px;
     }
-    
+
     .formulario-completo {
         padding: 0;
     }
-    
+
     .texto-grande {
         font-size: 16px;
     }
-    
+
     .cabecalho-superior {
         flex-wrap: wrap;
         padding-bottom: 20px;
     }
-    
+
     .bloco-titulo {
         width: 40%;
         order: 1;
     }
-    
+
     .bloco-visto {
         width: 15%;
         order: 2;
     }
-    
+
     .bloco-setor {
         width: 45%;
         order: 3;
         margin-top: 10px;
     }
-    
+
     .bloco-qualidade {
         width: 30%;
         order: 4;
     }
-    
+
     .bloco-documento {
         width: 15%;
         order: 5;
     }
-    
+
     .bloco-setas {
         width: 10%;
         order: 6;
         font-size: 12px;
     }
-    
+
     .bloco-mudanca {
         width: 20%;
         order: 7;
     }
-    
+
     .bloco-envie {
         width: 20%;
         order: 8;
     }
-    
+
     .bloco-controle {
         width: 50%;
         order: 9;
         margin-top: 10px;
     }
-    
+
     .barra-lateral-esquerda {
         width: 80px;
     }
-    
+
     .sidebar-acompanhamento {
         width: 200px;
     }
-    
+
     .vertical-text {
         font-size: 9px;
         letter-spacing: 0.3px;
     }
-    
+
     .item-cell {
         font-size: 9px;
     }
-    
+
     .celula-4m {
         min-height: 40px;
         padding: 3px 5px;
     }
-    
+
     .list-item span:first-child {
         font-size: 8px;
     }
-    
+
     .sidebar-table th,
     .sidebar-table td {
         padding: 2px;
         font-size: 8px;
     }
-    
+
     .sidebar-header h3 {
         font-size: 12px;
     }
@@ -1364,108 +1366,108 @@ body.gerando-pdf .formulario-completo {
         font-size: 7px;
         padding: 5px;
     }
-    
+
     .texto-grande {
         font-size: 14px;
     }
-    
+
     .corpo-principal {
         flex-direction: column;
     }
-    
+
     .barra-lateral-esquerda {
         width: 100%;
         margin-bottom: 5px;
     }
-    
+
     .header-table {
         display: flex;
     }
-    
+
     .header-table tr {
         display: flex;
         flex-direction: column;
         width: 100%;
     }
-    
+
     .departamento-cell,
     .item-cell {
         height: 50px;
     }
-    
+
     .vertical-text-cell {
         height: 50px;
     }
-    
+
     .vertical-text-wrapper {
         transform: translate(-50%, -50%) rotate(0deg);
     }
-    
+
     .vertical-text {
         font-size: 10px;
         writing-mode: horizontal-tb;
     }
-    
+
     .conteudo-central {
         order: 1;
     }
-    
+
     .sidebar-acompanhamento {
         width: 100%;
         order: 2;
         margin-top: 5px;
     }
-    
+
     .quadro-container-1,
     .quadro-container-2,
     .quadro-container-3,
     .quadro-container-4 {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .cabecalho-4m,
     .celula-4m {
         border: 1px solid black;
     }
-    
+
     .celula-4m:nth-child(odd) {
         border-right: 2px solid black;
     }
-    
+
     .celula-4m:nth-last-child(-n+2) {
         border-bottom: none;
     }
-    
+
     .coluna {
         border: 1px solid black;
     }
-    
+
     .fileiras-2-3 {
         flex-direction: column;
     }
-    
+
     .bloco-titulo {
         width: 100%;
         margin-bottom: 10px;
     }
-    
+
     .bloco-setor {
         width: 100%;
         grid-template-columns: 1fr 1fr;
     }
-    
+
     .bloco-controle {
         width: 100%;
     }
-    
+
     .sidebar-table {
         font-size: 7px;
     }
-    
+
     .sidebar-header h3 {
         font-size: 11px;
     }
-    
+
     .sidebar-note {
         font-size: 8px;
     }
@@ -1476,15 +1478,15 @@ body.gerando-pdf .formulario-completo {
     body {
         font-size: 6px;
     }
-    
+
     .texto-grande {
         font-size: 12px;
     }
-    
+
     .cabecalho-superior {
         border: 1px solid black;
     }
-    
+
     .bloco-visto,
     .bloco-documento,
     .bloco-setas,
@@ -1492,64 +1494,64 @@ body.gerando-pdf .formulario-completo {
     .bloco-envie {
         width: 25%;
     }
-    
+
     .bloco-qualidade {
         width: 50%;
     }
-    
+
     .bloco-setor {
         grid-template-columns: 1fr;
     }
-    
+
     .quadro-container-1,
     .quadro-container-2,
     .quadro-container-3,
     .quadro-container-4 {
         grid-template-columns: 1fr;
     }
-    
+
     .celula-4m,
     .coluna,
     .celula-3 {
         border: 1px solid black;
         border-bottom: none;
     }
-    
+
     .celula-4m:last-child,
     .coluna:last-child .secao:last-child,
     .celula-3:last-child {
         border-bottom: 1px solid black;
     }
-    
+
     .cabecalho-4m {
         border-bottom: 1px solid black;
     }
-    
+
     .celula-4m:not(:nth-child(4n)),
     .coluna:not(:last-child),
     .celula-3:not(:nth-child(4n)) {
         border-right: 1px solid black;
     }
-    
+
     .sidebar-table thead th {
         font-size: 7px;
         padding: 3px 1px;
     }
-    
+
     .sidebar-table tbody td {
         height: 15px;
     }
-    
+
     input[type="checkbox"] {
         width: 14px;
         height: 14px;
     }
-    
+
     .checkbox-lista-verificacao {
         width: 20px;
         height: 20px;
     }
-    
+
     .btn-voltar {
         padding: 5px 10px;
         font-size: 10px;
@@ -1561,11 +1563,11 @@ body.gerando-pdf .formulario-completo {
     body.gerando-pdf .formulario-completo {
         transform: scale(0.85);
     }
-    
+
     body.gerando-pdf .barra-lateral-esquerda {
         width: 70px !important;
     }
-    
+
     body.gerando-pdf .sidebar-acompanhamento {
         width: 180px !important;
     }
@@ -1590,9 +1592,10 @@ body.gerando-pdf .formulario-completo {
         -webkit-overflow-scrolling: touch;
         margin-bottom: 10px;
     }
-    
+
     .formulario-completo {
-        min-width: 576px; /* Largura mínima para manter layout */
+        min-width: 576px;
+        /* Largura mínima para manter layout */
     }
 }
 
@@ -1601,7 +1604,7 @@ body.gerando-pdf .formulario-completo {
     .header-table tr:nth-child(3) td.vertical-text-cell {
         height: 450px;
     }
-    
+
     .header-table tr:nth-child(4) td.vertical-text-cell {
         height: 180px;
     }
@@ -1623,5 +1626,23 @@ body.gerando-pdf .formulario-completo {
 .tratativa-item {
     break-inside: avoid;
     page-break-inside: avoid;
+}
+
+/* ============================================================================
+   ESCONDER TEXTOS AZUIS NA BARRA LATERAL ESQUERDA EM TELAS PEQUENAS
+   ============================================================================ */
+
+@media screen and (max-width: 767px) {
+    .barra-lateral-esquerda {
+        display: none !important;
+    }
+
+    .corpo-principal {
+        gap: 0 !important;
+    }
+
+    .conteudo-central {
+        width: 100% !important;
+    }
 }
 

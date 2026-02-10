@@ -1301,7 +1301,27 @@
                 window.sistemaChecklist.iniciar();
             }, 500);
         });
+        // Adicione isso ao seu script existente
+        document.addEventListener('DOMContentLoaded', function () {
+            // Verifica se estamos em uma tela pequena e ajusta os blocos
+            function ajustarSetoresParaMobile() {
+                const blocoSetor = document.querySelector('.bloco-setor');
+                if (!blocoSetor) return;
 
+                // Se a tela for ≤766px, garantimos que o layout mobile esteja ativo
+                if (window.innerWidth <= 766) {
+                    // Força a exibição dos novos elementos
+                    const container = blocoSetor.querySelector('.setor-bloco-container');
+                    if (container) {
+                        container.style.display = 'flex';
+                    }
+                }
+            }
+
+            // Executa ao carregar e ao redimensionar
+            ajustarSetoresParaMobile();
+            window.addEventListener('resize', ajustarSetoresParaMobile);
+        });
 
     </script>
 </head>

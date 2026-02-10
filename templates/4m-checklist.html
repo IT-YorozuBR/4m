@@ -140,7 +140,11 @@
       color: #fff;
       font-size: 1rem;
       transition: all 0.3s ease;
-      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-group select option {
+      background: #1a1a1a;
+      color: #fff;
     }
 
     .filter-group input:focus,
@@ -245,67 +249,55 @@
       gap: 5px;
     }
 
-    .stat-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    .stat-dot.em_andamento {
-      background: #FFA500;
-    }
-
-    .stat-dot.concluido {
-      background: #4CAF50;
-    }
-
-    .stat-dot.aprovado {
-      background: #2196F3;
-    }
-
-    .stat-dot.reprovado {
-      background: #F44336;
-    }
-
+    /* =============================================
+       GRID DE CARDS
+       minmax(min(350px, 100%), 1fr) garante que
+       o mínimo nunca ultrapasse o container,
+       evitando overflow em telas pequenas.
+    ============================================= */
     .checklist-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
       gap: 25px;
     }
 
+    /* MODO LISTA */
     .checklist-grid.list-view {
-      display: block;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
 
     .checklist-grid.list-view .checklist-card {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
       align-items: center;
-      margin-bottom: 15px;
+      gap: 20px;
       padding: 20px;
     }
 
     .checklist-grid.list-view .checklist-header {
-      flex: 1;
       margin-bottom: 0;
-      margin-right: 20px;
     }
 
     .checklist-grid.list-view .checklist-info {
-      flex: 2;
       display: flex;
+      flex-wrap: wrap;
+      gap: 10px 30px;
       margin-bottom: 0;
-      margin-right: 20px;
     }
 
     .checklist-grid.list-view .checklist-info-item {
-      margin-right: 30px;
       margin-bottom: 0;
     }
 
     .checklist-grid.list-view .checklist-status {
-      margin-left: auto;
+      border-top: none;
+      padding-top: 0;
+      white-space: nowrap;
     }
 
+    /* CARD */
     .checklist-card {
       background: rgba(30, 30, 30, 0.8);
       border-radius: 12px;
@@ -315,6 +307,7 @@
       position: relative;
       overflow: hidden;
       cursor: pointer;
+      animation: fadeIn 0.5s ease forwards;
     }
 
     .checklist-card:hover {
@@ -331,9 +324,10 @@
     }
 
     .checklist-title {
-      font-size: 1.3rem;
+      font-size: 1.1rem;
       font-weight: 600;
       color: #FFFFFF;
+      word-break: break-all;
     }
 
     .checklist-badge {
@@ -347,7 +341,7 @@
 
     .checklist-info {
       display: grid;
-      gap: 15px;
+      gap: 12px;
       margin-bottom: 20px;
     }
 
@@ -355,11 +349,10 @@
       display: flex;
       flex-direction: column;
       gap: 3px;
-      margin-bottom: 5px;
     }
 
     .checklist-info-item span:first-child {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       color: rgba(255, 255, 255, 0.5);
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -391,36 +384,17 @@
       font-size: 4rem;
       margin-bottom: 20px;
       color: rgba(255, 255, 255, 0.2);
-    }
-
-    .loading .material-icons {
       animation: spin 1s linear infinite;
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
     @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-
-    .checklist-card {
-      animation: fadeIn 0.5s ease forwards;
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
 
     .notification {
@@ -444,32 +418,16 @@
     }
 
     @keyframes slideIn {
-      from {
-        transform: translateX(100%);
-        opacity: 0;
-      }
-
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
     }
 
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-
-      to {
-        transform: translateX(100%);
-        opacity: 0;
-      }
-    }
-
+    /* =============================================
+       RESPONSIVIDADE
+    ============================================= */
     @media (max-width: 768px) {
       .container {
-        padding: 20px;
+        padding: 16px;
       }
 
       .header {
@@ -483,16 +441,18 @@
         justify-content: space-between;
       }
 
+      .header-left h1 {
+        font-size: 1.8rem;
+      }
+
       .filter-grid {
         grid-template-columns: 1fr;
       }
 
+      /* Grade: 1 coluna em telas pequenas */
       .checklist-grid {
         grid-template-columns: 1fr;
-      }
-
-      .header-left h1 {
-        font-size: 2rem;
+        gap: 15px;
       }
 
       .view-controls {
@@ -506,21 +466,22 @@
 
       .stats {
         justify-content: center;
+        flex-wrap: wrap;
       }
 
+      /* Modo lista no mobile: volta para coluna */
       .checklist-grid.list-view .checklist-card {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-columns: 1fr;
       }
 
       .checklist-grid.list-view .checklist-info {
         flex-direction: column;
-        margin-right: 0;
-        margin-bottom: 15px;
+        gap: 8px;
       }
 
       .checklist-grid.list-view .checklist-status {
-        margin-left: 0;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-top: 12px;
       }
     }
 
@@ -633,7 +594,7 @@
         </div>
         <div class="stat-item">
           <span class="material-icons" style="font-size: 16px;">check_circle</span>
-          <span>Aprovados: <span id="countAprovados">0</span></span>
+          <span>Finalizados: <span id="countAprovados">0</span></span>
         </div>
         <div class="stat-item">
           <span class="material-icons" style="font-size: 16px;">update</span>
@@ -754,7 +715,7 @@
 
       if (filtroStatus) {
         checklistsFiltrados = checklistsFiltrados.filter(cl =>
-          (cl.status || 'rascunho') === filtroStatus
+          (cl.status || 'em_andamento') === filtroStatus
         );
       }
 
@@ -805,69 +766,64 @@
 
       card.innerHTML = `
         <div class="checklist-header">
-            <div class="checklist-title">${checklist.numero_controle}</div>
+          <div class="checklist-title">${checklist.numero_controle}</div>
         </div>
         <div class="checklist-info">
-            <div class="checklist-info-item">
-                <span>Solicitado por:</span>
-                <span>${checklist.solicitado_por || 'N/A'}</span>
-            </div>
-            <div class="checklist-info-item">
-                <span>Criado em:</span>
-                <span>${dataFormatada}</span>
-            </div>
-            <div class="checklist-info-item">
-                <span>Atualizado em:</span>
-                <span>${formatarData(checklist.data_atualizacao)}</span>
-            </div>
+          <div class="checklist-info-item">
+            <span>Solicitado por</span>
+            <span>${checklist.solicitado_por || 'N/A'}</span>
+          </div>
+          <div class="checklist-info-item">
+            <span>Criado em</span>
+            <span>${dataFormatada}</span>
+          </div>
+          <div class="checklist-info-item">
+            <span>Atualizado em</span>
+            <span>${formatarData(checklist.data_atualizacao)}</span>
+          </div>
         </div>
         <div class="checklist-status">
-            <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
-            <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
+          <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
+          <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
         </div>
-    `;
+      `;
 
       card.addEventListener('click', () => {
         window.location.href = `FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
       });
 
-      card.style.animationDelay = `${index * 0.1}s`;
+      card.style.animationDelay = `${index * 0.05}s`;
       return card;
     }
 
     function atualizarEstatisticas(checklists) {
       const total = checklists.length;
       const finalizados = checklists.filter(cl => cl.status === 'finalizado').length;
-      const emAndamento = checklists.filter(cl => cl.status !== 'finalizado').length;
 
       const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
       const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
 
       document.getElementById('countTotal').textContent = total;
-      document.getElementById('countAprovados').textContent = finalizados; // reutiliza o card existente
+      document.getElementById('countAprovados').textContent = finalizados;
       document.getElementById('ultimoChecklist').textContent = ultimoData;
     }
 
     function mostrarLoading() {
-      if (loadingElement) {
-        loadingElement.style.display = 'block';
-      }
-    }
-
-    function esconderLoading() {
-      if (loadingElement) {
-        loadingElement.style.display = 'none';
-      }
+      checklistList.innerHTML = `
+        <div class="loading" id="loading">
+          <span class="material-icons">refresh</span>
+          <p>Carregando checklists...</p>
+        </div>
+      `;
     }
 
     function exibirMensagemSemDados() {
-      esconderLoading();
       checklistList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.5);">
           <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
           <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Nenhum checklist encontrado</h3>
           <p>Crie um novo checklist para começar</p>
-          <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'" style="margin-top: 20px;">
+          <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'" style="margin-top: 20px; border: 1px solid rgba(0,150,255,0.3);">
             <span class="material-icons">add</span>
             Novo Checklist
           </button>
@@ -876,13 +832,12 @@
     }
 
     function exibirMensagemErro(mensagem) {
-      esconderLoading();
       checklistList.innerHTML = `
         <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; color: #F44336;">
           <div style="font-size: 4rem; margin-bottom: 20px;">⚠️</div>
           <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Erro ao carregar</h3>
           <p>${mensagem}</p>
-          <button class="filter-button primary" onclick="carregarChecklists()" style="margin-top: 20px;">
+          <button class="filter-button primary" onclick="carregarChecklists()" style="margin-top: 20px; border: 1px solid rgba(255,255,255,0.3);">
             <span class="material-icons">refresh</span>
             Tentar Novamente
           </button>
@@ -903,14 +858,6 @@
       } catch {
         return dataString;
       }
-    }
-
-    function formatarTamanho(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
   </script>
 </body>
