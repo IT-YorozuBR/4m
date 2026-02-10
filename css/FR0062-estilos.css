@@ -77,6 +77,26 @@ body.gerando-pdf .formulario-completo {
     border-top: 2px solid black;
 }
 
+/* Garante que os cabeçalhos (PRODUÇÃO, Log./P.C, ENGENHARIA)
+   quebrem o texto ao invés de transbordar a célula */
+.bloco-setor .celula.cabecalho {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    font-size: clamp(7px, 0.75vw, 10px);
+    line-height: 1.2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 24px;
+}
+
+/* Inputs abaixo dos cabeçalhos — altura consistente nas 3 colunas */
+.bloco-setor .celula:not(.cabecalho):not(.origem) {
+    min-height: 35px;
+}
+
 .label-flutuante {
     position: absolute;
     top: -12px;
@@ -1453,7 +1473,7 @@ body.gerando-pdf .formulario-completo {
 
     .bloco-setor {
         width: 100%;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr; /* mantém 3 colunas para alinhar label com input */
     }
 
     .bloco-controle {
@@ -1500,7 +1520,7 @@ body.gerando-pdf .formulario-completo {
     }
 
     .bloco-setor {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr 1fr; /* mantém 3 colunas para alinhar label com input */
     }
 
     .quadro-container-1,
@@ -1645,4 +1665,3 @@ body.gerando-pdf .formulario-completo {
         width: 100% !important;
     }
 }
-
