@@ -5,7 +5,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "prestart": "echo 'Verificando dependências...' && node -e \"require('mongodb'); console.log('✅ MongoDB carregado')\"",
+    "test": "echo \"No tests specified\" && exit 0",
+    "render-build": "npm install --production"
   },
   "keywords": [
     "4m",
@@ -15,9 +18,15 @@
   ],
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20.19.0",
+    "npm": ">=10.0.0"
+  },
   "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.4",
     "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "mongodb": "^6.8.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

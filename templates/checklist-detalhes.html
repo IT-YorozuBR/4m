@@ -334,7 +334,7 @@
                     loading.style.display = 'block';
                     contentContainer.innerHTML = '';
                     
-                    const response = await fetch(`http://localhost:3001/api/fr0062/${numeroControle}`);
+                    const response = await fetch(`https://fourm-znis.onrender.com/api/fr0062/${numeroControle}`);
                     const result = await response.json();
                     
                     if (result.success && result.data) {
