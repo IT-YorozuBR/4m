@@ -373,6 +373,73 @@
       border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
+    .checklist-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      visibility: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .checklist-card:hover .checklist-actions {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .action-button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: rgba(255, 255, 255, 0.8);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      font-family: inherit;
+      font-weight: 500;
+    }
+
+    .action-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #fff;
+    }
+
+    .action-button.edit {
+      color: rgba(0, 150, 255, 0.9);
+      border-color: rgba(0, 150, 255, 0.3);
+    }
+
+    .action-button.edit:hover {
+      background: rgba(0, 150, 255, 0.1);
+      border-color: rgba(0, 150, 255, 0.5);
+      color: #00bbff;
+    }
+
+    .action-button.delete {
+      color: rgba(244, 67, 54, 0.9);
+      border-color: rgba(244, 67, 54, 0.3);
+    }
+
+    .action-button.delete:hover {
+      background: rgba(244, 67, 54, 0.1);
+      border-color: rgba(244, 67, 54, 0.5);
+      color: #ff6b6b;
+    }
+
+    .action-button.disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
     .loading {
       grid-column: 1 / -1;
       text-align: center;
@@ -388,13 +455,37 @@
     }
 
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeOut {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      to {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
     }
 
     @keyframes spin {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
     }
 
     .notification {
@@ -418,8 +509,15 @@
     }
 
     @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to   { transform: translateX(0);    opacity: 1; }
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
 
     /* =============================================
@@ -520,7 +618,7 @@
           <span class="material-icons">arrow_back</span>
           Voltar
         </button>
-        <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'">
+        <button class="novo-button" onclick="window.location.href='/FR0062-formulario.html'">
           <span class="material-icons">add</span>
           Novo Checklist
         </button>
@@ -619,8 +717,9 @@
     const loadingElement = document.getElementById('loading');
 
     let todosChecklists = [];
-    const API_URL = 'https://fourm-znis.onrender.com/api';
-    // const API_URL = 'http://localhost:3001/api';
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3001/api'
+      : 'https://fourm-znis.onrender.com/api';
 
     document.addEventListener('DOMContentLoaded', function () {
       configurarEventos();
@@ -634,7 +733,7 @@
       viewListBtn.addEventListener('click', () => alternarVisualizacao('list'));
 
       btnVoltar.addEventListener('click', () => {
-        window.location.href = '4m.html';
+        window.location.href = '/4m.html';
       });
 
       document.getElementById('filtrar').addEventListener('click', aplicarFiltros);
@@ -647,14 +746,14 @@
         }
         if (e.ctrlKey && e.key === 'n') {
           e.preventDefault();
-          window.location.href = 'FR0062-formulario.html';
+          window.location.href = '/FR0062-formulario.html';
         }
         if (e.ctrlKey && e.key === 'f') {
           e.preventDefault();
           document.getElementById('numero').focus();
         }
         if (e.key === 'Escape') {
-          window.location.href = '4m.html';
+          window.location.href = '/4m.html';
         }
       });
     }
@@ -759,41 +858,142 @@
 
       const dataFormatada = formatarData(checklist.data_criacao);
       const status = checklist.status || 'em_andamento';
+      const isFinalizado = status === 'finalizado';
 
-      const statusInfo = status === 'finalizado'
+      const statusInfo = isFinalizado
         ? { cor: '#4CAF50', label: 'Finalizado', icone: 'check_circle' }
         : { cor: '#FFA500', label: 'Em Andamento', icone: 'pending' };
 
-      card.innerHTML = `
-        <div class="checklist-header">
-          <div class="checklist-title">${checklist.numero_controle}</div>
-        </div>
-        <div class="checklist-info">
-          <div class="checklist-info-item">
-            <span>Solicitado por</span>
-            <span>${checklist.solicitado_por || 'N/A'}</span>
-          </div>
-          <div class="checklist-info-item">
-            <span>Criado em</span>
-            <span>${dataFormatada}</span>
-          </div>
-          <div class="checklist-info-item">
-            <span>Atualizado em</span>
-            <span>${formatarData(checklist.data_atualizacao)}</span>
-          </div>
-        </div>
-        <div class="checklist-status">
-          <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
-          <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
-        </div>
-      `;
+      // Obter usuário logado
+      const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const estaLogado = !!usuarioLogado.username;
 
-      card.addEventListener('click', () => {
-        window.location.href = `FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
+      // LÓGICA DE PERMISSÕES:
+      // 1. Deletar: Apenas se estiver logado.
+      // 2. Editar: Se logado OU se não logado e o card NÃO estiver finalizado.
+      const podeDeletar = estaLogado;
+      const podeEditar = estaLogado || (!estaLogado && !isFinalizado);
+
+      card.innerHTML = `
+    <div class="checklist-header">
+      <div class="checklist-title">${checklist.numero_controle}</div>
+    </div>
+    <div class="checklist-info">
+      <div class="checklist-info-item">
+        <span>Solicitado por</span>
+        <span>${checklist.solicitado_por || 'N/A'}</span>
+      </div>
+      <div class="checklist-info-item">
+        <span>Criado em</span>
+        <span>${dataFormatada}</span>
+      </div>
+      <div class="checklist-info-item">
+        <span>Atualizado em</span>
+        <span>${formatarData(checklist.data_atualizacao)}</span>
+      </div>
+    </div>
+    <div class="checklist-status">
+      <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
+      <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
+    </div>
+    
+    <div class="checklist-actions">
+      <button class="action-button edit" data-numero="${checklist.numero_controle}" title="${podeEditar ? 'Editar checklist' : 'Visualizar checklist'}">
+        <span class="material-icons" style="font-size: 16px;">${podeEditar ? 'edit' : 'visibility'}</span>
+        ${podeEditar ? 'Editar' : 'Visualizar'}
+      </button>
+      ${podeDeletar ? `
+      <button class="action-button delete" data-numero="${checklist.numero_controle}" title="Deletar checklist">
+        <span class="material-icons" style="font-size: 16px;">delete</span>
+        Deletar
+      </button>
+      ` : ''}
+    </div>
+  `;
+
+      // Evento de clique no card (Agora funciona para todos)
+      card.addEventListener('click', (e) => {
+        if (!e.target.closest('.checklist-actions')) {
+          window.location.href = `/FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
+        }
       });
+
+      // Event listener para o botão editar/visualizar
+      const editBtn = card.querySelector('.action-button.edit');
+      if (editBtn) {
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          window.location.href = `/FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
+        });
+      }
+
+      // Event listener para o botão deletar (se existir)
+      const deleteBtn = card.querySelector('.action-button.delete');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          deletarChecklist(checklist.numero_controle, checklist, card);
+        });
+      }
 
       card.style.animationDelay = `${index * 0.05}s`;
       return card;
+    }
+
+
+    async function deletarChecklist(numeroControle, checklist, cardElement) {
+      const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const token = localStorage.getItem('authToken');
+
+      if (!usuarioLogado.username || !token) {
+        alert('Você precisa estar logado para deletar');
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const confirmacao = confirm(
+        `Tem certeza que deseja deletar o checklist "${numeroControle}"?\n\nEsta ação não pode ser desfeita.`
+      );
+
+      if (!confirmacao) return;
+
+      try {
+        const response = await fetch(`${API_URL}/fr0062/${encodeURIComponent(numeroControle)}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Usar JWT token
+          }
+        });
+
+        const data = await response.json();
+
+        // Se não autorizado ou não autenticado
+        if (response.status === 401 || response.status === 403) {
+          alert('Sessão expirada. Por favor, faça login novamente.');
+          localStorage.removeItem('currentUser');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login.html';
+          return;
+        }
+
+        if (response.ok && data.success) {
+          // Remover card com animação
+          cardElement.style.animation = 'fadeOut 0.3s ease forwards';
+          setTimeout(() => {
+            cardElement.remove();
+            // Recarregar se nenhum card restante
+            if (document.querySelectorAll('.checklist-card').length === 0) {
+              carregarChecklists();
+            }
+          }, 300);
+        } else {
+          alert(`Erro ao deletar: ${data.message || 'Erro desconhecido'}`);
+        }
+      } catch (error) {
+        console.error('Erro ao deletar:', error);
+        alert('Erro ao deletar o checklist. Tente novamente.');
+      }
     }
 
     function atualizarEstatisticas(checklists) {
@@ -823,7 +1023,7 @@
           <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
           <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Nenhum checklist encontrado</h3>
           <p>Crie um novo checklist para começar</p>
-          <button class="novo-button" onclick="window.location.href='FR0062-formulario.html'" style="margin-top: 20px; border: 1px solid rgba(0,150,255,0.3);">
+          <button class="novo-button" onclick="window.location.href='/FR0062-formulario.html'" style="margin-top: 20px; border: 1px solid rgba(0,150,255,0.3);">​
             <span class="material-icons">add</span>
             Novo Checklist
           </button>

@@ -11,8 +11,9 @@
     <link rel="icon" href="./4m-logo.png" type="image/x-icon">
 
     <script>
-        const API_URL = 'https://fourm-znis.onrender.com/api';
-        // const API_URL = 'http://localhost:3001/api';
+        const API_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:3001/api'
+            : 'https://fourm-znis.onrender.com/api';
 
         // ========== SISTEMA DE MENSAGENS ==========
         class SistemaMensagens {
@@ -21,6 +22,7 @@
                 this.criarContainer();
                 this.adicionarEstilos();
             }
+
 
             criarContainer() {
                 this.container = document.createElement('div');
@@ -181,7 +183,26 @@
                 this.numeroControleAtual = null;
                 this.modoEdicao = false;
             }
+            verificarAutenticacao() {
+                const token = localStorage.getItem('authToken');
+                const usuarioJSON = localStorage.getItem('currentUser');
 
+                if (token && usuarioJSON) {
+                    try {
+                        this.usuarioLogado = JSON.parse(usuarioJSON);
+                        this.isAdmin = this.usuarioLogado.role === 'admin';
+                        console.log('✅ Usuário autenticado:', this.usuarioLogado);
+                        return true;
+                    } catch (error) {
+                        console.error('❌ Erro ao parsear usuário:', error);
+                        return false;
+                    }
+                }
+
+                console.log('⚠️ Usuário não autenticado (OPERADOR)');
+                this.isAdmin = false;
+                return false;
+            }
             // Adicione este método à classe SistemaChecklist4M
             encontrarElementoPorTexto(selector, texto) {
                 const elementos = document.querySelectorAll(selector);
@@ -605,29 +626,38 @@
 
                     const dados = this.coletarDados();
 
+                    // 1. Recupera o JWT que foi salvo no localStorage durante o Login
+                    const token = localStorage.getItem('authToken');
+
                     const url = this.modoEdicao
                         ? `${API_URL}/fr0062/${this.numeroControleAtual}`
                         : `${API_URL}/fr0062`;
 
                     const method = this.modoEdicao ? 'PUT' : 'POST';
 
+                    // 2. Envia o token no cabeçalho Authorization
                     const response = await fetch(url, {
                         method: method,
                         headers: {
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
                         },
                         body: JSON.stringify(dados)
                     });
+
+                    // 3. Trata erros de autenticação (Token expirado ou ausente)
+                    if (response.status === 401 || response.status === 403) {
+                        this.mensagens.erro('✗ Sua sessão expirou ou você não tem permissão. Faça login novamente.');
+                        setTimeout(() => window.location.href = '/login.html', 3000);
+                        return;
+                    }
 
                     const result = await response.json();
 
                     if (result.success) {
                         this.mensagens.sucesso(`✓ Formulário ${this.modoEdicao ? 'atualizado' : 'salvo'} com sucesso!`);
-                        console.log('✅ Resposta do servidor:', result);
-
-                        // Após salvar, redirecionar para a lista após 2 segundos
                         setTimeout(() => {
-                            window.location.href = '4m-checklist.html';
+                            window.location.href = '/4m-checklist.html';
                         }, 2000);
                     } else {
                         this.mensagens.erro(`✗ Erro ao salvar: ${result.message}`);
@@ -635,11 +665,9 @@
 
                 } catch (error) {
                     console.error('❌ Erro ao salvar formulário:', error);
-                    this.mensagens.erro('✗ Erro ao comunicar com o servidor. Verifique se o servidor está rodando.');
+                    this.mensagens.erro('✗ Erro de conexão com o servidor.');
                 }
             }
-
-            // Carregar dados do formulário
             async carregarFormulario(numeroControle) {
                 try {
                     const response = await fetch(`${API_URL}/fr0062/${numeroControle}`);
@@ -650,34 +678,30 @@
                         this.numeroControleAtual = numeroControle;
                         this.modoEdicao = true;
 
-                        // Verificar se o checklist já está finalizado
-                        if (result.formulario.status === 'finalizado') {
-                            console.log('⚠️ Checklist carregado em modo FINALIZADO (somente leitura)');
+                        const status = result.formulario.status || 'em_andamento';
+                        this.isFinalizado = status === 'finalizado';
+
+                        console.log('📋 Checklist carregado - Status:', status);
+                        console.log('👤 isAdmin:', this.isAdmin);
+                        console.log('🔒 isFinalizado:', this.isFinalizado);
+
+                        if (this.isFinalizado && !this.isAdmin) {
                             this.desabilitarEdicaoFormulario();
-                        } else {
-                            console.log('✅ Checklist carregado em modo de edição');
+                            this.exibirBadgeFinalizacao();
+                            this.mensagens.aviso('⚠️ Este checklist está FINALIZADO (somente leitura)');
+                        } else if (this.isFinalizado && this.isAdmin) {
+                            this.exibirBadgeAdmin();
                         }
 
                         return result.formulario;
-                    } else {
-                        this.mensagens.erro('Formulário não encontrado');
-                        return null;
                     }
-
-                } catch (error) {
+                }
+                catch (error) {
                     console.error('❌ Erro ao carregar formulário:', error);
-                    this.mensagens.erro('✗ Erro ao carregar formulário');
-                    return null;
+                    this.mensagens.erro('✗ Erro ao comunicar com o servidor. Verifique se o servidor está rodando.');
                 }
             }
-            // Adicione este método à classe SistemaChecklist4M
-            verificarPermissoesEdicao(status) {
-                if (status === 'finalizado') {
-                    this.desabilitarEdicaoFormulario();
-                    return false;
-                }
-                return true;
-            }
+
             preencherAcompanhamento(dadosAcompanhamento) {
                 if (!dadosAcompanhamento || dadosAcompanhamento.length === 0) {
                     console.log('⚠️ Nenhum dado de acompanhamento para preencher');
@@ -1052,8 +1076,7 @@
                     this.mensagens.informacao('Formulário limpo com sucesso!');
                 }
             }
-            // Adicione este método à classe SistemaChecklist4M
-            // Adicione este método à classe SistemaChecklist4M
+
             async finalizarChecklist() {
                 const confirmacao = confirm(
                     "Tem certeza que deseja FINALIZAR este checklist?\n\n" +
@@ -1067,6 +1090,10 @@
 
                     const dados = this.coletarDados();
 
+                    // --- ADIÇÃO DO TOKEN AQUI ---
+                    const token = localStorage.getItem('authToken');
+                    // ----------------------------
+
                     if (!dados.numero_controle) {
                         this.mensagens.erro('✗ Número de controle inválido. Recarregue a página.');
                         return;
@@ -1077,14 +1104,12 @@
                     dados.data_atualizacao = new Date().toISOString();
                     dados.data_criacao = dados.data_criacao || dados.data_finalizacao;
 
-                    // 1. Verificar se já existe
                     console.log('🔍 Verificando existência do checklist...');
                     const checkResponse = await fetch(`${API_URL}/fr0062/${dados.numero_controle}`);
                     const existe = checkResponse.ok;
 
                     console.log(existe ? '✅ Existe → PUT' : '🆕 Não existe → POST');
 
-                    // 2. Criar ou atualizar conforme resultado
                     const method = existe ? 'PUT' : 'POST';
                     const url = existe
                         ? `${API_URL}/fr0062/${dados.numero_controle}`
@@ -1092,7 +1117,10 @@
 
                     const response = await fetch(url, {
                         method,
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` // <--- ADICIONE ESTA LINHA
+                        },
                         body: JSON.stringify(dados)
                     });
 
@@ -1100,16 +1128,7 @@
 
                     if (result.success) {
                         this.mensagens.sucesso('✓ Checklist finalizado com sucesso!');
-                        this.desabilitarEdicaoFormulario();
-
-                        const btnFinalizar = document.getElementById('btnFinalizarcheck');
-                        if (btnFinalizar) {
-                            btnFinalizar.disabled = true;
-                            btnFinalizar.textContent = 'CHECKLIST FINALIZADO';
-                            btnFinalizar.style.cssText += '; background-color: #666; cursor: not-allowed;';
-                        }
-
-                        setTimeout(() => { window.location.href = '4m-checklist.html'; }, 3000);
+                        setTimeout(() => { window.location.href = '/4m-checklist.html'; }, 3000);
                     } else {
                         this.mensagens.erro(`✗ Erro ao finalizar: ${result.message || 'Erro desconhecido'}`);
                     }
@@ -1119,45 +1138,105 @@
                     this.mensagens.erro('✗ Erro ao finalizar. Verifique a conexão com o servidor.');
                 }
             }
+            exibirBadgeFinalizacao() {
+                const badgeAntigo = document.getElementById('badge-finalizado');
+                if (badgeAntigo) badgeAntigo.remove();
 
+                const badge = document.createElement('div');
+                badge.id = 'badge-finalizado';
+                badge.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #FF9800, #F57C00);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 8px;
+        border-left: 5px solid #E65100;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-weight: bold;
+        transition: opacity 0.5s ease; /* Transição suave ao sumir */
+    `;
 
-            // Adicione este método para desabilitar a edição
-            // Método para desabilitar edição (apenas funcional, sem alterações visuais)
+                badge.innerHTML = `<span>🔒 CHECKLIST FINALIZADO - Somente leitura</span>`;
+                document.body.insertBefore(badge, document.body.firstChild);
+                console.log('✅ Badge de finalização exibido');
+
+                // Remove após 5 segundos
+                setTimeout(() => {
+                    if (badge) {
+                        badge.style.opacity = '0'; // Começa o fade-out
+                        setTimeout(() => badge.remove(), 500); // Remove do DOM após a transição
+                    }
+                }, 5000);
+            }
+
+            exibirBadgeAdmin() {
+                const badgeAntigo = document.getElementById('badge-admin');
+                if (badgeAntigo) badgeAntigo.remove();
+
+                const badge = document.createElement('div');
+                badge.id = 'badge-admin';
+                badge.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #2196F3, #1976D2);
+        color: white;
+        padding: 15px 30px;
+        border-radius: 8px;
+        border-left: 5px solid #0D47A1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-weight: bold;
+        transition: opacity 0.5s ease; /* Transição suave ao sumir */
+    `;
+
+                badge.innerHTML = `<span>👑 Admin - Edição completa permitida</span>`;
+                document.body.insertBefore(badge, document.body.firstChild);
+                console.log('✅ Badge admin exibido');
+
+                // Remove após 5 segundos
+                setTimeout(() => {
+                    if (badge) {
+                        badge.style.opacity = '0'; // Começa o fade-out
+                        setTimeout(() => badge.remove(), 500); // Remove do DOM após a transição
+                    }
+                }, 5000);
+            }
             desabilitarEdicaoFormulario() {
                 console.log('🔒 Desabilitando edição do formulário...');
 
-                // Desabilitar todos os campos contenteditable (não removemos conteúdo, apenas editabilidade)
                 document.querySelectorAll('[contenteditable="true"]').forEach(element => {
                     element.setAttribute('contenteditable', 'false');
-                    // Adicionar atributo personalizado para identificar que era editável
-                    element.setAttribute('data-was-editable', 'true');
+                    element.style.opacity = '0.7';
+                    element.style.backgroundColor = 'rgba(200, 200, 200, 0.1)';
+                    element.style.cursor = 'not-allowed';
                 });
 
-                // Desabilitar todos os inputs e textareas
                 document.querySelectorAll('input, textarea').forEach(element => {
                     element.setAttribute('disabled', 'disabled');
                     element.setAttribute('readonly', 'readonly');
-                    // Adicionar atributo personalizado para identificar estado original
-                    element.setAttribute('data-was-enabled', 'true');
+                    element.style.opacity = '0.6';
+                    element.style.cursor = 'not-allowed';
+                    element.style.backgroundColor = 'rgba(200, 200, 200, 0.1)';
                 });
 
-                // Desabilitar botões de ação específicos
                 const botoesDesabilitar = ['btnSalvarCheck', 'btnLimparDados', 'btnFinalizarcheck'];
                 botoesDesabilitar.forEach(id => {
                     const botao = document.getElementById(id);
                     if (botao) {
                         botao.setAttribute('disabled', 'disabled');
-                        // Alterar texto do botão de finalizar se existir
-                        if (id === 'btnFinalizarcheck') {
-                            botao.textContent = 'CHECKLIST FINALIZADO';
-                        }
+                        botao.style.opacity = '0.5';
+                        botao.style.cursor = 'not-allowed';
                     }
                 });
 
-                console.log('✅ Formulário desabilitado para edição (somente leitura)');
+                console.log('✅ Formulário desabilitado para edição');
             }
-
-
             // Inicializar o sistema
             iniciar() {
                 console.log('🚀 Sistema Checklist 4M iniciado');
@@ -1170,6 +1249,7 @@
 
             // Criar instância global do sistema
             window.sistemaChecklist = new SistemaChecklist4M();
+            window.sistemaChecklist.verificarAutenticacao();
 
             // Verificar se está em modo de edição
             const urlParams = new URLSearchParams(window.location.search);
@@ -1276,9 +1356,7 @@
             if (btnSalvarCheck) {
                 btnSalvarCheck.addEventListener('click', function (e) {
                     e.preventDefault();
-
                     window.sistemaChecklist.salvarFormulario();
-                    window.location.href = '/4m-checklist.html';
                 });
             }
 
@@ -1526,138 +1604,157 @@
                     <div class="cabecalho-4m">MÉTODO/OUTROS (MÉTODOS)</div>
 
                     <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
-                            id="man_itemModificado1" name="man_itemModificado1"
+                            id="man_itemModificado1" name="man_itemModificado1" data-categoria="MAN"
                             data-field="man_item_modificado_1"></span></div>
                     <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
-                            id="machine_itemModificado1" name="machine_itemModificado1"
+                            id="machine_itemModificado1" name="machine_itemModificado1" data-categoria="MACHINE"
                             data-field="machine_item_modificado_1"></span></div>
                     <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
-                            id="material_itemModificado1" name="material_itemModificado1"
+                            id="material_itemModificado1" name="material_itemModificado1" data-categoria="MATERIAL"
                             data-field="material_item_modificado_1"></span></div>
                     <div class="celula-4m"><label>ITEM MODIFICADO</label><span class="input-line" contenteditable="true"
-                            id="method_itemModificado1" name="method_itemModificado1"
+                            id="method_itemModificado1" name="method_itemModificado1" data-categoria="METHOD"
                             data-field="method_item_modificado_1"></span></div>
 
                     <div class="celula-4m"><label>NOME</label><span class="input-line" contenteditable="true"
-                            id="man_nome1" name="man_nome1" data-field="man_nome_1"></span>
+                            id="man_nome1" name="man_nome1" data-field="man_nome_1" data-categoria="MAN"></span>
                     </div>
                     <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
-                            id="machine_motivo1" name="machine_motivo1" data-field="machine_motivo_1"></span>
+                            id="machine_motivo1" name="machine_motivo1" data-field="machine_motivo_1"
+                            data-categoria="MACHINE"></span>
                     </div>
                     <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
-                            id="material_motivo1" name="material_motivo1" data-field="material_motivo_1"></span>
+                            id="material_motivo1" name="material_motivo1" data-field="material_motivo_1"
+                            data-categoria="MATERIAL"></span>
                     </div>
                     <div class="celula-4m"><label>MOTIVO</label><span class="input-line" contenteditable="true"
-                            id="method_motivo1" name="method_motivo1" data-field="method_motivo_1"></span>
+                            id="method_motivo1" name="method_motivo1" data-field="method_motivo_1"
+                            data-categoria="METHOD"></span>
                     </div>
 
                     <div class="celula-4m"><label>ORGAN./RAMAL</label><span class="input-line" contenteditable="true"
                             id="man_organRamal1" name="man_organRamal1" data-field="man_organ_ramal_1"
-                            name="manOrganRamal1"></span></div>
+                            data-categoria="MAN" name="manOrganRamal1"></span></div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
-                            id="machine_projeto1" name="machine_projeto1" data-field="machine_projeto_1"></span>
+                            id="machine_projeto1" name="machine_projeto1" data-field="machine_projeto_1"
+                            data-categoria="MACHINE"></span>
                     </div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
-                            id="material_projeto1" name="material_projeto1" data-field="material_projeto_1"></span>
+                            id="material_projeto1" name="material_projeto1" data-field="material_projeto_1"
+                            data-categoria="MATERIAL"></span>
                     </div>
                     <div class="celula-4m"><label>PROJETO</label><span class="input-line" contenteditable="true"
-                            id="method_projeto1" name="method_projeto1" data-field="method_projeto_1"></span>
+                            id="method_projeto1" name="method_projeto1" data-field="method_projeto_1"
+                            data-categoria="METHOD"></span>
                     </div>
 
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
-                            id="man_numOperacao1" name="man_numOperacao1" data-field="man_num_operacao_1"></span></div>
+                            id="man_numOperacao1" name="man_numOperacao1" data-field="man_num_operacao_1"
+                            data-categoria="MAN"></span></div>
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
-                            id="machine_numOperacao1" name="machine_numOperacao1"
-                            data-field="machine_num_operacao_1"></span></div>
+                            id="machine_numOperacao1" name="machine_numOperacao1" data-field="machine_num_operacao_1"
+                            data-categoria="MACHINE"></span></div>
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
-                            id="material_numOperacao1" name="material_numOperacao1"
-                            data-field="material_num_operacao_1"></span></div>
+                            id="material_numOperacao1" name="material_numOperacao1" data-field="material_num_operacao_1"
+                            data-categoria="MATERIAL"></span></div>
                     <div class="celula-4m"><label>Nº OPERAÇÃO</label><span class="input-line" contenteditable="true"
                             id="method_numOperacao1" name="method_numOperacao1"
                             data-field="method_num_operacao_1"></span></div>
 
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
-                        <label><input type="checkbox" aria-label="MAN Importância Normal" id="man_importanciaNormal"
-                                name="man_importanciaNormal" data-field="man_importancia_normal"> NORMAL</label>
+                        <label><input type="checkbox" aria-label="MAN Importância Normal" data-categoria="MAN"
+                                id="man_importanciaNormal" name="man_importanciaNormal"
+                                data-field="man_importancia_normal" data-categoria="MAN"> NORMAL</label>
                         <label><input type="checkbox" aria-label="MAN Importância Importante A/S" id="man_importanciaAS"
-                                name="man_importanciaAS" data-field="man_importancia_as"> IMPORTANTE
+                                name="man_importanciaAS" data-field="man_importancia_as" data-categoria="MAN">
+                            IMPORTANTE
                             A/S</label>
                     </div>
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
                         <label><input type="checkbox" aria-label="MACHINE Importância Normal"
                                 id="machine_importanciaNormal" name="machine_importanciaNormal"
-                                data-field="machine_importancia_normal"> NORMAL</label>
+                                data-field="machine_importancia_normal" data-categoria="MACHINE"> NORMAL</label>
                         <label><input type="checkbox" aria-label="MACHINE Importância Importante A/S"
                                 id="machine_importanciaAS" name="machine_importanciaAS"
-                                data-field="machine_importancia_as"> IMPORTANTE
+                                data-field="machine_importancia_as" data-categoria="MACHINE"> IMPORTANTE
                             A/S</label>
                     </div>
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
                         <label><input type="checkbox" aria-label="MATERIAL Importância Normal"
                                 id="material_importanciaNormal" name="material_importanciaNormal"
-                                data-field="material_importancia_normal"> NORMAL</label>
+                                data-field="material_importancia_normal" data-categoria="MATERIAL"> NORMAL</label>
                         <label><input type="checkbox" aria-label="MATERIAL Importância Importante A/S"
                                 id="material_importanciaAS" name="material_importanciaAS"
-                                data-field="material_importancia_as"> IMPORTANTE
+                                data-field="material_importancia_as" data-categoria="MATERIAL"> IMPORTANTE
                             A/S</label>
                     </div>
                     <div class="celula importancia">
                         <span class="label-bold">IMPORTÂNCIA</span>
                         <label><input type="checkbox" aria-label="METHOD Importância Normal"
                                 id="method_importanciaNormal" name="method_importanciaNormal"
-                                data-field="method_importancia_normal"> NORMAL</label>
+                                data-field="method_importancia_normal" data-categoria="METHOD"> NORMAL</label>
                         <label><input type="checkbox" aria-label="METHOD Importância Importante A/S"
-                                id="method_importanciaAS" name="method_importanciaAS"
-                                data-field="method_importancia_as"> IMPORTANTE
+                                id="method_importanciaAS" name="method_importanciaAS" data-field="method_importancia_as"
+                                data-categoria="METHOD"> IMPORTANTE
                             A/S</label>
                     </div>
 
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="man_dataTurno1" name="man_dataTurno1"
-                            data-field="man_data_turno_1"> / / </span>
-                        <label><input type="checkbox" aria-label="MAN Turno 1T" id="man_turno1T" name="man_turno1T"
-                                data-field="man_turno_1t"> 1T</label>
-                        <label><input type="checkbox" aria-label="MAN Turno 2T" id="man_turno2T" name="man_turno2T"
-                                data-field="man_turno_2t"> 2T</label>
-                        <label><input type="checkbox" aria-label="MAN Turno 3T" id="man_turno3T" name="man_turno3T"
-                                data-field="man_turno_3t"> 3T</label>
+                        <span class="input-line" contenteditable="true" id="man_dataTurno1" data-categoria="MAN"
+                            name="man_dataTurno1" data-field="man_data_turno_1"> / / </span>
+                        <label><input type="checkbox" aria-label="MAN Turno 1T" id="man_turno1T" data-categoria="MAN"
+                                name="man_turno1T" data-field="man_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MAN Turno 2T" id="man_turno2T" data-categoria="MAN"
+                                name="man_turno2T" data-field="man_turno_2t"> 2T</label>
+                        <label><input type="checkbox" aria-label="MAN Turno 3T" id="man_turno3T" data-categoria="MAN"
+                                name="man_turno3T" data-field="man_turno_3t"> 3T</label>
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="machine_dataTurno1"
-                            name="machine_dataTurno1" data-field="machine_data_turno_1"> / / </span>
-                        <label><input type="checkbox" aria-label="MACHINE Turno 1T" id="machine_turno1T"
-                                name="machine_turno1T" data-field="machine_turno_1t"> 1T</label>
-                        <label><input type="checkbox" aria-label="MACHINE Turno 2T" id="machine_turno2T"
-                                name="machine_turno2T" data-field="machine_turno_2t"> 2T</label>
-                        <label><input type="checkbox" aria-label="MACHINE Turno 3T" id="machine_turno3T"
-                                name="machine_turno3T" data-field="machine_turno_3t"> 3T</label>
+                        <span class="input-line" contenteditable="true" id="machine_dataTurno1" data-categoria="MACHINE"
+                            name="machine_dataTurno1" data-field="machine_data_turno_1" data-categoria="MACHINE"> / /
+                        </span>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 1T" data-categoria="MACHINE"
+                                id="machine_turno1T" name="machine_turno1T" data-field="machine_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 2T" data-categoria="MACHINE"
+                                id="machine_turno2T" name="machine_turno2T" data-field="machine_turno_2t"
+                                data-categoria="MACHINE"> 2T</label>
+                        <label><input type="checkbox" aria-label="MACHINE Turno 3T" data-categoria="MACHINE"
+                                id="machine_turno3T" name="machine_turno3T" data-categoria="MACHINE"
+                                data-field="machine_turno_3t"> 3T</label>
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="material_dataTurno1"
-                            name="material_dataTurno1" data-field="material_data_turno_1"> / / </span>
-                        <label><input type="checkbox" aria-label="MATERIAL Turno 1T" id="material_turno1T"
-                                name="material_turno1T" data-field="material_turno_1t"> 1T</label>
-                        <label><input type="checkbox" aria-label="MATERIAL Turno 2T" id="material_turno2T"
-                                name="material_turno2T" data-field="material_turno_2t"> 2T</label>
+                            data-categoria="MATERIAL" name="material_dataTurno1" data-field="material_data_turno_1"
+                            data-categoria="MATERIAL"> / /
+                        </span>
+                        <label><input type="checkbox" aria-label="MATERIAL Turno 1T" data-categoria="MATERIAL"
+                                id="material_turno1T" name="material_turno1T" data-field="material_turno_1t"> 1T</label>
+                        <label><input type="checkbox" aria-label="MATERIAL Turno 2T" data-categoria="MATERIAL"
+                                id="material_turno2T" name="material_turno2T" data-field="material_turno_2t"
+                                data-categoria="MATERIAL"> 2T</label>
                         <label><input type="checkbox" aria-label="MATERIAL Turno 3T" id="material_turno3T"
-                                name="material_turno3T" data-field="material_turno_3t"> 3T</label>
+                                name="material_turno3T" data-field="material_turno_3t" data-categoria="MATERIAL">
+                            3T</label>
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="method_dataTurno1" name="method_dataTurno1"
                             data-field="method_data_turno_1"> / / </span>
-                        <label><input type="checkbox" aria-label="METHOD Turno 1T" id="method_turno1T"
-                                name="method_turno1T" data-field="method_turno_1t"> 1T</label>
-                        <label><input type="checkbox" aria-label="METHOD Turno 2T" id="method_turno2T"
-                                name="method_turno2T" data-field="method_turno_2t"> 2T</label>
-                        <label><input type="checkbox" aria-label="METHOD Turno 3T" id="method_turno3T"
-                                name="method_turno3T" data-field="method_turno_3t"> 3T</label>
+                        <label><input type="checkbox" aria-label="METHOD Turno 1T" data-categoria="METHOD"
+                                id="method_turno1T" name="method_turno1T" data-field="method_turno_1t"
+                                data-categoria="METHOD"> 1T</label>
+                        <label><input type="checkbox" aria-label="METHOD Turno 2T" data-categoria="METHOD"
+                                id="method_turno2T" name="method_turno2T" data-field="method_turno_2t"
+                                data-categoria="METHOD"> 2T</label>
+                        <label><input type="checkbox" aria-label="METHOD Turno 3T" data-categoria="METHOD"
+                                id="method_turno3T" name="method_turno3T" data-field="method_turno_3t"
+                                data-categoria="METHOD"> 3T</label>
                     </div>
                 </div>
 
@@ -1689,7 +1786,7 @@
                                     <span class="label-bold">*GARANTIA 200%?</span>
                                 </div>
                                 <div class="secao secao-sakanobori">
-                                    <span class="label-bold">SAKANOBORI:</span>
+                                    <span class="label-bold">bosta:</span>
                                     <label><input type="checkbox" aria-label="Sakanobori Não"> NÃO</label>
                                     <label><input type="checkbox" aria-label="Sakanobori Sim"> SIM</label>
                                     <span>QTD:</span>

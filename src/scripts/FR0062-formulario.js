@@ -592,29 +592,38 @@ class SistemaChecklist4M {
 
             const dados = this.coletarDados();
 
+            // 1. Recupera o JWT que foi salvo no localStorage durante o Login
+            const token = localStorage.getItem('authToken');
+
             const url = this.modoEdicao
                 ? `${API_URL}/fr0062/${this.numeroControleAtual}`
                 : `${API_URL}/fr0062`;
 
             const method = this.modoEdicao ? 'PUT' : 'POST';
 
+            // 2. Envia o token no cabeçalho Authorization
             const response = await fetch(url, {
                 method: method,
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(dados)
             });
+
+            // 3. Trata erros de autenticação (Token expirado ou ausente)
+            if (response.status === 401 || response.status === 403) {
+                this.mensagens.erro('✗ Sua sessão expirou ou você não tem permissão. Faça login novamente.');
+                setTimeout(() => window.location.href = '/login.html', 3000);
+                return;
+            }
 
             const result = await response.json();
 
             if (result.success) {
                 this.mensagens.sucesso(`✓ Formulário ${this.modoEdicao ? 'atualizado' : 'salvo'} com sucesso!`);
-                console.log('✅ Resposta do servidor:', result);
-
-                // Após salvar, redirecionar para a lista após 2 segundos
                 setTimeout(() => {
-                    window.location.href = '4m-checklist.html';
+                    window.location.href = '/templates/4m-checklist.html';
                 }, 2000);
             } else {
                 this.mensagens.erro(`✗ Erro ao salvar: ${result.message}`);
@@ -622,7 +631,7 @@ class SistemaChecklist4M {
 
         } catch (error) {
             console.error('❌ Erro ao salvar formulário:', error);
-            this.mensagens.erro('✗ Erro ao comunicar com o servidor. Verifique se o servidor está rodando.');
+            this.mensagens.erro('✗ Erro de conexão com o servidor.');
         }
     }
 

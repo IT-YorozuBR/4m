@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { MongoClient } = require('mongodb');
+const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const uri = process.env.MONGODB_URI;
@@ -17,24 +18,113 @@ async function startServer() {
         const app = express();
         const port = process.env.PORT || 3001;
 
-        // CORS
-        app.use(cors({
-            origin: [
-                'http://127.0.0.1:5500',
-                'http://localhost:5500',
-                'http://localhost:3000',
-                'http://127.0.0.1:3000',
-                'http://localhost:3001',
-                'http://127.0.0.1:3001',
-                'https://fourm-znis.onrender.com'
-            ],
+        // CORS - Configuração detalhada
+        const corsOptions = {
+            origin: function (origin, callback) {
+                const allowedOrigins = [
+                    'http://127.0.0.1:5500',
+                    'http://localhost:5500',
+                    'http://localhost:3000',
+                    'http://127.0.0.1:3000',
+                    'http://localhost:3001',
+                    'http://127.0.0.1:3001',
+                    'https://fourm-znis.onrender.com'
+                ];
+
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'));
+                }
+            },
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type'],
-            credentials: true
-        }));
+            allowedHeaders: ['Content-Type', 'Authorization'],
+            exposedHeaders: ['Content-Type', 'Authorization'],
+            credentials: true,
+            maxAge: 86400 // 24 horas
+        };
+
+        app.use(cors(corsOptions));
+
+        // Preflight request handler
+        app.options('*', cors(corsOptions));
 
         app.use(express.json({ limit: '50mb' }));
         app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+        // ==================== AUTHENTICATION HELPERS ====================
+        const JWT_SECRET = process.env.JWT_SECRET || 'seu-secret-key-super-seguro-2026';
+        const JWT_EXPIRES_IN = '24h';
+
+        function verificarCredenciais(username, password) {
+            // Buscar credenciais no .env
+            const envUser = process.env[`USER_${username.toUpperCase()}`];
+            const envPassword = process.env[`USER_${username.toUpperCase()}_PASSWORD`];
+
+            if (envUser && envPassword && envUser === username && envPassword === password) {
+                // Determinar role do usuário
+                // Usuários começados com "admin" são admins
+                const role = username.toLowerCase().includes('admin') ? 'admin' : 'admin';
+                return { success: true, user: { username, role } };
+            }
+            return { success: false };
+        }
+
+        // Middleware de autenticação JWT (OPCIONAL - para admin)
+        function autenticarJWT(req, res, next) {
+            const authHeader = req.headers['authorization'];
+            const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+            if (!token) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token não fornecido'
+                });
+            }
+
+            jwt.verify(token, JWT_SECRET, (err, decoded) => {
+                if (err) {
+                    console.error('❌ Erro ao verificar JWT:', err.message);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Token inválido ou expirado'
+                    });
+                }
+
+                // Adicionar dados do usuário ao request
+                req.user = decoded;
+                next();
+            });
+        }
+
+        // Middleware para verificar role
+        function verificarRole(rolesPermitidas) {
+            return (req, res, next) => {
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+
+                if (token) {
+                    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+                        if (!err && rolesPermitidas.includes(decoded.role)) {
+                            req.user = decoded;
+                            return next();
+                        }
+                    });
+                }
+
+                return res.status(403).json({
+                    success: false,
+                    message: 'Sem permissão para realizar esta ação'
+                });
+            };
+        }
+
+        // Middleware para operador (sem token, apenas acesso direto)
+        function verificarOperador(req, res, next) {
+            // Operador não precisa de token, acesso livre
+            req.user = { username: 'operador', role: 'operador' };
+            next();
+        }
 
         // Arquivos estáticos
         app.use(express.static(path.join(__dirname, '..', 'templates')));
@@ -43,11 +133,62 @@ async function startServer() {
 
         // ==================== ROTAS API ====================
 
-        // Rota para salvar formulário FR0062
-        app.post('/api/fr0062', async (req, res) => {
+        // ==================== ROTA DE LOGIN (APENAS PARA ADMIN) ====================
+        app.post('/api/fr0062/login', async (req, res) => {
+            try {
+                const { username, password } = req.body;
+
+                if (!username || !password) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Username e password são obrigatórios'
+                    });
+                }
+
+                const resultado = verificarCredenciais(username, password);
+
+                if (resultado.success) {
+                    // Gerar JWT token
+                    const token = jwt.sign(
+                        {
+                            username: resultado.user.username,
+                            role: resultado.user.role
+                        },
+                        JWT_SECRET,
+                        { expiresIn: JWT_EXPIRES_IN }
+                    );
+
+                    console.log(`✅ Login bem-sucedido para usuário: ${username} (${resultado.user.role})`);
+                    return res.json({
+                        success: true,
+                        user: resultado.user,
+                        token: token
+                    });
+                } else {
+                    console.log(`❌ Tentativa de login falha para: ${username}`);
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Credenciais inválidas'
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Erro ao fazer login:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao processar login',
+                    error: error.message
+                });
+            }
+        });
+
+        // ==================== ROTAS CRUD FORMULÁRIOS ====================
+
+        // Rota para salvar formulário FR0062 (OPERADOR + ADMIN)
+        app.post('/api/fr0062', verificarOperador, async (req, res) => {
             try {
                 const dados = req.body;
                 console.log('📥 Recebendo dados do formulário:', dados.numero_controle);
+                console.log(`👤 Criado por: ${req.user.username} (${req.user.role})`);
 
                 if (!dados.numero_controle) {
                     return res.status(400).json({
@@ -56,10 +197,12 @@ async function startServer() {
                     });
                 }
 
-                // Adicionar timestamps
+                // Adicionar timestamps e informações do usuário
                 const agora = new Date().toISOString();
                 dados.data_criacao = dados.data_criacao || agora;
                 dados.data_atualizacao = agora;
+                dados.criado_por = req.user.username;
+                dados.status = dados.status || 'em_andamento';
 
                 // Salvar no MongoDB
                 await db.collection('checklists').insertOne(dados);
@@ -82,8 +225,8 @@ async function startServer() {
             }
         });
 
-        // Rota para listar todos os formulários
-        app.get('/api/fr0062', async (req, res) => {
+        // Rota para listar todos os formulários (OPERADOR + ADMIN)
+        app.get('/api/fr0062', verificarOperador, async (req, res) => {
             try {
                 const formularios = await db
                     .collection('checklists')
@@ -106,8 +249,8 @@ async function startServer() {
             }
         });
 
-        // Rota para buscar um formulário específico
-        app.get('/api/fr0062/:numeroControle', async (req, res) => {
+        // Rota para buscar um formulário específico (OPERADOR + ADMIN)
+        app.get('/api/fr0062/:numeroControle', verificarOperador, async (req, res) => {
             try {
                 const numeroControle = req.params.numeroControle;
 
@@ -137,13 +280,94 @@ async function startServer() {
             }
         });
 
-        // Rota para atualizar um formulário
+        // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
+        // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
         app.put('/api/fr0062/:numeroControle', async (req, res) => {
             try {
-                const numeroControle = req.params.numeroControle;
+                const { numeroControle } = req.params;
                 const dados = req.body;
 
+                // 1. Extração e limpeza do Token
+                const authHeader = req.headers['authorization'];
+                let token = authHeader && authHeader.split(' ')[1];
+
+                // Se o token for a string "null" ou "undefined" vinda do front, tratamos como nulo
+                if (token === 'null' || token === 'undefined') token = null;
+
+                // Usuário padrão caso não haja token válido
+                let user = { username: 'operador', role: 'operador' };
+
+                // 2. Verificação do JWT (Se houver token)
+                if (token) {
+                    try {
+                        const decoded = jwt.verify(token, JWT_SECRET);
+                        user = decoded;
+                        console.log(`✅ Token Admin verificado: ${user.username} (${user.role})`);
+                    } catch (err) {
+                        console.error('❌ Erro na verificação do JWT no PUT:', err.message);
+                        // Se o cara mandou um token e ele é inválido, barramos por segurança
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Sessão inválida ou expirada. Por favor, faça login novamente.'
+                        });
+                    }
+                }
+
+                // 3. Busca o formulário no Banco de Dados
+                const formularioAtual = await db.collection('checklists').findOne({
+                    numero_controle: numeroControle
+                });
+
+                if (!formularioAtual) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Formulário não encontrado no banco de dados.'
+                    });
+                }
+
+                const statusAtual = formularioAtual.status || 'em_andamento';
+                const statusNovo = dados.status || statusAtual;
+
+                // 4. Validação de Regras de Negócio por Role
+                // Garantimos que o role seja comparado sempre em minúsculo para evitar erros de digitação
+                const userRole = user.role ? user.role.toLowerCase() : 'operador';
+
+                if (userRole === 'operador') {
+                    // Regra: Operador não mexe em finalizado
+                    if (statusAtual === 'finalizado') {
+                        console.log(`🚫 Bloqueado: Operador ${user.username} tentou editar checklist finalizado.`);
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Operadores não podem editar checklists já finalizados.'
+                        });
+                    }
+
+                    // Regra: Operador só pode mudar para 'em_andamento' ou 'finalizado'
+                    if (statusNovo !== 'em_andamento' && statusNovo !== 'finalizado') {
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Permissão negada para alterar o status para este valor.'
+                        });
+                    }
+                    console.log(`📝 Operador ${user.username} atualizando: ${numeroControle}`);
+
+                } else if (userRole === 'admin') {
+                    console.log(`👑 Admin ${user.username} atualizando: ${numeroControle} (Permissão Total)`);
+                } else {
+                    // Caso o role no token seja algo bizarro (ex: "user", "manager")
+                    console.error(`⚠️ Role desconhecido detectado: ${userRole}`);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Seu nível de acesso não permite esta ação.'
+                    });
+                }
+
+                // 5. Preparação dos dados e Update
                 dados.data_atualizacao = new Date().toISOString();
+                dados.atualizado_por = user.username;
+
+                // Removemos o _id dos dados para evitar erro de tentativa de alterar chave primária do Mongo
+                delete dados._id;
 
                 const resultado = await db.collection('checklists').updateOne(
                     { numero_controle: numeroControle },
@@ -153,30 +377,62 @@ async function startServer() {
                 if (resultado.matchedCount === 0) {
                     return res.status(404).json({
                         success: false,
-                        message: 'Formulário não encontrado'
+                        message: 'Não foi possível encontrar o registro para atualizar.'
                     });
                 }
 
                 res.json({
                     success: true,
-                    message: 'Formulário atualizado com sucesso',
-                    formulario: dados
+                    message: 'Formulário atualizado com sucesso!',
+                    usuario: user.username
                 });
 
             } catch (error) {
-                console.error('❌ Erro ao atualizar formulário:', error);
+                console.error('❌ Erro crítico no Servidor (PUT):', error);
                 res.status(500).json({
                     success: false,
-                    message: 'Erro ao atualizar formulário',
+                    message: 'Erro interno ao processar a atualização.',
                     error: error.message
                 });
             }
         });
-
-        // Rota para deletar um formulário
+        
+        // Rota para deletar um formulário (APENAS ADMIN)
         app.delete('/api/fr0062/:numeroControle', async (req, res) => {
             try {
                 const numeroControle = req.params.numeroControle;
+
+                // Verificar token (obrigatório para delete)
+                const authHeader = req.headers['authorization'];
+                const token = authHeader && authHeader.split(' ')[1];
+
+                if (!token) {
+                    return res.status(401).json({
+                        success: false,
+                        message: 'Token não fornecido. Apenas admins podem deletar.'
+                    });
+                }
+
+                let user;
+                try {
+                    user = jwt.verify(token, JWT_SECRET);
+                } catch (err) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Token inválido ou expirado'
+                    });
+                }
+
+                // Apenas ADMIN pode deletar
+                if (user.role !== 'admin') {
+                    console.log(`❌ Usuário ${user.username} (${user.role}) tentou deletar ${numeroControle}`);
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas administradores podem deletar checklists'
+                    });
+                }
+
+                console.log(`👑 Admin ${user.username} deletando ${numeroControle}`);
 
                 const resultado = await db.collection('checklists').deleteOne({
                     numero_controle: numeroControle
@@ -211,11 +467,12 @@ async function startServer() {
                 message: 'API funcionando corretamente',
                 timestamp: new Date().toISOString(),
                 endpoints: {
-                    'POST /api/fr0062': 'Criar novo formulário',
-                    'GET /api/fr0062': 'Listar todos os formulários',
-                    'GET /api/fr0062/:id': 'Buscar formulário específico',
-                    'PUT /api/fr0062/:id': 'Atualizar formulário',
-                    'DELETE /api/fr0062/:id': 'Deletar formulário'
+                    'POST /api/fr0062/login': 'Login (Admin)',
+                    'POST /api/fr0062': 'Criar novo formulário (Operador/Admin)',
+                    'GET /api/fr0062': 'Listar todos os formulários (Operador/Admin)',
+                    'GET /api/fr0062/:id': 'Buscar formulário específico (Operador/Admin)',
+                    'PUT /api/fr0062/:id': 'Atualizar formulário (Operador/Admin com restrições)',
+                    'DELETE /api/fr0062/:id': 'Deletar formulário (Apenas Admin)'
                 }
             });
         });
@@ -236,12 +493,27 @@ async function startServer() {
             console.log(`🗄️  Banco de dados: MongoDB - 4m_checklist`);
             console.log('');
             console.log('📋 Endpoints disponíveis:');
-            console.log(`   POST   /api/fr0062              - Criar formulário`);
-            console.log(`   GET    /api/fr0062              - Listar formulários`);
-            console.log(`   GET    /api/fr0062/:id          - Buscar formulário`);
-            console.log(`   PUT    /api/fr0062/:id          - Atualizar formulário`);
-            console.log(`   DELETE /api/fr0062/:id          - Deletar formulário`);
+            console.log(`   POST   /api/fr0062/login       - Login (Admin)`);
+            console.log(`   POST   /api/fr0062              - Criar formulário (Operador/Admin)`);
+            console.log(`   GET    /api/fr0062              - Listar formulários (Operador/Admin)`);
+            console.log(`   GET    /api/fr0062/:id          - Buscar formulário (Operador/Admin)`);
+            console.log(`   PUT    /api/fr0062/:id          - Atualizar formulário (Operador/Admin)`);
+            console.log(`   DELETE /api/fr0062/:id          - Deletar formulário (Apenas Admin)`);
             console.log(`   GET    /api/status              - Status da API`);
+            console.log('');
+            console.log('🔐 PERMISSÕES:');
+            console.log(`   OPERADOR: Sem login, acesso direto`);
+            console.log(`   - Criar checklists`);
+            console.log(`   - Editar checklists em andamento`);
+            console.log(`   - Finalizar checklists`);
+            console.log(`   - Visualizar tudo (read-only em finalizados)`);
+            console.log(`   - NÃO pode editar finalizados`);
+            console.log(`   - NÃO pode deletar`);
+            console.log('');
+            console.log(`   ADMIN: Login obrigatório`);
+            console.log(`   - Tudo que operador pode fazer`);
+            console.log(`   - Editar checklists finalizados`);
+            console.log(`   - Deletar checklists`);
             console.log('═══════════════════════════════════════════════════════');
             console.log('');
         });

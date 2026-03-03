@@ -445,7 +445,10 @@
                     contentContainer.innerHTML = '';
                     infoBar.style.display = 'none';
                     
-                    const response = await fetch(`https://fourm-znis.onrender.com/api/fr0062/${numeroControle}`);
+                    const apiUrl = window.location.hostname === 'localhost' 
+                        ? 'http://localhost:3001' 
+                        : 'https://fourm-znis.onrender.com';
+                    const response = await fetch(`${apiUrl}/api/fr0062/${numeroControle}`);
                     const result = await response.json();
                     
                     if (result.success && result.data) {
@@ -772,12 +775,12 @@
                 // Ctrl+L para lista
                 if (e.ctrlKey && e.key === 'l') {
                     e.preventDefault();
-                    window.location.href = '4m-checklist.html';
+                    window.location.href = '/4m-checklist.html';
                 }
                 // Ctrl+D para detalhes
                 if (e.ctrlKey && e.key === 'd') {
                     e.preventDefault();
-                    window.location.href = `checklist-detalhes.html?numero=${numeroControle}`;
+                    window.location.href = `/checklist-detalhes.html?numero=${numeroControle}`;
                 }
             });
         });
