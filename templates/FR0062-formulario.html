@@ -9,13 +9,16 @@
     <link rel="stylesheet" href="../css/FR0062-estilos.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="icon" href="./4m-logo.png" type="image/x-icon">
-
+    <script src="./scripts/validacao-colunas.js"></script>
     <script>
         const API_URL = window.location.hostname === 'localhost'
             ? 'http://localhost:3001/api'
             : 'https://fourm-znis.onrender.com/api';
 
         // ========== SISTEMA DE MENSAGENS ==========
+
+
+
         class SistemaMensagens {
             constructor() {
                 this.container = null;
@@ -1381,6 +1384,67 @@
         });
         // Adicione isso ao seu script existente
         document.addEventListener('DOMContentLoaded', function () {
+
+            // ========== CONTROLE DE MODIFICAÇÕES NO FORMULÁRIO ==========
+            let formularioModificado = false;
+
+            // Função para marcar o formulário como modificado
+            function marcarModificado() {
+                formularioModificado = true;
+                console.log('📝 Formulário modificado');
+            }
+
+            // Função para verificar se há dados preenchidos (fallback)
+            function verificarDadosPreenchidos() {
+                // Verifica campos contenteditable
+                const edits = document.querySelectorAll('[contenteditable="true"]');
+                for (let el of edits) {
+                    if (el.textContent.trim() !== '') return true;
+                }
+                // Verifica inputs text, date, etc.
+                const inputs = document.querySelectorAll('input[type="text"], input[type="date"], textarea');
+                for (let el of inputs) {
+                    if (el.value.trim() !== '') return true;
+                }
+                // Verifica checkboxes marcados
+                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                for (let el of checkboxes) {
+                    if (el.checked) return true;
+                }
+                return false;
+            }
+
+            // Adiciona listeners para detectar modificações
+            document.querySelectorAll('[contenteditable="true"], input, textarea').forEach(el => {
+                el.addEventListener('input', marcarModificado);
+                el.addEventListener('change', marcarModificado);
+            });
+
+            // Para checkboxes (change já cobre)
+            // Para o caso de conteúdo editável via teclado, input já dispara
+
+            // Evento beforeunload - disparado ao recarregar/fechar a página
+            window.addEventListener('beforeunload', function (e) {
+                // Se o formulário foi modificado ou há dados preenchidos
+                if (formularioModificado || verificarDadosPreenchidos()) {
+                    // Mensagem personalizada (alguns navegadores ignoram o texto customizado)
+                    const mensagem = 'Você tem dados não salvos. Tem certeza que deseja sair?';
+                    e.returnValue = mensagem; // Padrão para Chrome
+                    return mensagem; // Para Firefox
+                }
+            });
+
+            // Opcional: após salvar ou limpar o formulário, resetar a flag
+            // Você pode chamar isso nos métodos de sucesso do salvamento/limpeza
+            function resetarModificacao() {
+                formularioModificado = false;
+                console.log('✅ Flag de modificação resetada');
+            }
+
+            // Exemplo de como integrar com os botões existentes:
+            // No método salvarFormulario, após o sucesso, chame resetarModificacao()
+            // No método limparFormulario, após limpar, chame resetarModificacao()
+
             // Verifica se estamos em uma tela pequena e ajusta os blocos
             function ajustarSetoresParaMobile() {
                 const blocoSetor = document.querySelector('.bloco-setor');
@@ -1705,7 +1769,7 @@
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="man_dataTurno1" data-categoria="MAN"
-                            name="man_dataTurno1" data-field="man_data_turno_1"> / / </span>
+                            name="man_dataTurno1" data-field="man_data_turno_1"></span>
                         <label><input type="checkbox" aria-label="MAN Turno 1T" id="man_turno1T" data-categoria="MAN"
                                 name="man_turno1T" data-field="man_turno_1t"> 1T</label>
                         <label><input type="checkbox" aria-label="MAN Turno 2T" id="man_turno2T" data-categoria="MAN"
@@ -1716,7 +1780,7 @@
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="machine_dataTurno1" data-categoria="MACHINE"
-                            name="machine_dataTurno1" data-field="machine_data_turno_1" data-categoria="MACHINE"> / /
+                            name="machine_dataTurno1" data-field="machine_data_turno_1" data-categoria="MACHINE">
                         </span>
                         <label><input type="checkbox" aria-label="MACHINE Turno 1T" data-categoria="MACHINE"
                                 id="machine_turno1T" name="machine_turno1T" data-field="machine_turno_1t"> 1T</label>
@@ -1731,7 +1795,7 @@
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="material_dataTurno1"
                             data-categoria="MATERIAL" name="material_dataTurno1" data-field="material_data_turno_1"
-                            data-categoria="MATERIAL"> / /
+                            data-categoria="MATERIAL">
                         </span>
                         <label><input type="checkbox" aria-label="MATERIAL Turno 1T" data-categoria="MATERIAL"
                                 id="material_turno1T" name="material_turno1T" data-field="material_turno_1t"> 1T</label>
@@ -1745,7 +1809,7 @@
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
                         <span class="input-line" contenteditable="true" id="method_dataTurno1" name="method_dataTurno1"
-                            data-field="method_data_turno_1"> / / </span>
+                            data-field="method_data_turno_1">  </span>
                         <label><input type="checkbox" aria-label="METHOD Turno 1T" data-categoria="METHOD"
                                 id="method_turno1T" name="method_turno1T" data-field="method_turno_1t"
                                 data-categoria="METHOD"> 1T</label>
@@ -2427,8 +2491,10 @@
             </div>
         </div>
         <button class="btn-finalizar" id="btnFinalizarcheck">FINALIZAR CHECKLIST 4M</button>
-        <!-- No bloco-visto, adicione este botão -->
     </form>
+    <!-- Gerenciador de etapas: carregado após o script inline para garantir que
+         window.sistemaChecklist já exista quando DOMContentLoaded disparar -->
+    <script src="./scripts/FR0062-etapas.js"></script>
 </body>
 
 </html>

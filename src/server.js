@@ -69,12 +69,12 @@ async function startServer() {
             }
             return { success: false };
         }
-
+    
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
             const authHeader = req.headers['authorization'];
             const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-
+    
             if (!token) {
                 return res.status(401).json({
                     success: false,
@@ -90,13 +90,13 @@ async function startServer() {
                         message: 'Token inválido ou expirado'
                     });
                 }
-
+    
                 // Adicionar dados do usuário ao request
                 req.user = decoded;
                 next();
             });
         }
-
+    
         // Middleware para verificar role
         function verificarRole(rolesPermitidas) {
             return (req, res, next) => {
@@ -111,7 +111,7 @@ async function startServer() {
                         }
                     });
                 }
-
+    
                 return res.status(403).json({
                     success: false,
                     message: 'Sem permissão para realizar esta ação'
@@ -180,7 +180,8 @@ async function startServer() {
                 });
             }
         });
-
+    
+    
         // ==================== ROTAS CRUD FORMULÁRIOS ====================
 
         // Rota para salvar formulário FR0062 (OPERADOR + ADMIN)
@@ -203,18 +204,18 @@ async function startServer() {
                 dados.data_atualizacao = agora;
                 dados.criado_por = req.user.username;
                 dados.status = dados.status || 'em_andamento';
-
+        
                 // Salvar no MongoDB
                 await db.collection('checklists').insertOne(dados);
-
+        
                 console.log('✅ Formulário salvo no MongoDB');
-
+        
                 res.json({
                     success: true,
                     message: 'Formulário salvo com sucesso',
                     numero_controle: dados.numero_controle
                 });
-
+        
             } catch (error) {
                 console.error('❌ Erro ao salvar formulário:', error);
                 res.status(500).json({
@@ -224,7 +225,7 @@ async function startServer() {
                 });
             }
         });
-
+        
         // Rota para listar todos os formulários (OPERADOR + ADMIN)
         app.get('/api/fr0062', verificarOperador, async (req, res) => {
             try {
@@ -233,7 +234,7 @@ async function startServer() {
                     .find()
                     .sort({ data_criacao: -1 })
                     .toArray();
-
+        
                 res.json({
                     success: true,
                     count: formularios.length,
@@ -248,28 +249,28 @@ async function startServer() {
                 });
             }
         });
-
+        
         // Rota para buscar um formulário específico (OPERADOR + ADMIN)
         app.get('/api/fr0062/:numeroControle', verificarOperador, async (req, res) => {
             try {
                 const numeroControle = req.params.numeroControle;
-
+        
                 const formulario = await db
                     .collection('checklists')
                     .findOne({ numero_controle: numeroControle });
-
+        
                 if (!formulario) {
                     return res.status(404).json({
                         success: false,
                         message: 'Formulário não encontrado'
                     });
                 }
-
+        
                 res.json({
                     success: true,
                     formulario
                 });
-
+        
             } catch (error) {
                 console.error('❌ Erro ao buscar formulário:', error);
                 res.status(500).json({
@@ -279,21 +280,21 @@ async function startServer() {
                 });
             }
         });
-
+        
         // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
         // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
         app.put('/api/fr0062/:numeroControle', async (req, res) => {
             try {
                 const { numeroControle } = req.params;
                 const dados = req.body;
-
+        
                 // 1. Extração e limpeza do Token
                 const authHeader = req.headers['authorization'];
                 let token = authHeader && authHeader.split(' ')[1];
-
+        
                 // Se o token for a string "null" ou "undefined" vinda do front, tratamos como nulo
                 if (token === 'null' || token === 'undefined') token = null;
-
+        
                 // Usuário padrão caso não haja token válido
                 let user = { username: 'operador', role: 'operador' };
 
@@ -333,23 +334,40 @@ async function startServer() {
                 const userRole = user.role ? user.role.toLowerCase() : 'operador';
 
                 if (userRole === 'operador') {
-                    // Regra: Operador não mexe em finalizado
-                    if (statusAtual === 'finalizado') {
-                        console.log(`🚫 Bloqueado: Operador ${user.username} tentou editar checklist finalizado.`);
+                    // Regra: Nenhum operador edita checklist concluído/finalizado
+                    if (statusAtual === 'concluido' || statusAtual === 'finalizado') {
+                        console.log(`🚫 Bloqueado: Operador ${user.username} tentou editar checklist concluído.`);
                         return res.status(403).json({
                             success: false,
-                            message: 'Operadores não podem editar checklists já finalizados.'
+                            message: 'Não é possível editar um checklist já concluído.'
                         });
                     }
 
-                    // Regra: Operador só pode mudar para 'em_andamento' ou 'finalizado'
-                    if (statusNovo !== 'em_andamento' && statusNovo !== 'finalizado') {
+                    // Operador/Qualidade nunca podem definir status 'concluido' — só admin pode
+                    if (statusNovo === 'concluido' || statusNovo === 'finalizado') {
                         return res.status(403).json({
                             success: false,
-                            message: 'Permissão negada para alterar o status para este valor.'
+                            message: 'Apenas administradores podem concluir checklists.'
                         });
                     }
-                    console.log(`📝 Operador ${user.username} atualizando: ${numeroControle}`);
+
+                    // Validar transições permitidas (fluxo linear)
+                    const transicoesPermitidas = {
+                        'em_andamento':         ['em_andamento', 'aguardando_qualidade'],
+                        'aguardando_qualidade':  ['aguardando_qualidade', 'aguardando_aprovacao'],
+                        'aguardando_aprovacao':  ['aguardando_aprovacao'] // avanço para concluido só por admin
+                    };
+
+                    const permitidos = transicoesPermitidas[statusAtual] || [];
+                    if (statusNovo !== statusAtual && !permitidos.includes(statusNovo)) {
+                        console.log(`🚫 Transição inválida: ${statusAtual} → ${statusNovo} por ${user.username}`);
+                        return res.status(403).json({
+                            success: false,
+                            message: `Transição de status '${statusAtual}' para '${statusNovo}' não é permitida.`
+                        });
+                    }
+
+                    console.log(`📝 Operador/Qualidade ${user.username} atualizando: ${numeroControle} (${statusAtual} → ${statusNovo})`);
 
                 } else if (userRole === 'admin') {
                     console.log(`👑 Admin ${user.username} atualizando: ${numeroControle} (Permissão Total)`);
@@ -396,7 +414,7 @@ async function startServer() {
                 });
             }
         });
-        
+
         // Rota para deletar um formulário (APENAS ADMIN)
         app.delete('/api/fr0062/:numeroControle', async (req, res) => {
             try {
