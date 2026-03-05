@@ -386,6 +386,8 @@ async function startServer() {
 
                 // Removemos o _id dos dados para evitar erro de tentativa de alterar chave primária do Mongo
                 delete dados._id;
+                // data_criacao nunca deve ser sobrescrita em um update
+                delete dados.data_criacao;
 
                 const resultado = await db.collection('checklists').updateOne(
                     { numero_controle: numeroControle },

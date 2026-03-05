@@ -642,11 +642,14 @@
         </div>
 
         <div class="filter-group">
-          <label for="status"><span class="material-icons">info</span> Status</label>
+          <label for="status"><span class="material-icons">info</span> Status / Etapa</label>
           <select id="status" name="status">
-            <option value="">Todos os status</option>
-            <option value="em_andamento">Em andamento</option>
-            <option value="finalizado">Finalizado</option>
+            <option value="">Todas as etapas</option>
+            <option value="em_andamento">Etapa 1 — Produção</option>
+            <option value="aguardando_qualidade">Etapa 2 — Qualidade</option>
+            <option value="aguardando_aprovacao">Etapa 3 — Aprovação</option>
+            <option value="concluido">Concluído</option>
+            <option value="finalizado">Concluído (legado)</option>
           </select>
         </div>
 
@@ -690,9 +693,21 @@
           <span class="material-icons" style="font-size: 16px;">description</span>
           <span>Total: <span id="countTotal">0</span></span>
         </div>
-        <div class="stat-item">
-          <span class="material-icons" style="font-size: 16px;">check_circle</span>
-          <span>Finalizados: <span id="countAprovados">0</span></span>
+        <div class="stat-item" style="color:#1976D2">
+          <span class="material-icons" style="font-size: 16px; color:#1976D2">engineering</span>
+          <span>Produção: <span id="countProducao">0</span></span>
+        </div>
+        <div class="stat-item" style="color:#E65100">
+          <span class="material-icons" style="font-size: 16px; color:#E65100">rule</span>
+          <span>Qualidade: <span id="countQualidade">0</span></span>
+        </div>
+        <div class="stat-item" style="color:#6A1B9A">
+          <span class="material-icons" style="font-size: 16px; color:#6A1B9A">verified</span>
+          <span>Aprovação: <span id="countAprovacao">0</span></span>
+        </div>
+        <div class="stat-item" style="color:#2E7D32">
+          <span class="material-icons" style="font-size: 16px; color:#2E7D32">check_circle</span>
+          <span>Concluídos: <span id="countAprovados">0</span></span>
         </div>
         <div class="stat-item">
           <span class="material-icons" style="font-size: 16px;">update</span>
@@ -813,9 +828,13 @@
       }
 
       if (filtroStatus) {
-        checklistsFiltrados = checklistsFiltrados.filter(cl =>
-          (cl.status || 'em_andamento') === filtroStatus
-        );
+        checklistsFiltrados = checklistsFiltrados.filter(cl => {
+          const s = cl.status || 'em_andamento';
+          // 'finalizado' e 'concluido' são equivalentes para filtro
+          if (filtroStatus === 'concluido') return s === 'concluido' || s === 'finalizado';
+          if (filtroStatus === 'finalizado') return s === 'finalizado';
+          return s === filtroStatus;
+        });
       }
 
       if (filtroAno) {
@@ -858,11 +877,16 @@
 
       const dataFormatada = formatarData(checklist.data_criacao);
       const status = checklist.status || 'em_andamento';
-      const isFinalizado = status === 'finalizado';
+      const isConcluido = status === 'concluido' || status === 'finalizado';
 
-      const statusInfo = isFinalizado
-        ? { cor: '#4CAF50', label: 'Finalizado', icone: 'check_circle' }
-        : { cor: '#FFA500', label: 'Em Andamento', icone: 'pending' };
+      const STATUS_MAP = {
+        'em_andamento':         { cor: '#1565C0', bg: 'rgba(21,101,192,.15)',  label: 'Etapa 1 — Produção',  icone: 'engineering', etapa: 1 },
+        'aguardando_qualidade': { cor: '#E65100', bg: 'rgba(230,81,0,.15)',    label: 'Etapa 2 — Qualidade', icone: 'rule',        etapa: 2 },
+        'aguardando_aprovacao': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)',  label: 'Etapa 3 — Aprovação', icone: 'verified',    etapa: 3 },
+        'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 4 },
+        'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 4 },
+      };
+      const statusInfo = STATUS_MAP[status] || STATUS_MAP['em_andamento'];
 
       // Obter usuário logado
       const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -870,9 +894,9 @@
 
       // LÓGICA DE PERMISSÕES:
       // 1. Deletar: Apenas se estiver logado.
-      // 2. Editar: Se logado OU se não logado e o card NÃO estiver finalizado.
+      // 2. Editar: Se logado OU se não logado e o card NÃO estiver concluído.
       const podeDeletar = estaLogado;
-      const podeEditar = estaLogado || (!estaLogado && !isFinalizado);
+      const podeEditar = estaLogado || (!estaLogado && !isConcluido);
 
       card.innerHTML = `
     <div class="checklist-header">
@@ -892,9 +916,22 @@
         <span>${formatarData(checklist.data_atualizacao)}</span>
       </div>
     </div>
-    <div class="checklist-status">
+
+    <div class="card-pipeline">
+      ${[1,2,3,4].map(n => {
+        const nomes = {1:'Produção',2:'Qualidade',3:'Aprovação',4:'Concluído'};
+        const cores = {1:'#1565C0',2:'#E65100',3:'#6A1B9A',4:'#2E7D32'};
+        const etapaAtiva = statusInfo.etapa;
+        const cls = n < etapaAtiva ? 'pipe-ok' : n === etapaAtiva ? 'pipe-ativa' : 'pipe-inativa';
+        return `<div class="pipe-step ${cls}" style="--c:${cores[n]}">
+
+        </div>${n < 4 ? '<div class="pipe-line ' + (n < etapaAtiva ? 'pipe-line-ok' : '') + '"></div>' : ''}`;
+      }).join('')}
+    </div>
+
+    <div class="checklist-status" style="background:${statusInfo.bg}; border-radius:6px; padding:8px 12px; margin-top:8px;">
       <span class="material-icons" style="font-size: 16px; color: ${statusInfo.cor};">${statusInfo.icone}</span>
-      <span style="color: ${statusInfo.cor};">${statusInfo.label}</span>
+      <span style="color: ${statusInfo.cor}; font-weight:600; font-size:.9rem;">${statusInfo.label}</span>
     </div>
     
     <div class="checklist-actions">
@@ -997,14 +1034,20 @@
     }
 
     function atualizarEstatisticas(checklists) {
-      const total = checklists.length;
-      const finalizados = checklists.filter(cl => cl.status === 'finalizado').length;
+      const total      = checklists.length;
+      const producao   = checklists.filter(cl => (cl.status || 'em_andamento') === 'em_andamento').length;
+      const qualidade  = checklists.filter(cl => cl.status === 'aguardando_qualidade').length;
+      const aprovacao  = checklists.filter(cl => cl.status === 'aguardando_aprovacao').length;
+      const concluidos = checklists.filter(cl => cl.status === 'concluido' || cl.status === 'finalizado').length;
 
       const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
       const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
 
-      document.getElementById('countTotal').textContent = total;
-      document.getElementById('countAprovados').textContent = finalizados;
+      document.getElementById('countTotal').textContent    = total;
+      document.getElementById('countProducao').textContent = producao;
+      document.getElementById('countQualidade').textContent= qualidade;
+      document.getElementById('countAprovacao').textContent= aprovacao;
+      document.getElementById('countAprovados').textContent= concluidos;
       document.getElementById('ultimoChecklist').textContent = ultimoData;
     }
 

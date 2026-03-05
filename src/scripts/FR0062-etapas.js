@@ -104,7 +104,9 @@ class GerenciadorEtapas {
                 break;
             case 'concluido':
             case 'finalizado':
-                this._bloquearTudo();
+                if (!this.isAdmin) {
+                    this._bloquearTudo();
+                }
                 this._badge('✔ CONCLUÍDO', '#2E7D32');
                 break;
             default:
@@ -127,16 +129,16 @@ class GerenciadorEtapas {
         this._limparBanners();
 
         // Sinalizar seções bloqueadas com faixa discreta
-        this._faixaBloqueada('.quadro-container-3',     '🔒  QUALIDADE — preenchido na Etapa 2');
-        this._faixaBloqueada('.sidebar-acompanhamento', '🔒  QUALIDADE — preenchido na Etapa 2');
-        this._faixaBloqueada('.cabecalho-superior',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
-        this._faixaBloqueada('.quadro-container-4',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
+        // this._faixaBloqueada('.quadro-container-3',     '🔒  QUALIDADE — preenchido na Etapa 2');
+        // this._faixaBloqueada('.sidebar-acompanhamento', '🔒  QUALIDADE — preenchido na Etapa 2');
+        // this._faixaBloqueada('.cabecalho-superior',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
+        // this._faixaBloqueada('.quadro-container-4',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
 
         this._show('btnSalvarEtapa');
         this._show('btnAvancarEtapa');
         this._hide('btnVoltarSalvar');
         this._hide('btnAprovarFinalizar');
-        this._atualTexto('btnAvancarEtapa', '📋 ENVIAR PARA QUALIDADE');
+        this._atualTexto('btnAvancarEtapa', '📋 AVANÇAR');
         this._atualClasse('btnAvancarEtapa', 'btn-avancar btn-avancar-producao');
     }
 
@@ -167,14 +169,14 @@ class GerenciadorEtapas {
         this._unlock('.sidebar-acompanhamento');
 
         // Sinalizar restantes
-        this._faixaBloqueada('.cabecalho-superior', '🔒  APROVAÇÃO — preenchido na Etapa 3');
-        this._faixaBloqueada('.quadro-container-4',  '🔒  APROVAÇÃO — preenchido na Etapa 3');
+        // this._faixaBloqueada('.cabecalho-superior', '🔒  APROVAÇÃO — preenchido na Etapa 3');
+        // this._faixaBloqueada('.quadro-container-4',  '🔒  APROVAÇÃO — preenchido na Etapa 3');
 
         this._show('btnSalvarEtapa');
         this._show('btnAvancarEtapa');
         this._hide('btnVoltarSalvar');
         this._hide('btnAprovarFinalizar');
-        this._atualTexto('btnAvancarEtapa', '📤 ENVIAR PARA APROVAÇÃO');
+        this._atualTexto('btnAvancarEtapa', '📤 AVANÇAR');
         this._atualClasse('btnAvancarEtapa', 'btn-avancar btn-avancar-qualidade');
     }
 
@@ -187,8 +189,8 @@ class GerenciadorEtapas {
         this._limparBanners();
 
         // Destacar cabeçalho e container-4 como foco da aprovação
-        this._faixaDestaque('.cabecalho-superior', '✏️  Preencha o cabeçalho para finalizar o fluxo');
-        this._faixaDestaque('.quadro-container-4',  '✏️  Confirme a análise de risco e horário de aplicação');
+        // this._faixaDestaque('.cabecalho-superior', '✏️  Preencha o cabeçalho para finalizar o fluxo');
+        // this._faixaDestaque('.quadro-container-4',  '✏️  Confirme a análise de risco e horário de aplicação');
 
         this._show('btnSalvarEtapa');
         this._hide('btnAvancarEtapa');
@@ -378,7 +380,7 @@ class GerenciadorEtapas {
         btnAprovar.id        = 'btnAprovarFinalizar';
         btnAprovar.type      = 'button';
         btnAprovar.className = 'btn-aprovar';
-        btnAprovar.textContent = '✔ APROVAR E FINALIZAR';
+        btnAprovar.textContent = 'FINALIZAR';
         btnAprovar.style.display = 'none';
         btnAprovar.addEventListener('click', () => this._aprovarFinalizar());
         bloco.appendChild(btnAprovar);
@@ -442,7 +444,7 @@ class GerenciadorEtapas {
             const res = await this._req(dados);
             if (res.success) {
                 msg?.sucesso(`✓ Formulário enviado para ${label}!`);
-                setTimeout(() => { window.location.href = '/templates/4m-checklist.html'; }, 2000);
+                setTimeout(() => { window.location.href = '/4m-checklist.html'; }, 2000);
             } else {
                 msg?.erro('Erro ao enviar: ' + (res.message || 'tente novamente.'));
             }
@@ -469,7 +471,7 @@ class GerenciadorEtapas {
             const res = await this._req(dados);
             if (res.success) {
                 msg?.sucesso('✓ Checklist aprovado e concluído!');
-                setTimeout(() => { window.location.href = '/templates/4m-checklist.html'; }, 2500);
+                setTimeout(() => { window.location.href = '/4m-checklist.html'; }, 2500);
             } else {
                 msg?.erro('Erro ao finalizar: ' + (res.message || 'tente novamente.'));
             }
@@ -750,7 +752,7 @@ class GerenciadorEtapas {
     font-family: Arial, sans-serif;
     line-height: 1.5;
 }
-.etapa-faixa-lock {
+    .etapa-faixa-lock {
     background: #FFF8E1;
     color:  #795548;
     border-left: 3px solid #FF8F00;

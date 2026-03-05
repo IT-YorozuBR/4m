@@ -1,14 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema de Qualidade - Acesso</title>
   <link rel="icon" href="./4m-logo.png" type="image/x-icon">
 
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body {
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
       width: 100%;
       height: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -192,13 +199,11 @@
       left: -50%;
       width: 200%;
       height: 200%;
-      background: linear-gradient(
-        to bottom right,
-        rgba(255, 214, 0, 0.1) 0%,
-        rgba(255, 214, 0, 0.3) 20%,
-        rgba(255, 214, 0, 0.1) 40%,
-        transparent 60%
-      );
+      background: linear-gradient(to bottom right,
+          rgba(255, 214, 0, 0.1) 0%,
+          rgba(255, 214, 0, 0.3) 20%,
+          rgba(255, 214, 0, 0.1) 40%,
+          transparent 60%);
       transform: rotate(30deg);
       animation: energy-flow 6s linear infinite;
       z-index: 1;
@@ -223,24 +228,20 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(
-        to right,
-        transparent 0%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 100%
-      );
+      background: linear-gradient(to right,
+          transparent 0%,
+          rgba(255, 255, 255, 0.1) 50%,
+          transparent 100%);
       animation: hyperspace 1.5s linear;
       z-index: 1;
     }
 
     /* Efeito especial para o 4M ao passar mouse */
     .card-4m:hover::after {
-      background: linear-gradient(
-        to right,
-        transparent 0%,
-        rgba(255, 214, 0, 0.2) 50%,
-        transparent 100%
-      );
+      background: linear-gradient(to right,
+          transparent 0%,
+          rgba(255, 214, 0, 0.2) 50%,
+          transparent 100%);
     }
 
     /* Ícones */
@@ -291,14 +292,30 @@
 
     /* Animações */
     @keyframes energy-flow {
-      0% { transform: translateX(-50%) translateY(-50%) rotate(30deg); }
-      100% { transform: translateX(0%) translateY(0%) rotate(30deg); }
+      0% {
+        transform: translateX(-50%) translateY(-50%) rotate(30deg);
+      }
+
+      100% {
+        transform: translateX(0%) translateY(0%) rotate(30deg);
+      }
     }
 
     @keyframes hyperspace {
-      0% { transform: translateX(-100%) skewX(-20deg); opacity: 0; }
-      50% { transform: translateX(0) skewX(-20deg); opacity: 0.8; }
-      100% { transform: translateX(100%) skewX(-20deg); opacity: 0; }
+      0% {
+        transform: translateX(-100%) skewX(-20deg);
+        opacity: 0;
+      }
+
+      50% {
+        transform: translateX(0) skewX(-20deg);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translateX(100%) skewX(-20deg);
+        opacity: 0;
+      }
     }
 
     /* Efeito de reflexo */
@@ -308,21 +325,15 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.03) 0%,
-        transparent 30%
-      );
-      mask-image: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.8) 0%,
-        transparent 70%
-      );
-      -webkit-mask-image: linear-gradient(
-        to bottom,
-        rgba(0,0,0,0.8) 0%,
-        transparent 70%
-      );
+      background: linear-gradient(to bottom,
+          rgba(255, 255, 255, 0.03) 0%,
+          transparent 30%);
+      mask-image: linear-gradient(to bottom,
+          rgba(0, 0, 0, 0.8) 0%,
+          transparent 70%);
+      -webkit-mask-image: linear-gradient(to bottom,
+          rgba(0, 0, 0, 0.8) 0%,
+          transparent 70%);
       z-index: 1;
     }
 
@@ -468,19 +479,33 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
       border: 1px solid rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(10px);
     }
 
     @keyframes slideIn {
-      from { transform: translateX(100%); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
 
     @keyframes slideOut {
-      from { transform: translateX(0); opacity: 1; }
-      to { transform: translateX(100%); opacity: 0; }
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
     }
 
     /* Responsividade */
@@ -489,20 +514,20 @@
         padding: 20px;
         gap: 20px;
       }
-      
+
       .card {
         height: 200px;
         padding: 20px;
       }
-      
+
       .card-4m .card-title {
         font-size: 2rem;
       }
-      
+
       .card-icon {
         font-size: 2.5rem;
       }
-      
+
       .info-bar {
         width: 90%;
         text-align: center;
@@ -513,6 +538,7 @@
   </style>
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
+
 <body>
   <!-- Navbar com info de usuário -->
   <nav class="navbar" id="navbar">
@@ -636,7 +662,7 @@
         // Usuário logado
         const roleBadgeClass = usuarioLogado.role === 'admin' ? 'admin' : '';
         const roleLabel = usuarioLogado.role === 'admin' ? 'ADM' : 'APR';
-        
+
         navbarRight.innerHTML = `
           <div class="user-info">
             <span class="material-icons" style="font-size: 18px;">account_circle</span>
@@ -669,7 +695,7 @@
     }
 
     // Inicialização
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       atualizarNavbar();
       configurarCard4M();
       configurarDragAndDrop();
@@ -684,11 +710,11 @@
       const card4m = document.getElementById('card-4m');
       const card4mTitle = card4m.querySelector('.card-title');
       const card4mIcon = card4m.querySelector('.card-icon');
-      
+
       // Clique simples - abrir lista de checklists
-      card4m.addEventListener('click', function(e) {
+      card4m.addEventListener('click', function (e) {
         clickCount++;
-        
+
         if (clickCount === 1) {
           clickTimer = setTimeout(() => {
             // Clique simples
@@ -699,7 +725,7 @@
       });
 
       // Clique com botão direito - menu rápido
-      card4m.addEventListener('contextmenu', function(e) {
+      card4m.addEventListener('contextmenu', function (e) {
         e.preventDefault();
         mostrarMenuRapido(e);
       });
@@ -709,14 +735,14 @@
         const rect = card4m.getBoundingClientRect();
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
-        
+
         const moveX = (x - 0.5) * 20;
         const moveY = (y - 0.5) * 20;
-        
+
         card4mTitle.style.transform = `translate(${moveX}px, ${moveY}px)`;
         card4mIcon.style.transform = `translate(${-moveX}px, ${-moveY}px) scale(1.1)`;
       });
-      
+
       card4m.addEventListener('mouseleave', () => {
         card4mTitle.style.transform = 'translate(0, 0)';
         card4mIcon.style.transform = 'translate(0, 0) scale(1)';
@@ -726,10 +752,10 @@
     // Configurar drag and drop
     function configurarDragAndDrop() {
       const dashboard = document.querySelector('.dashboard');
-      
+
       document.querySelectorAll('.card.draggable').forEach(card => {
         // Drag start
-        card.addEventListener('dragstart', function(e) {
+        card.addEventListener('dragstart', function (e) {
           draggedItem = this;
           setTimeout(() => {
             this.classList.add('dragging');
@@ -739,7 +765,7 @@
         });
 
         // Drag end
-        card.addEventListener('dragend', function() {
+        card.addEventListener('dragend', function () {
           this.classList.remove('dragging');
           draggedItem = null;
           salvarLayout();
@@ -747,10 +773,10 @@
       });
 
       // Drag over
-      dashboard.addEventListener('dragover', function(e) {
+      dashboard.addEventListener('dragover', function (e) {
         e.preventDefault();
         if (!draggedItem) return;
-        
+
         const afterElement = getDragAfterElement(this, e.clientY);
         if (afterElement == null) {
           this.appendChild(draggedItem);
@@ -762,24 +788,24 @@
       // Touch support
       document.querySelectorAll('.card.draggable').forEach(card => {
         let touchStartY = 0;
-        
-        card.addEventListener('touchstart', function(e) {
+
+        card.addEventListener('touchstart', function (e) {
           touchStartY = e.touches[0].clientY;
           this.classList.add('dragging');
           draggedItem = this;
         });
-        
-        card.addEventListener('touchmove', function(e) {
+
+        card.addEventListener('touchmove', function (e) {
           e.preventDefault();
           const touchY = e.touches[0].clientY;
           const deltaY = touchY - touchStartY;
-          
+
           if (Math.abs(deltaY) > 10) {
             this.style.transform = `translateY(${deltaY}px)`;
           }
         });
-        
-        card.addEventListener('touchend', function() {
+
+        card.addEventListener('touchend', function () {
           this.classList.remove('dragging');
           this.style.transform = '';
           draggedItem = null;
@@ -790,11 +816,11 @@
 
     function getDragAfterElement(container, y) {
       const draggableElements = [...container.querySelectorAll('.card.draggable:not(.dragging)')];
-      
+
       return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
         const offset = y - box.top - box.height / 2;
-        
+
         if (offset < 0 && offset > closest.offset) {
           return { offset: offset, element: child };
         } else {
@@ -808,16 +834,16 @@
       document.querySelectorAll('.card').forEach(card => {
         card.addEventListener('mousemove', (e) => {
           if (card.classList.contains('dragging')) return;
-          
+
           const rect = card.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
-          
+
           const centerX = rect.width / 2;
           const centerY = rect.height / 2;
           const angleX = (y - centerY) / 20;
           const angleY = (centerX - x) / 20;
-          
+
           card.style.transform = `
             perspective(1000px) 
             rotateX(${angleX}deg) 
@@ -825,23 +851,23 @@
             translateY(-8px) 
             scale(1.02)
           `;
-          
+
           // Efeito de brilho
           const lightX = (x / rect.width) * 100;
           const lightY = (y / rect.height) * 100;
           card.style.background = `
             radial-gradient(circle at ${lightX}% ${lightY}%, 
               rgba(255,255,255,0.05) 0%,
-              ${card.classList.contains('card-4m') ? 
-                'rgba(40,40,40,0.8)' : 'rgba(30,30,30,0.7)'} 70%
+              ${card.classList.contains('card-4m') ?
+              'rgba(40,40,40,0.8)' : 'rgba(30,30,30,0.7)'} 70%
             )
           `;
         });
-        
+
         card.addEventListener('mouseleave', () => {
           if (!card.classList.contains('dragging')) {
             card.style.transform = 'translateY(-8px) scale(1.02)';
-            card.style.background = card.classList.contains('card-4m') ? 
+            card.style.background = card.classList.contains('card-4m') ?
               'linear-gradient(135deg, rgba(40,40,40,0.8) 0%, rgba(30,30,30,0.9) 100%)' :
               'rgba(30, 30, 30, 0.7)';
           }
@@ -872,25 +898,25 @@
 
     // Configurar atalhos de teclado
     function configurarAtalhosTeclado() {
-      document.addEventListener('keydown', function(e) {
+      document.addEventListener('keydown', function (e) {
         // F1 - Ajuda
         if (e.key === 'F1') {
           e.preventDefault();
           mostrarAjuda();
         }
-        
+
         // Ctrl+1 - Abrir checklist 4M
         if (e.ctrlKey && e.key === '1') {
           e.preventDefault();
           window.location.href = '4m-checklist.html';
         }
-        
+
         // Ctrl+N - Novo checklist
         if (e.ctrlKey && e.key === 'n') {
           e.preventDefault();
           window.location.href = 'FR0062-formulario.html';
         }
-        
+
         // Escape - Fechar modal
         if (e.key === 'Escape') {
           document.getElementById('progressOverlay').classList.remove('active');
@@ -923,34 +949,34 @@
         backdrop-filter: blur(20px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.5);
       `;
-      
+
       const opcoes = [
-        { 
-          icon: 'list_alt', 
-          text: 'Ver Checklists', 
+        {
+          icon: 'list_alt',
+          text: 'Ver Checklists',
           action: () => window.location.href = '/4m-checklist.html',
           color: '#4CAF50'
         },
-        { 
-          icon: 'add_circle', 
-          text: 'Novo Checklist', 
+        {
+          icon: 'add_circle',
+          text: 'Novo Checklist',
           action: () => window.location.href = '/FR0062-formulario.html',
           color: '#2196F3'
         },
-        { 
-          icon: 'assessment', 
-          text: 'Estatísticas', 
+        {
+          icon: 'assessment',
+          text: 'Estatísticas',
           action: mostrarEstatisticas,
           color: '#FF9800'
         },
-        { 
-          icon: 'help', 
-          text: 'Ajuda', 
+        {
+          icon: 'help',
+          text: 'Ajuda',
           action: mostrarAjuda,
           color: '#9C27B0'
         }
       ];
-      
+
       opcoes.forEach(opcao => {
         const item = document.createElement('div');
         item.style.cssText = `
@@ -967,35 +993,35 @@
           <span class="material-icons" style="font-size: 18px; color: ${opcao.color}">${opcao.icon}</span>
           <span style="flex-grow: 1;">${opcao.text}</span>
         `;
-        
+
         item.addEventListener('mouseenter', () => {
           item.style.background = 'rgba(255, 255, 255, 0.12)';
           item.style.paddingLeft = '20px';
         });
-        
+
         item.addEventListener('mouseleave', () => {
           item.style.background = 'transparent';
           item.style.paddingLeft = '16px';
         });
-        
+
         item.addEventListener('click', (e) => {
           e.stopPropagation();
           opcao.action();
           document.body.removeChild(menu);
         });
-        
+
         menu.appendChild(item);
       });
-      
+
       document.body.appendChild(menu);
-      
+
       const fecharMenu = (e) => {
         if (!menu.contains(e.target)) {
           document.body.removeChild(menu);
           document.removeEventListener('click', fecharMenu);
         }
       };
-      
+
       setTimeout(() => {
         document.addEventListener('click', fecharMenu);
       }, 100);
@@ -1004,7 +1030,7 @@
     function mostrarAjuda() {
       const modal = document.getElementById('progressOverlay');
       const modalContent = modal.querySelector('.modal');
-      
+
       modalContent.innerHTML = `
         <div class="modal-icon"><span class="material-icons" style="color: #4CAF50;">help</span></div>
         <div class="modal-title">Ajuda - Sistema 4M</div>
@@ -1026,14 +1052,14 @@
           Fechar
         </button>
       `;
-      
+
       modal.classList.add('active');
     }
 
     function mostrarEstatisticas() {
       const modal = document.getElementById('progressOverlay');
       const modalContent = modal.querySelector('.modal');
-      
+
       modalContent.innerHTML = `
         <div class="modal-icon"><span class="material-icons" style="color: #2196F3;">assessment</span></div>
         <div class="modal-title">Estatísticas do Sistema</div>
@@ -1073,7 +1099,7 @@
           Fechar
         </button>
       `;
-      
+
       modal.classList.add('active');
     }
 
@@ -1090,10 +1116,10 @@
         // Reordenação dos cards conforme layout salvo
         const dashboard = document.querySelector('.dashboard');
         const cards = Array.from(dashboard.querySelectorAll('.card'));
-        
+
         layout.forEach(moduleId => {
-          const card = cards.find(c => 
-            (moduleId === '4m' && c.id === 'card-4m') || 
+          const card = cards.find(c =>
+            (moduleId === '4m' && c.id === 'card-4m') ||
             c.dataset.module === moduleId
           );
           if (card) {
@@ -1107,7 +1133,7 @@
       if (document.referrer.includes('intro')) {
         const card4m = document.getElementById('card-4m');
         card4m.style.animation = 'pulse 2s ease';
-        
+
         const style = document.createElement('style');
         style.textContent = `
           @keyframes pulse {
@@ -1117,7 +1143,7 @@
           }
         `;
         document.head.appendChild(style);
-        
+
         setTimeout(() => {
           card4m.style.animation = '';
         }, 2000);
@@ -1129,16 +1155,16 @@
       if (notificacaoAnterior) {
         notificacaoAnterior.remove();
       }
-      
+
       const notificacao = document.createElement('div');
       notificacao.className = 'notification';
       notificacao.innerHTML = `
         <span class="material-icons" style="font-size: 20px;">${tipo === 'success' ? 'check_circle' : 'info'}</span>
         <span style="font-size: 0.9rem;">${mensagem}</span>
       `;
-      
+
       document.body.appendChild(notificacao);
-      
+
       setTimeout(() => {
         notificacao.style.animation = 'slideOut 0.3s ease';
         setTimeout(() => {
@@ -1156,7 +1182,7 @@
     document.querySelectorAll('.card').forEach((card, index) => {
       card.style.opacity = '0';
       card.style.transform = 'translateY(20px)';
-      
+
       setTimeout(() => {
         card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
         card.style.opacity = '1';
@@ -1165,4 +1191,5 @@
     });
   </script>
 </body>
+
 </html>
