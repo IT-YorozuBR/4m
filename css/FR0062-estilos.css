@@ -1803,7 +1803,10 @@ body.gerando-pdf .formulario-completo {
     padding: 9px 18px;
     box-shadow: 0 2px 6px rgba(46,125,50,.4);
 }
-
+.campo-invalido {
+    outline: 2px solid #e53935 !important;
+    background-color: rgba(229, 57, 53, 0.08) !important;
+}
 /* ============================================================================
    CAMPOS BLOQUEADOS
    ============================================================================ */

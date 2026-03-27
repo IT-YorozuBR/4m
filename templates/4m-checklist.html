@@ -259,6 +259,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr));
       gap: 25px;
+      margin-bottom: 40px;
     }
 
     /* MODO LISTA */
@@ -454,6 +455,200 @@
       animation: spin 1s linear infinite;
     }
 
+    /* =============================================
+       PAGINAÇÃO
+    ============================================= */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      padding: 30px 0;
+      margin-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      flex-wrap: wrap;
+    }
+
+    .pagination-info {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 200px;
+      justify-content: center;
+    }
+
+    .pagination-info strong {
+      color: rgba(0, 150, 255, 0.9);
+    }
+
+    .pagination-buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .pagination-btn {
+      background: rgba(30, 30, 30, 0.8);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: rgba(40, 40, 40, 0.8);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+      transform: translateY(-2px);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .pagination-btn.active {
+      background: rgba(0, 150, 255, 0.2);
+      border-color: rgba(0, 150, 255, 0.3);
+      color: rgba(0, 150, 255, 0.9);
+    }
+
+    .pagination-numbers {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .page-number {
+      background: rgba(30, 30, 30, 0.8);
+      color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 8px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .page-number:hover {
+      background: rgba(40, 40, 40, 0.8);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .page-number.active {
+      background: rgba(0, 150, 255, 0.2);
+      border-color: rgba(0, 150, 255, 0.3);
+      color: rgba(0, 150, 255, 0.9);
+    }
+
+    .page-ellipsis {
+      color: rgba(255, 255, 255, 0.5);
+      padding: 8px 4px;
+    }
+
+    .items-per-page {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .items-per-page select {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .items-per-page select:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .items-per-page select:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    .items-per-page select option {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    /* PIPELINE VISUAL */
+    .card-pipeline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 15px 0;
+      padding: 15px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .pipe-step {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--c);
+      background: transparent;
+      font-size: 12px;
+      flex-shrink: 0;
+      transition: all 0.3s ease;
+    }
+
+    .pipe-step.pipe-ok {
+      background: var(--c);
+      color: #000;
+    }
+
+    .pipe-step.pipe-ativa {
+      background: var(--c);
+      color: #fff;
+      box-shadow: 0 0 12px var(--c);
+    }
+
+    .pipe-step.pipe-inativa {
+      opacity: 0.3;
+    }
+
+    .pipe-line {
+      width: 16px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
+    }
+
+    .pipe-line.pipe-line-ok {
+      background: rgba(46, 125, 50, 0.6);
+    }
+
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -520,76 +715,71 @@
       }
     }
 
-    /* =============================================
-       RESPONSIVIDADE
-    ============================================= */
     @media (max-width: 768px) {
       .container {
-        padding: 16px;
+        padding: 15px;
       }
 
       .header {
         flex-direction: column;
-        align-items: flex-start;
         gap: 20px;
-      }
-
-      .header-right {
-        width: 100%;
-        justify-content: space-between;
+        text-align: center;
       }
 
       .header-left h1 {
         font-size: 1.8rem;
       }
 
+      .header-right {
+        width: 100%;
+        flex-direction: column;
+      }
+
+      .header-right button {
+        width: 100%;
+      }
+
       .filter-grid {
         grid-template-columns: 1fr;
       }
 
-      /* Grade: 1 coluna em telas pequenas */
-      .checklist-grid {
-        grid-template-columns: 1fr;
+      .pagination-container {
+        flex-direction: column;
         gap: 15px;
+      }
+
+      .pagination-info {
+        min-width: auto;
+      }
+
+      .pagination-numbers {
+        flex-wrap: wrap;
+        justify-content: center;
       }
 
       .view-controls {
         flex-direction: column;
-        align-items: stretch;
-      }
-
-      .view-buttons {
-        justify-content: center;
+        align-items: flex-start;
       }
 
       .stats {
-        justify-content: center;
         flex-wrap: wrap;
+        width: 100%;
       }
 
-      /* Modo lista no mobile: volta para coluna */
       .checklist-grid.list-view .checklist-card {
         grid-template-columns: 1fr;
+        gap: 10px;
       }
 
-      .checklist-grid.list-view .checklist-info {
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .checklist-grid.list-view .checklist-status {
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-        padding-top: 12px;
+      .checklist-grid {
+        grid-template-columns: 1fr;
       }
     }
 
-    @media (min-width: 768px) and (max-width: 1199px) {
+    @media (min-width: 1200px) {
       .checklist-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-
-      .container {
-        padding: 25px;
+        grid-template-columns: repeat(3, 1fr);
       }
     }
 
@@ -632,24 +822,18 @@
       </h2>
       <div class="filter-grid">
         <div class="filter-group">
-          <label for="numero"><span class="material-icons">tag</span> Número de Controle</label>
-          <input type="text" id="numero" name="numero" placeholder="Buscar por número...">
+          <label for="numero"><span class="material-icons">tag</span> Buscar</label>
+          <input type="text" id="numero" name="numero" placeholder="Número, criado por ou status...">
         </div>
 
         <div class="filter-group">
-          <label for="solicitado_por"><span class="material-icons">person</span> Solicitado Por</label>
-          <input type="text" id="solicitado_por" name="solicitado_por" placeholder="Buscar por solicitante...">
-        </div>
-
-        <div class="filter-group">
-          <label for="status"><span class="material-icons">info</span> Status / Etapa</label>
+          <label for="status"><span class="material-icons">status</span> Status</label>
           <select id="status" name="status">
-            <option value="">Todas as etapas</option>
+            <option value="">Todos os status</option>
             <option value="em_andamento">Etapa 1 — Produção</option>
             <option value="aguardando_qualidade">Etapa 2 — Qualidade</option>
             <option value="aguardando_aprovacao">Etapa 3 — Aprovação</option>
             <option value="concluido">Concluído</option>
-            <option value="finalizado">Concluído (legado)</option>
           </select>
         </div>
 
@@ -662,16 +846,26 @@
             <option value="2026">2026</option>
           </select>
         </div>
+
+        <div class="filter-group">
+          <label for="limite"><span class="material-icons">view_agenda</span> Itens por página</label>
+          <select id="limite" name="limite">
+            <option value="5">5 itens</option>
+            <option value="10" selected>10 itens</option>
+            <option value="20">20 itens</option>
+            <option value="50">50 itens</option>
+          </select>
+        </div>
       </div>
 
       <div class="filter-actions">
         <button class="filter-button primary" id="filtrar">
           <span class="material-icons">search</span>
-          Filtrar
+          Pesquisar
         </button>
         <button class="filter-button" id="limpar">
           <span class="material-icons">refresh</span>
-          Limpar Filtros
+          Limpar
         </button>
       </div>
     </div>
@@ -691,27 +885,23 @@
       <div class="stats" id="statsContainer">
         <div class="stat-item">
           <span class="material-icons" style="font-size: 16px;">description</span>
-          <span>Total: <span id="countTotal">0</span></span>
+          <span>Total: <strong id="countTotal">0</strong></span>
         </div>
         <div class="stat-item" style="color:#1976D2">
           <span class="material-icons" style="font-size: 16px; color:#1976D2">engineering</span>
-          <span>Produção: <span id="countProducao">0</span></span>
+          <span>Produção: <strong id="countProducao">0</strong></span>
         </div>
         <div class="stat-item" style="color:#E65100">
           <span class="material-icons" style="font-size: 16px; color:#E65100">rule</span>
-          <span>Qualidade: <span id="countQualidade">0</span></span>
+          <span>Qualidade: <strong id="countQualidade">0</strong></span>
         </div>
         <div class="stat-item" style="color:#6A1B9A">
           <span class="material-icons" style="font-size: 16px; color:#6A1B9A">verified</span>
-          <span>Aprovação: <span id="countAprovacao">0</span></span>
+          <span>Aprovação: <strong id="countAprovacao">0</strong></span>
         </div>
         <div class="stat-item" style="color:#2E7D32">
           <span class="material-icons" style="font-size: 16px; color:#2E7D32">check_circle</span>
-          <span>Concluídos: <span id="countAprovados">0</span></span>
-        </div>
-        <div class="stat-item">
-          <span class="material-icons" style="font-size: 16px;">update</span>
-          <span>Último: <span id="ultimoChecklist">-</span></span>
+          <span>Concluídos: <strong id="countAprovados">0</strong></span>
         </div>
       </div>
     </div>
@@ -722,6 +912,28 @@
         <p>Carregando checklists...</p>
       </div>
     </div>
+
+    <!-- PAGINAÇÃO -->
+    <div class="pagination-container" id="paginationContainer" style="display: none;">
+      <div class="pagination-info">
+        Página <strong id="paginaAtual">1</strong> de <strong id="totalPaginas">1</strong> 
+        (<strong id="totalDocumentos">0</strong> resultados)
+      </div>
+
+      <div class="pagination-buttons">
+        <button class="pagination-btn" id="btnAnterior" title="Página anterior">
+          <span class="material-icons">chevron_left</span>
+          Anterior
+        </button>
+
+        <div class="pagination-numbers" id="numerosPaginas"></div>
+
+        <button class="pagination-btn" id="btnProximo" title="Próxima página">
+          Próxima
+          <span class="material-icons">chevron_right</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -729,9 +941,26 @@
     const viewListBtn = document.getElementById('viewList');
     const checklistList = document.getElementById('checklistList');
     const btnVoltar = document.getElementById('btnVoltar');
-    const loadingElement = document.getElementById('loading');
+    const paginationContainer = document.getElementById('paginationContainer');
 
-    let todosChecklists = [];
+    // Estado da paginação
+    let estadoPaginacao = {
+      pagina_atual: 1,
+      total_paginas: 1,
+      limite_por_pagina: 10,
+      total_documentos: 0,
+      tem_proxima: false,
+      tem_anterior: false
+    };
+
+    let filtroAtual = {
+      busca: '',
+      status: '',
+      ano: '',
+      pagina: 1,
+      limite: 10
+    };
+
     const API_URL = window.location.hostname === 'localhost'
       ? 'http://localhost:3001/api'
       : 'https://fourm-znis.onrender.com/api';
@@ -751,12 +980,26 @@
         window.location.href = '/4m.html';
       });
 
-      document.getElementById('filtrar').addEventListener('click', aplicarFiltros);
+      document.getElementById('filtrar').addEventListener('click', () => {
+        filtroAtual.pagina = 1; // Resetar para primeira página
+        aplicarFiltros();
+      });
+
       document.getElementById('limpar').addEventListener('click', limparFiltros);
+
+      document.getElementById('btnAnterior').addEventListener('click', irParaPaginaAnterior);
+      document.getElementById('btnProximo').addEventListener('click', irParaProximaPagina);
+
+      document.getElementById('limite').addEventListener('change', (e) => {
+        filtroAtual.limite = parseInt(e.target.value);
+        filtroAtual.pagina = 1; // Resetar para primeira página
+        carregarChecklists();
+      });
 
       document.addEventListener('keydown', function (e) {
         if (e.key === 'F5') {
           e.preventDefault();
+          filtroAtual.pagina = 1;
           carregarChecklists();
         }
         if (e.ctrlKey && e.key === 'n') {
@@ -787,74 +1030,216 @@
       }
     }
 
+    function construirParamsConsulta() {
+      const params = new URLSearchParams({
+        page: filtroAtual.pagina,
+        limit: filtroAtual.limite
+      });
+
+      if (filtroAtual.busca.trim()) {
+        params.append('busca', filtroAtual.busca.trim());
+      }
+
+      if (filtroAtual.status) {
+        params.append('status', filtroAtual.status);
+      }
+
+      if (filtroAtual.ano) {
+        params.append('ano', filtroAtual.ano);
+      }
+
+      return params;
+    }
+
+    function atualizarEstatisticas(stats) {
+      document.getElementById('countTotal').textContent = stats?.total || 0;
+      document.getElementById('countProducao').textContent = stats?.em_andamento || 0;
+      document.getElementById('countQualidade').textContent = stats?.aguardando_qualidade || 0;
+      document.getElementById('countAprovacao').textContent = stats?.aguardando_aprovacao || 0;
+      document.getElementById('countAprovados').textContent = stats?.concluido || 0;
+    }
+
     async function carregarChecklists() {
       try {
         mostrarLoading();
 
-        const response = await fetch(`${API_URL}/fr0062`);
+        const params = construirParamsConsulta();
+
+        console.log('📡 Buscando checklists com params:', params.toString());
+        const response = await fetch(`${API_URL}/fr0062?${params}`);
         const result = await response.json();
 
-        if (result.success && result.formularios) {
-          todosChecklists = result.formularios;
-          exibirChecklists(todosChecklists);
-          atualizarEstatisticas(todosChecklists);
+        console.log('📦 Resposta da API:', result);
+
+        const formularios = result.data || result.formularios || [];
+        const pagination = result.pagination || null;
+
+        if (result.success && Array.isArray(formularios)) {
+          if (pagination) {
+            estadoPaginacao = {
+              pagina_atual: pagination.page,
+              total_paginas: pagination.totalPages,
+              limite_por_pagina: pagination.limit,
+              total_documentos: pagination.total,
+              tem_proxima: pagination.page < pagination.totalPages,
+              tem_anterior: pagination.page > 1
+            };
+          } else if (result.paginacao) {
+            estadoPaginacao = result.paginacao;
+          } else {
+            estadoPaginacao = {
+              pagina_atual: 1,
+              total_paginas: 1,
+              limite_por_pagina: filtroAtual.limite,
+              total_documentos: formularios.length,
+              tem_proxima: false,
+              tem_anterior: false
+            };
+          }
+
+          exibirChecklists(formularios);
+          atualizarEstatisticas(result.stats);
+          atualizarPaginacao();
+          paginationContainer.style.display = estadoPaginacao.total_documentos > 0 ? 'flex' : 'none';
         } else {
+          console.warn('⚠️ Resposta sem sucesso ou sem formulários:', result);
+          atualizarEstatisticas();
           exibirMensagemSemDados();
+          paginationContainer.style.display = 'none';
         }
       } catch (error) {
-        console.error('Erro ao carregar checklists:', error);
-        exibirMensagemErro('Erro ao carregar checklists. Verifique a conexão com o servidor.');
+        console.error('❌ Erro ao carregar checklists:', error);
+        exibirMensagemErro('Erro ao carregar checklists. Verifique a conexão com o servidor. ' + error.message);
+        atualizarEstatisticas();
+        paginationContainer.style.display = 'none';
       }
     }
 
     function aplicarFiltros() {
-      const filtroNumero = document.getElementById('numero').value.toLowerCase();
-      const filtroSolicitado = document.getElementById('solicitado_por').value.toLowerCase();
-      const filtroStatus = document.getElementById('status').value;
-      const filtroAno = document.getElementById('ano').value;
-
-      let checklistsFiltrados = todosChecklists;
-
-      if (filtroNumero) {
-        checklistsFiltrados = checklistsFiltrados.filter(cl =>
-          cl.numero_controle.toLowerCase().includes(filtroNumero)
-        );
-      }
-
-      if (filtroSolicitado) {
-        checklistsFiltrados = checklistsFiltrados.filter(cl =>
-          cl.solicitado_por.toLowerCase().includes(filtroSolicitado)
-        );
-      }
-
-      if (filtroStatus) {
-        checklistsFiltrados = checklistsFiltrados.filter(cl => {
-          const s = cl.status || 'em_andamento';
-          // 'finalizado' e 'concluido' são equivalentes para filtro
-          if (filtroStatus === 'concluido') return s === 'concluido' || s === 'finalizado';
-          if (filtroStatus === 'finalizado') return s === 'finalizado';
-          return s === filtroStatus;
-        });
-      }
-
-      if (filtroAno) {
-        checklistsFiltrados = checklistsFiltrados.filter(cl => {
-          const dataCriacao = new Date(cl.data_criacao);
-          return dataCriacao.getFullYear() == filtroAno;
-        });
-      }
-
-      exibirChecklists(checklistsFiltrados);
-      atualizarEstatisticas(checklistsFiltrados);
+      filtroAtual.busca = document.getElementById('numero').value;
+      filtroAtual.status = document.getElementById('status').value;
+      filtroAtual.ano = document.getElementById('ano').value;
+      carregarChecklists();
     }
 
     function limparFiltros() {
       document.getElementById('numero').value = '';
-      document.getElementById('solicitado_por').value = '';
       document.getElementById('status').value = '';
       document.getElementById('ano').value = '';
-      exibirChecklists(todosChecklists);
-      atualizarEstatisticas(todosChecklists);
+      document.getElementById('limite').value = '10';
+      filtroAtual = {
+        busca: '',
+        status: '',
+        ano: '',
+        pagina: 1,
+        limite: 10
+      };
+      carregarChecklists();
+    }
+
+    function irParaPaginaAnterior() {
+      if (estadoPaginacao && estadoPaginacao.tem_anterior) {
+        filtroAtual.pagina--;
+        carregarChecklists();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function irParaProximaPagina() {
+      if (estadoPaginacao && estadoPaginacao.tem_proxima) {
+        filtroAtual.pagina++;
+        carregarChecklists();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function irParaPagina(numeroPagina) {
+      if (estadoPaginacao && numeroPagina >= 1 && numeroPagina <= estadoPaginacao.total_paginas) {
+        filtroAtual.pagina = numeroPagina;
+        carregarChecklists();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function atualizarPaginacao() {
+      // Validar se estadoPaginacao existe e tem os valores esperados
+      if (!estadoPaginacao || typeof estadoPaginacao !== 'object') {
+        console.warn('⚠️ estadoPaginacao inválido:', estadoPaginacao);
+        return;
+      }
+
+      const {
+        pagina_atual = 1,
+        total_paginas = 1,
+        total_documentos = 0,
+        tem_anterior = false,
+        tem_proxima = false
+      } = estadoPaginacao;
+
+      // Atualizar informações
+      document.getElementById('paginaAtual').textContent = pagina_atual;
+      document.getElementById('totalPaginas').textContent = total_paginas;
+      document.getElementById('totalDocumentos').textContent = total_documentos;
+
+      // Atualizar botões anterior/próximo
+      document.getElementById('btnAnterior').disabled = !tem_anterior;
+      document.getElementById('btnProximo').disabled = !tem_proxima;
+
+      // Gerar números de página
+      const numerosPaginas = document.getElementById('numerosPaginas');
+      numerosPaginas.innerHTML = '';
+
+      const maxBotoes = 5;
+      let inicio = Math.max(1, pagina_atual - Math.floor(maxBotoes / 2));
+      let fim = Math.min(total_paginas, inicio + maxBotoes - 1);
+
+      if (fim - inicio + 1 < maxBotoes) {
+        inicio = Math.max(1, fim - maxBotoes + 1);
+      }
+
+      // Botão primeira página
+      if (inicio > 1) {
+        const btn1 = document.createElement('button');
+        btn1.className = 'page-number';
+        btn1.textContent = '1';
+        btn1.addEventListener('click', () => irParaPagina(1));
+        numerosPaginas.appendChild(btn1);
+
+        if (inicio > 2) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'page-ellipsis';
+          ellipsis.textContent = '...';
+          numerosPaginas.appendChild(ellipsis);
+        }
+      }
+
+      // Botões das páginas
+      for (let i = inicio; i <= fim; i++) {
+        const btn = document.createElement('button');
+        btn.className = 'page-number';
+        if (i === pagina_atual) {
+          btn.classList.add('active');
+        }
+        btn.textContent = i;
+        btn.addEventListener('click', () => irParaPagina(i));
+        numerosPaginas.appendChild(btn);
+      }
+
+      // Botão última página
+      if (fim < total_paginas) {
+        if (fim < total_paginas - 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'page-ellipsis';
+          ellipsis.textContent = '...';
+          numerosPaginas.appendChild(ellipsis);
+        }
+
+        const btnUltima = document.createElement('button');
+        btnUltima.className = 'page-number';
+        btnUltima.textContent = total_paginas;
+        btnUltima.addEventListener('click', () => irParaPagina(total_paginas));
+        numerosPaginas.appendChild(btnUltima);
+      }
     }
 
     function exibirChecklists(checklists) {
@@ -892,9 +1277,6 @@
       const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
       const estaLogado = !!usuarioLogado.username;
 
-      // LÓGICA DE PERMISSÕES:
-      // 1. Deletar: Apenas se estiver logado.
-      // 2. Editar: Se logado OU se não logado e o card NÃO estiver concluído.
       const podeDeletar = estaLogado;
       const podeEditar = estaLogado || (!estaLogado && !isConcluido);
 
@@ -924,7 +1306,6 @@
         const etapaAtiva = statusInfo.etapa;
         const cls = n < etapaAtiva ? 'pipe-ok' : n === etapaAtiva ? 'pipe-ativa' : 'pipe-inativa';
         return `<div class="pipe-step ${cls}" style="--c:${cores[n]}">
-
         </div>${n < 4 ? '<div class="pipe-line ' + (n < etapaAtiva ? 'pipe-line-ok' : '') + '"></div>' : ''}`;
       }).join('')}
     </div>
@@ -948,7 +1329,7 @@
     </div>
   `;
 
-      // Evento de clique no card (Agora funciona para todos)
+      // Evento de clique no card
       card.addEventListener('click', (e) => {
         if (!e.target.closest('.checklist-actions')) {
           window.location.href = `/FR0062-formulario.html?id=${encodeURIComponent(checklist.numero_controle)}`;
@@ -964,7 +1345,7 @@
         });
       }
 
-      // Event listener para o botão deletar (se existir)
+      // Event listener para o botão deletar
       const deleteBtn = card.querySelector('.action-button.delete');
       if (deleteBtn) {
         deleteBtn.addEventListener('click', (e) => {
@@ -976,7 +1357,6 @@
       card.style.animationDelay = `${index * 0.05}s`;
       return card;
     }
-
 
     async function deletarChecklist(numeroControle, checklist, cardElement) {
       const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -999,13 +1379,12 @@
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}` // Usar JWT token
+            'Authorization': `Bearer ${token}`
           }
         });
 
         const data = await response.json();
 
-        // Se não autorizado ou não autenticado
         if (response.status === 401 || response.status === 403) {
           alert('Sessão expirada. Por favor, faça login novamente.');
           localStorage.removeItem('currentUser');
@@ -1015,7 +1394,6 @@
         }
 
         if (response.ok && data.success) {
-          // Remover card com animação
           cardElement.style.animation = 'fadeOut 0.3s ease forwards';
           setTimeout(() => {
             cardElement.remove();
@@ -1033,23 +1411,7 @@
       }
     }
 
-    function atualizarEstatisticas(checklists) {
-      const total      = checklists.length;
-      const producao   = checklists.filter(cl => (cl.status || 'em_andamento') === 'em_andamento').length;
-      const qualidade  = checklists.filter(cl => cl.status === 'aguardando_qualidade').length;
-      const aprovacao  = checklists.filter(cl => cl.status === 'aguardando_aprovacao').length;
-      const concluidos = checklists.filter(cl => cl.status === 'concluido' || cl.status === 'finalizado').length;
 
-      const datas = checklists.map(cl => new Date(cl.data_criacao)).sort((a, b) => b - a);
-      const ultimoData = datas.length > 0 ? formatarData(datas[0]) : '-';
-
-      document.getElementById('countTotal').textContent    = total;
-      document.getElementById('countProducao').textContent = producao;
-      document.getElementById('countQualidade').textContent= qualidade;
-      document.getElementById('countAprovacao').textContent= aprovacao;
-      document.getElementById('countAprovados').textContent= concluidos;
-      document.getElementById('ultimoChecklist').textContent = ultimoData;
-    }
 
     function mostrarLoading() {
       checklistList.innerHTML = `

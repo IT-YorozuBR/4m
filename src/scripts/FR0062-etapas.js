@@ -7,9 +7,8 @@
  *    Bloqueado: cabeçalho, container-3, container-4, sidebar
  *
  *  ETAPA 2 — QUALIDADE  (aguardando_qualidade)
- *    Editável : quadro-container-3 col-1 (lista+tratativa) SEMPRE
- *               quadro-container-3 col-2/3/4 SÓ se a categoria
- *               correspondente (MACHINE/MATERIAL/METHOD) foi preenchida
+ *    Editável : quadro-container-3 colunas cujas categorias 4M foram preenchidas
+ *               pela produção (MAN → col-1, MACHINE → col-2, MATERIAL → col-3, METHOD → col-4)
  *               sidebar-acompanhamento
  *    Leitura  : container-1, container-2
  *    Bloqueado: cabeçalho, container-4
@@ -23,19 +22,19 @@
  */
 
 // ─── Mapeamento: coluna do container-3 → categoria 4M ────────────
-// col-1 = lista-verificacao + tratativa  → SEMPRE editável
+// col-1 = lista-verificacao + tratativa  → MAN   (operador)
 // col-2 = resultado-1 + justificativa-1  → MACHINE
 // col-3 = resultado-2 + justificativa-2  → MATERIAL
 // col-4 = resultado-3 + justificativa-3  → METHOD
-const COL3_PARA_CATEGORIA = { 2: 'MACHINE', 3: 'MATERIAL', 4: 'METHOD' };
-
+// Só desbloqueia a coluna se a categoria correspondente foi preenchida na produção.
+const COL3_PARA_CATEGORIA = { 1: 'MAN', 2: 'MACHINE', 3: 'MATERIAL', 4: 'METHOD' };
 // ─────────────────────────────────────────────────────────────────
 
 class GerenciadorEtapas {
 
     constructor() {
-        this.statusAtual  = 'em_andamento';
-        this.isAdmin      = false;
+        this.statusAtual = 'em_andamento';
+        this.isAdmin = false;
         this.usuarioAtual = null;
     }
 
@@ -59,7 +58,7 @@ class GerenciadorEtapas {
             const self = this;
             if (window.sistemaChecklist) {
                 const orig = window.sistemaChecklist.preencherFormulario
-                                 .bind(window.sistemaChecklist);
+                    .bind(window.sistemaChecklist);
                 window.sistemaChecklist.preencherFormulario = function (dados) {
                     orig(dados);
                     self._aplicar(dados.status || 'em_andamento');
@@ -78,7 +77,7 @@ class GerenciadorEtapas {
         try {
             const p = JSON.parse(atob(token.split('.')[1]));
             if (p.role === 'admin' && p.exp > Date.now() / 1000) {
-                this.isAdmin      = true;
+                this.isAdmin = true;
                 this.usuarioAtual = p.username;
             }
         } catch (_) { /* token inválido */ }
@@ -102,11 +101,17 @@ class GerenciadorEtapas {
             case 'aguardando_aprovacao':
                 this.isAdmin ? this._etapa3() : (this._bloquearTudo(), this._badge('⏳ AGUARDANDO APROVAÇÃO', '#E65100'));
                 break;
+
             case 'concluido':
+                if (!this.isAdmin) {
+                    this._bloquearTudo();
+                }
+
             case 'finalizado':
                 if (!this.isAdmin) {
                     this._bloquearTudo();
                 }
+                this._show('btnSalvarEtapa');
                 this._badge('✔ CONCLUÍDO', '#2E7D32');
                 break;
             default:
@@ -120,19 +125,9 @@ class GerenciadorEtapas {
 
     _etapa1() {
         this._lockAll();
-
-        // Liberar containers da produção
         this._unlock('.quadro-container-1');
         this._unlock('.quadro-container-2');
-
-        // Remover banners de etapa anterior
         this._limparBanners();
-
-        // Sinalizar seções bloqueadas com faixa discreta
-        // this._faixaBloqueada('.quadro-container-3',     '🔒  QUALIDADE — preenchido na Etapa 2');
-        // this._faixaBloqueada('.sidebar-acompanhamento', '🔒  QUALIDADE — preenchido na Etapa 2');
-        // this._faixaBloqueada('.cabecalho-superior',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
-        // this._faixaBloqueada('.quadro-container-4',     '🔒  APROVAÇÃO — preenchido na Etapa 3');
 
         this._show('btnSalvarEtapa');
         this._show('btnAvancarEtapa');
@@ -150,12 +145,10 @@ class GerenciadorEtapas {
         this._lockAll();
         this._limparBanners();
 
-        // Liberar col-1 de container-3 (lista-verificacao + tratativa) — SEMPRE
-        this._unlockCelulas3([1]);
-
-        // Detectar quais categorias de produção foram preenchidas
-        // e liberar as colunas correspondentes em container-3
-        const colsAtivas = [1]; // col-1 sempre
+        // Detectar quais categorias foram preenchidas pela produção
+        // e desbloquear SOMENTE as colunas correspondentes em container-3
+        // (col-1 → MAN também segue a mesma regra das outras colunas)
+        const colsAtivas = [];
         for (const [col, cat] of Object.entries(COL3_PARA_CATEGORIA)) {
             if (this._categoriaFoiPreenchida(cat)) {
                 this._unlockCelulas3([Number(col)]);
@@ -165,12 +158,7 @@ class GerenciadorEtapas {
             }
         }
 
-        // Liberar sidebar
         this._unlock('.sidebar-acompanhamento');
-
-        // Sinalizar restantes
-        // this._faixaBloqueada('.cabecalho-superior', '🔒  APROVAÇÃO — preenchido na Etapa 3');
-        // this._faixaBloqueada('.quadro-container-4',  '🔒  APROVAÇÃO — preenchido na Etapa 3');
 
         this._show('btnSalvarEtapa');
         this._show('btnAvancarEtapa');
@@ -187,10 +175,6 @@ class GerenciadorEtapas {
     _etapa3() {
         this._unlockAll();
         this._limparBanners();
-
-        // Destacar cabeçalho e container-4 como foco da aprovação
-        // this._faixaDestaque('.cabecalho-superior', '✏️  Preencha o cabeçalho para finalizar o fluxo');
-        // this._faixaDestaque('.quadro-container-4',  '✏️  Confirme a análise de risco e horário de aplicação');
 
         this._show('btnSalvarEtapa');
         this._hide('btnAvancarEtapa');
@@ -216,13 +200,19 @@ class GerenciadorEtapas {
     ════════════════════════════════════════════════════════════ */
 
     _categoriaFoiPreenchida(categoria) {
-        // Verifica campos contenteditable com data-categoria na categoria
-        const spans = document.querySelectorAll(`[data-categoria="${categoria}"]`);
-        for (const el of spans) {
-            if (el.tagName === 'INPUT' && el.type === 'checkbox') {
-                if (el.checked) return true;
-            } else {
-                if (el.textContent.trim().length > 0) return true;
+        // Verifica APENAS container-1 e container-2 — onde a produção preenche.
+        // Não consulta container-3/4 para evitar falsos positivos com dados
+        // salvos pela qualidade em etapas anteriores.
+        const escopo = '.quadro-container-1, .quadro-container-2';
+        const raizes = document.querySelectorAll(escopo);
+        for (const raiz of raizes) {
+            const campos = raiz.querySelectorAll(`[data-categoria="${categoria}"]`);
+            for (const el of campos) {
+                if (el.tagName === 'INPUT' && el.type === 'checkbox') {
+                    if (el.checked) return true;
+                } else {
+                    if (el.textContent.trim().length > 0) return true;
+                }
             }
         }
         return false;
@@ -238,7 +228,7 @@ class GerenciadorEtapas {
             el.classList.add('etapa-lock');
         });
         document.querySelectorAll('input, textarea, select').forEach(el => {
-            if (['submit','button','hidden','reset'].includes(el.type)) return;
+            if (['submit', 'button', 'hidden', 'reset'].includes(el.type)) return;
             el.disabled = true;
             el.classList.add('etapa-lock');
         });
@@ -250,7 +240,7 @@ class GerenciadorEtapas {
             el.classList.remove('etapa-lock', 'etapa-readonly');
         });
         document.querySelectorAll('input, textarea, select').forEach(el => {
-            if (['submit','button','hidden','reset'].includes(el.type)) return;
+            if (['submit', 'button', 'hidden', 'reset'].includes(el.type)) return;
             el.disabled = false;
             el.classList.remove('etapa-lock', 'etapa-readonly');
         });
@@ -264,7 +254,7 @@ class GerenciadorEtapas {
             c.classList.remove('etapa-lock', 'etapa-readonly');
         });
         el.querySelectorAll('input, textarea, select').forEach(c => {
-            if (['submit','button','hidden','reset'].includes(c.type)) return;
+            if (['submit', 'button', 'hidden', 'reset'].includes(c.type)) return;
             c.disabled = false;
             c.classList.remove('etapa-lock', 'etapa-readonly');
         });
@@ -273,13 +263,11 @@ class GerenciadorEtapas {
     /**
      * Desbloqueia células específicas do container-3.
      * O container-3 usa grid de 4 colunas com 8 células.
-     * Para coluna N: células N e (N+4) — ex: col 2 → célula 2 e célula 6
+     * Para coluna N: células N-1 e N+3 (0-based)
      */
     _unlockCelulas3(colunas) {
         const celulas = document.querySelectorAll('.quadro-container-3 .celula-3');
         colunas.forEach(col => {
-            // linha 1: índice col-1  (0-based → col-1)
-            // linha 2: índice col+3  (0-based → col+3)
             [col - 1, col + 3].forEach(idx => {
                 const cel = celulas[idx];
                 if (!cel) return;
@@ -288,7 +276,7 @@ class GerenciadorEtapas {
                     c.classList.remove('etapa-lock', 'etapa-readonly');
                 });
                 cel.querySelectorAll('input, textarea, select').forEach(c => {
-                    if (['submit','button','hidden','reset'].includes(c.type)) return;
+                    if (['submit', 'button', 'hidden', 'reset'].includes(c.type)) return;
                     c.disabled = false;
                     c.classList.remove('etapa-lock', 'etapa-readonly');
                 });
@@ -339,6 +327,7 @@ class GerenciadorEtapas {
     ════════════════════════════════════════════════════════════ */
 
     _ocultarAntigos() {
+        // Ocultar botões legados do formulario.js que interferem no fluxo de etapas
         ['btnSalvarCheck', 'btnFinalizarcheck'].forEach(id => this._hide(id));
     }
 
@@ -348,8 +337,8 @@ class GerenciadorEtapas {
 
         // ─── Salvar (mantém status) ───────────────────────────────
         const btnSalvar = document.createElement('button');
-        btnSalvar.id        = 'btnSalvarEtapa';
-        btnSalvar.type      = 'button';
+        btnSalvar.id = 'btnSalvarEtapa';
+        btnSalvar.type = 'button';
         btnSalvar.className = 'btn-etapa-salvar';
         btnSalvar.innerHTML = '💾 SALVAR';
         btnSalvar.style.display = 'none';
@@ -358,8 +347,8 @@ class GerenciadorEtapas {
 
         // ─── Avançar etapa ────────────────────────────────────────
         const btnAvancar = document.createElement('button');
-        btnAvancar.id        = 'btnAvancarEtapa';
-        btnAvancar.type      = 'button';
+        btnAvancar.id = 'btnAvancarEtapa';
+        btnAvancar.type = 'button';
         btnAvancar.className = 'btn-avancar';
         btnAvancar.textContent = 'AVANÇAR';
         btnAvancar.style.display = 'none';
@@ -368,8 +357,8 @@ class GerenciadorEtapas {
 
         // ─── Voltar / salvar (reservado) ──────────────────────────
         const btnVoltar = document.createElement('button');
-        btnVoltar.id        = 'btnVoltarSalvar';
-        btnVoltar.type      = 'button';
+        btnVoltar.id = 'btnVoltarSalvar';
+        btnVoltar.type = 'button';
         btnVoltar.className = 'btn-etapa-salvar';
         btnVoltar.textContent = '↩ VOLTAR';
         btnVoltar.style.display = 'none';
@@ -377,8 +366,8 @@ class GerenciadorEtapas {
 
         // ─── Aprovar e finalizar ──────────────────────────────────
         const btnAprovar = document.createElement('button');
-        btnAprovar.id        = 'btnAprovarFinalizar';
-        btnAprovar.type      = 'button';
+        btnAprovar.id = 'btnAprovarFinalizar';
+        btnAprovar.type = 'button';
         btnAprovar.className = 'btn-aprovar';
         btnAprovar.textContent = 'FINALIZAR';
         btnAprovar.style.display = 'none';
@@ -409,14 +398,16 @@ class GerenciadorEtapas {
         try {
             msg?.informacao('Salvando…', 0);
             const dados = window.sistemaChecklist.coletarDados();
-            dados.status           = this.statusAtual;   // mantém status
+            dados.status = this.statusAtual;
             dados.data_atualizacao = new Date().toISOString();
 
             const res = await this._req(dados);
             if (res.success) {
-                // Marca como modoEdicao para próximos salvamentos usarem PUT
                 if (window.sistemaChecklist) window.sistemaChecklist.modoEdicao = true;
                 msg?.sucesso('✓ Salvo com sucesso!');
+                //redireciona para a pagina /4m-checklist.html
+                setTimeout(() => { window.location.href = '/4m-checklist.html'; }, 1500);
+
             } else {
                 msg?.erro('Erro ao salvar: ' + (res.message || 'tente novamente.'));
             }
@@ -426,11 +417,18 @@ class GerenciadorEtapas {
     // Avançar para próxima etapa
     async _avancar() {
         const proximo = {
-            'em_andamento':        'aguardando_qualidade',
+            'em_andamento': 'aguardando_qualidade',
             'aguardando_qualidade': 'aguardando_aprovacao'
         }[this.statusAtual];
 
         if (!proximo) return;
+
+        // ── Validação obrigatória antes de avançar ──
+        const invalidos = this._validarEtapaAtual();
+        if (invalidos.length) {
+            this._mostrarErrosValidacao(invalidos);
+            return;
+        }
 
         const msg = window.sistemaChecklist?.mensagens;
         const label = proximo === 'aguardando_qualidade' ? 'Qualidade' : 'Aprovação';
@@ -438,7 +436,7 @@ class GerenciadorEtapas {
         try {
             msg?.informacao(`Enviando para ${label}…`, 0);
             const dados = window.sistemaChecklist.coletarDados();
-            dados.status           = proximo;
+            dados.status = proximo;
             dados.data_atualizacao = new Date().toISOString();
 
             const res = await this._req(dados);
@@ -455,6 +453,13 @@ class GerenciadorEtapas {
     async _aprovarFinalizar() {
         const msg = window.sistemaChecklist?.mensagens;
 
+        // ── Validação obrigatória antes de finalizar ──
+        const invalidos = this._validarEtapaAtual();
+        if (invalidos.length) {
+            this._mostrarErrosValidacao(invalidos);
+            return;
+        }
+
         const ok = await this._modalConfirm(
             'Ao finalizar, o checklist será marcado como <strong>CONCLUÍDO</strong> e não poderá mais ser editado.<br><br>Confirmar finalização?'
         );
@@ -463,7 +468,7 @@ class GerenciadorEtapas {
         try {
             msg?.informacao('Finalizando…', 0);
             const dados = window.sistemaChecklist.coletarDados();
-            dados.status           = 'concluido';
+            dados.status = 'concluido';
             dados.data_finalizacao = new Date().toISOString();
             dados.data_atualizacao = new Date().toISOString();
             if (this.usuarioAtual) dados.finalizado_por = this.usuarioAtual;
@@ -479,13 +484,13 @@ class GerenciadorEtapas {
     }
 
     async _req(dados) {
-        const sc    = window.sistemaChecklist;
-        const nc    = sc?.numeroControleAtual || dados.numero_controle;
-        const modo  = sc?.modoEdicao || false;
+        const sc = window.sistemaChecklist;
+        const nc = sc?.numeroControleAtual || dados.numero_controle;
+        const modo = sc?.modoEdicao || false;
         const token = localStorage.getItem('authToken');
 
         const method = modo ? 'PUT' : 'POST';
-        const url    = modo ? `${API_URL}/fr0062/${nc}` : `${API_URL}/fr0062`;
+        const url = modo ? `${API_URL}/fr0062/${nc}` : `${API_URL}/fr0062`;
 
         const headers = { 'Content-Type': 'application/json' };
         if (token && token !== 'null' && token !== 'undefined')
@@ -493,6 +498,354 @@ class GerenciadorEtapas {
 
         const r = await fetch(url, { method, headers, body: JSON.stringify(dados) });
         return r.json();
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
+    ════════════════════════════════════════════════════════════ */
+
+    /**
+     * Valida um par de checkboxes (SIM/NÃO) onde pelo menos um deve estar marcado
+     * e o texto correspondente só é obrigatório quando "SIM" estiver marcado.
+     * 
+     * @param {HTMLElement} cbSim - Checkbox "SIM"
+     * @param {HTMLElement} cbNao - Checkbox "NÃO"
+     * @param {HTMLElement} spanTexto - Span contenteditable para preenchimento
+     * @param {string} categoria - Nome da categoria (ex: 'MACHINE')
+     * @param {string} tipo - Nome do campo (ex: 'GARANTIA 200%')
+     * @param {Function} isVazio - Função para verificar se um campo está vazio
+     * @param {Array} erros - Array onde os erros serão adicionados
+     */
+    _validarCheckboxComTextoObrigatorio(cbSim, cbNao, spanTexto, categoria, tipo, isVazio, erros) {
+        // Validação básica: pelo menos um deve estar marcado
+        if (!cbSim.checked && !cbNao.checked) {
+            erros.push({ 
+                el: cbSim, 
+                msg: `${categoria} › ${tipo}: Selecione SIM ou NÃO` 
+            });
+            return;
+        }
+
+        // Texto obrigatório apenas quando "SIM" está marcado
+        if (cbSim.checked && spanTexto && isVazio(spanTexto)) {
+            erros.push({ 
+                el: spanTexto, 
+                msg: `${categoria} › ${tipo}: Preencha o texto` 
+            });
+        }
+    }
+
+    /**
+     * Valida múltiplos checkboxes (grupo) onde pelo menos um deve estar marcado
+     * e, para cada marcado, o texto correspondente é obrigatório.
+     * 
+     * Útil para validar campos como "Resultado Avaliação" (2D, CMM, MACRO, OUTROS).
+     * 
+     * @param {Array<{cb: HTMLElement, span: HTMLElement}>} itens - Array com pares {checkbox, span}
+     * @param {string} nomeCampo - Nome do campo para mensagem de erro
+     * @param {Function} isVazio - Função para verificar se um campo está vazio
+     * @param {Array} erros - Array onde os erros serão adicionados
+     * @param {HTMLElement} elFallback - Elemento para fallback se nenhum item tiver checkbox válido
+     */
+    _validarCheckboxMultiplosComTextos(itens, nomeCampo, isVazio, erros, elFallback = null) {
+        // Regra 1: pelo menos um checkbox deve estar marcado
+        const algumMarcado = itens.some(item => item.cb && item.cb.checked);
+        if (!algumMarcado) {
+            const elErro = elFallback || (itens[0]?.cb);
+            if (elErro) {
+                erros.push({ 
+                    el: elErro, 
+                    msg: `${nomeCampo}: Selecione ao menos uma opção` 
+                });
+            }
+        }
+
+        // Regra 2: para cada checkbox marcado, o texto é obrigatório
+        itens.forEach(item => {
+            if (item.cb && item.cb.checked && item.span && isVazio(item.span)) {
+                erros.push({ 
+                    el: item.span, 
+                    msg: `${nomeCampo}: Preencha o campo de texto do item marcado` 
+                });
+            }
+        });
+    }
+
+    /**
+     * Retorna lista de { el, msg } com todos os campos obrigatórios
+     * da etapa atual que estão vazios ou incompletos.
+     */
+    _validarEtapaAtual() {
+        const erros = [];
+
+        const textoVazio = el => !el.textContent.trim();
+        const bloqueado = el => el.classList.contains('etapa-lock')
+            || el.getAttribute('contenteditable') === 'false';
+        const desabilitado = el => el.disabled;
+
+        const testarTexto = (el, label) => {
+            if (!bloqueado(el) && textoVazio(el)) erros.push({ el, msg: label });
+        };
+
+        const testarGrupo = (seletor, label) => {
+            const itens = [...document.querySelectorAll(seletor)].filter(c => !desabilitado(c));
+            if (itens.length && !itens.some(c => c.checked))
+                erros.push({ el: itens[0], msg: label });
+        };
+
+        // ── ETAPA 1 — PRODUÇÃO ─────────────────────────────────
+        if (this.statusAtual === 'em_andamento') {
+
+            // Função auxiliar para verificar se um campo contenteditable está vazio
+            const isVazio = (el) => {
+                if (!el) return true;
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    return !el.value.trim();
+                }
+                // Para spans com contenteditable
+                return !(el.textContent || el.innerText || '').trim();
+            };
+
+            const CATS = ['MAN', 'MACHINE', 'MATERIAL', 'METHOD'];
+
+            CATS.forEach(cat => {
+                const campos = document.querySelectorAll(
+                    `.quadro-container-1 [data-categoria="${cat}"][contenteditable]`
+                );
+                if (!campos.length || bloqueado(campos[0])) return;
+
+                campos.forEach(el => {
+                    const label = el.closest('.celula-4m')?.querySelector('label')?.textContent?.trim()
+                        || el.getAttribute('aria-label') || 'Campo';
+                    testarTexto(el, `${cat} › ${label}`);
+                });
+
+                testarGrupo(
+                    `input[aria-label*="${cat} Importância"]:not(:disabled)`,
+                    `${cat} › IMPORTÂNCIA`
+                );
+                testarGrupo(
+                    `input[aria-label*="${cat} Turno"]:not(:disabled)`,
+                    `${cat} › DATA / TURNO`
+                );
+            });
+
+            document.querySelectorAll('.quadro-container-2 .coluna').forEach((col, i) => {
+                // Pula coluna se estiver completamente bloqueada
+                const primeiroElemEditavel = col.querySelector('[contenteditable]:not(.etapa-lock), input[type="checkbox"]:not(:disabled)');
+                if (!primeiroElemEditavel) return;
+
+                col.querySelectorAll('[contenteditable]').forEach(el => {
+                    if (bloqueado(el)) return;
+                    if (el.closest('.secao-garantia')) return;
+                    if (el.closest('.secao-sakanobori')) return;
+                    if (el.closest('.secao-meios')) return;
+                    const label = el.closest('[class*="secao"]')
+                        ?.querySelector('span:first-child')?.textContent?.trim()
+                        || 'Campo';
+                    testarTexto(el, `${CATS[i]} › ${label}`);
+                });
+
+                // ────────────────────────────────────────────────────────────
+                // GARANTIA 200% — validação com texto obrigatório
+                // ────────────────────────────────────────────────────────────
+                const cbGarantiaSim = col.querySelector(`input[aria-label*="${CATS[i]} Garantia 200% Sim"]`);
+                const cbGarantiaNao = col.querySelector(`input[aria-label*="${CATS[i]} Garantia 200% Não"]`);
+                const spanGarantia = col.querySelector('.secao-garantia span.input-line');
+                
+                if (cbGarantiaSim && cbGarantiaNao && !desabilitado(cbGarantiaSim) && !desabilitado(cbGarantiaNao)) {
+                    this._validarCheckboxComTextoObrigatorio(
+                        cbGarantiaSim,
+                        cbGarantiaNao,
+                        spanGarantia,
+                        CATS[i],
+                        'GARANTIA 200%',
+                        isVazio,
+                        erros
+                    );
+                }
+
+                // ────────────────────────────────────────────────────────────
+                // MEIOS DE AVALIAÇÃO — validação com "OUTROS" obrigatório
+                // ────────────────────────────────────────────────────────────
+                const secaoMeios = col.querySelector('.secao-meios');
+                if (secaoMeios && !bloqueado(secaoMeios)) {
+                    const cb2D = secaoMeios.querySelector(`input[aria-label*="${CATS[i]} Avaliação 2D"]`);
+                    const cbCMM = secaoMeios.querySelector(`input[aria-label*="${CATS[i]} Avaliação CMM"]`);
+                    const cbMACRO = secaoMeios.querySelector(`input[aria-label*="${CATS[i]} Avaliação MACRO"]`);
+                    const cbOutros = secaoMeios.querySelector(`input[aria-label*="${CATS[i]} Avaliação Outros"]`);
+                    const spanOutros = secaoMeios.querySelector('.checkbox-group:last-child span.input-line');
+                    
+                    // Validar apenas se todos os elementos estão desbloqueados
+                    if (cb2D && cbCMM && cbMACRO && cbOutros && !desabilitado(cb2D) && !desabilitado(cbCMM) && !desabilitado(cbMACRO) && !desabilitado(cbOutros)) {
+                        // Regra 1: pelo menos um deve estar marcado
+                        if (!cb2D.checked && !cbCMM.checked && !cbMACRO.checked && !cbOutros.checked) {
+                            erros.push({ el: cb2D, msg: `${CATS[i]} › MEIOS DE AVALIAÇÃO: Selecione ao menos uma opção` });
+                        }
+                        
+                        // Regra 2: se "OUTROS" está marcado, o texto é obrigatório
+                        if (cbOutros.checked && spanOutros && isVazio(spanOutros)) {
+                            erros.push({ el: spanOutros, msg: `${CATS[i]} › MEIOS DE AVALIAÇÃO › OUTROS: Preencha o texto` });
+                        }
+                    }
+                }
+
+                testarGrupo(
+                    `input[aria-label*="${i === 0 ? 'Sakanobori' : CATS[i] + ' Sakanobori'}"]:not(:disabled)`,
+                    `${CATS[i]} › SAKANOBORI`
+                );
+            });
+        }
+
+        // ── ETAPA 2 — QUALIDADE ────────────────────────────────
+        else if (this.statusAtual === 'aguardando_qualidade') {
+
+            // Função auxiliar para verificar se um campo contenteditable está vazio
+            const isVazio = (el) => {
+                if (!el) return true;
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    return !el.value.trim();
+                }
+                // Para spans com contenteditable
+                return !(el.textContent || el.innerText || '').trim();
+            };
+
+            document.querySelectorAll('.quadro-container-3 .celula-3').forEach(cel => {
+                // Pula células completamente bloqueadas
+                const primeiro = cel.querySelector('[contenteditable], input');
+                if (!primeiro || desabilitado(primeiro) || bloqueado(primeiro)) return;
+
+                // ------------------------------------------------------------
+                // RESULTADO AVALIAÇÃO (secao-resultado) e JUSTIFICATIVA (secao-justificativa) são pares
+                // ------------------------------------------------------------
+                if (cel.classList.contains('secao-resultado')) {
+                    // Encontra o bloco de justificativa correspondente (mesmo índice)
+                    const index = Array.from(document.querySelectorAll('.secao-resultado')).indexOf(cel);
+                    const blocoJust = document.querySelectorAll('.secao-justificativa')[index];
+                    if (!blocoJust) return;
+
+                    const cbOk = cel.querySelector('input[type="checkbox"]'); // primeiro checkbox do resultado (OK)
+                    const cbNok = blocoJust.querySelector('input[type="checkbox"]'); // primeiro checkbox da justificativa (NOK)
+
+                    if (!cbOk || !cbNok) return;
+
+                    // Regra 1: pelo menos um dos dois deve estar marcado
+                    if (!cbOk.checked && !cbNok.checked) {
+                        erros.push({ el: cbOk, msg: 'Selecione OK ou NOK para este item' });
+                    }
+
+                    // Se OK estiver marcado
+                    if (cbOk.checked) {
+                        // Coleta todos os itens internos (checkboxes com campo de texto)
+                        const itensInternos = [];
+                        cel.querySelectorAll('.input-item').forEach(item => {
+                            const cb = item.querySelector('input[type="checkbox"]');
+                            const span = item.querySelector('span.input-line');
+                            if (cb && span) itensInternos.push({ cb, span });
+                        });
+
+                        // Usa função genérica para validar múltiplos checkboxes
+                        const primeiroLabel = cel.querySelector('.input-item label');
+                        this._validarCheckboxMultiplosComTextos(
+                            itensInternos,
+                            'RESULTADO AVALIAÇÃO (2D, CMM, MACRO, OUTROS)',
+                            isVazio,
+                            erros,
+                            primeiroLabel || cbOk
+                        );
+
+                        const spanGarantia = cel.querySelector('.input-line[style*="margin-top: auto"]')
+                            || cel.querySelector('.input-line:last-child');
+                        if (spanGarantia && isVazio(spanGarantia)) {
+                            erros.push({ el: spanGarantia, msg: 'GARANTIA 200%: Preencha o texto' });
+                        }
+                    }
+
+                    // Se NOK estiver marcado
+                    if (cbNok.checked) {
+                        // Apenas a justificativa principal (primeiro span dentro de .justificativa-linha) é obrigatória
+                        const spanJust = blocoJust.querySelector('.justificativa-linha span.input-line');
+                        if (spanJust && isVazio(spanJust)) {
+                            erros.push({ el: spanJust, msg: 'Justificativa obrigatória' });
+                        }
+                    }
+                }
+
+                // ------------------------------------------------------------
+                // TRATATIVA (procedimentos) - regra existente
+                // ------------------------------------------------------------
+                if (cel.classList.contains('secao-tratativa')) {
+                    ['PR008', 'PR990', 'PR007', 'PR092'].forEach(pr =>
+                        testarGrupo(
+                            `input[aria-label*="${pr}"]:not(:disabled)`,
+                            `${pr}: selecione SIM ou NÃO`
+                        )
+                    );
+                }
+
+                // A validação antiga de justificativa (apenas checkbox) foi removida porque agora é feita em conjunto com o resultado.
+                // Se houver outras justificativas independentes, ajuste conforme necessário.
+            });
+        }
+
+        // ── ETAPA 3 — APROVAÇÃO ────────────────────────────────
+        else if (this.statusAtual === 'aguardando_aprovacao') {
+
+            [
+                ['solicitadoPor', 'Solicitado Por'],
+                ['vistoRetencaoQA', 'Visto Retenção QA'],
+                ['setorProducao', 'Setor Produção'],
+                ['setorLogistica', 'Setor Log. / P.C.'],
+                ['setorEngenharia', 'Setor Engenharia'],
+                ['qualidadeAprovado', 'Qualidade Aprovado'],
+                ['qualidadeConfirmado', 'Qualidade Confirmado'],
+                ['qualidadeExecutadoPor', 'Qualidade Executado Por'],
+                ['recebimentoQA', 'Recebimento Q.A.'],
+                ['controleAprovado', 'Controle Aprovado'],
+                ['controleExecutadoPor', 'Controle Executado Por'],
+                ['controleElaboradoPor', 'Controle Elaborado Por'],
+            ].forEach(([id, label]) => {
+                const el = document.getElementById(id);
+                if (el && !bloqueado(el)) testarTexto(el, label);
+            });
+
+            testarGrupo(
+                '#mudanca4mEngenharia, #mudanca4mControle, #mudanca4mProducao',
+                'MUDANÇA 4M: selecione pelo menos uma opção'
+            );
+        }
+
+        return erros;
+    }
+
+    /**
+     * Destaca visualmente os campos inválidos e exibe resumo de erros.
+     */
+    _mostrarErrosValidacao(invalidos) {
+        // Remove destaques anteriores
+        document.querySelectorAll('.campo-invalido').forEach(el => el.classList.remove('campo-invalido'));
+
+        // Destaca cada campo inválido e remove o destaque quando preenchido
+        invalidos.forEach(({ el }) => {
+            el.classList.add('campo-invalido');
+            el.addEventListener('input', () => el.classList.remove('campo-invalido'), { once: true });
+            el.addEventListener('change', () => el.classList.remove('campo-invalido'), { once: true });
+        });
+
+        // Scrolla até o primeiro campo inválido
+        invalidos[0]?.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Exibe mensagem resumida
+        const msg = window.sistemaChecklist?.mensagens;
+        const visiveis = invalidos.slice(0, 6);
+        const lista = visiveis.map(e => `• ${e.msg}`).join('\n');
+        const extra = invalidos.length > 6 ? `\n...e mais ${invalidos.length - 6} campo(s)` : '';
+
+        if (msg) {
+            msg.erro(`Campos obrigatórios não preenchidos (${invalidos.length}):\n${lista}${extra}`);
+        } else {
+            alert(`Campos obrigatórios não preenchidos (${invalidos.length}):\n\n${lista}${extra}`);
+        }
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -517,8 +870,8 @@ class GerenciadorEtapas {
                 </div>
             </div>`;
             document.body.appendChild(ov);
-            ov.querySelector('#_mc_yes').onclick = () => { ov.remove(); resolve(true);  };
-            ov.querySelector('#_mc_no').onclick  = () => { ov.remove(); resolve(false); };
+            ov.querySelector('#_mc_yes').onclick = () => { ov.remove(); resolve(true); };
+            ov.querySelector('#_mc_no').onclick = () => { ov.remove(); resolve(false); };
         });
     }
 
@@ -531,7 +884,7 @@ class GerenciadorEtapas {
         barra.id = 'barra-etapas';
 
         const etapas = [
-            { n: 1, label: 'PRODUÇÃO',  cor: '#1565C0' },
+            { n: 1, label: 'PRODUÇÃO', cor: '#1565C0' },
             { n: 2, label: 'QUALIDADE', cor: '#E65100' },
             { n: 3, label: 'APROVAÇÃO', cor: '#1B5E20' }
         ];
@@ -553,16 +906,16 @@ class GerenciadorEtapas {
         if (!barra) return;
 
         const etapaN = { 'em_andamento': 1, 'aguardando_qualidade': 2, 'aguardando_aprovacao': 3, 'concluido': 4, 'finalizado': 4 };
-        const ativa  = etapaN[this.statusAtual] || 1;
+        const ativa = etapaN[this.statusAtual] || 1;
 
         barra.querySelectorAll('.barra-step').forEach(step => {
             const n = +step.dataset.n;
             step.classList.remove('step-ok', 'step-ativa', 'step-inativa');
             const num = step.querySelector('.barra-num');
 
-            if (ativa > 3 || n < ativa)     { step.classList.add('step-ok');     num.textContent = '✓'; }
-            else if (n === ativa)            { step.classList.add('step-ativa');  num.textContent = n; }
-            else                             { step.classList.add('step-inativa'); num.textContent = n; }
+            if (ativa > 3 || n < ativa) { step.classList.add('step-ok'); num.textContent = '✓'; }
+            else if (n === ativa) { step.classList.add('step-ativa'); num.textContent = n; }
+            else { step.classList.add('step-inativa'); num.textContent = n; }
         });
 
         barra.querySelectorAll('.barra-conector').forEach((c, i) => {
@@ -742,6 +1095,12 @@ class GerenciadorEtapas {
     user-select: none;
 }
 
+/* ── CAMPOS INVÁLIDOS (validação obrigatória) ────────────────────── */
+.campo-invalido {
+    outline: 2px solid #e53935 !important;
+    background-color: rgba(229, 57, 53, 0.08) !important;
+}
+
 /* ── FAIXAS INDICADORAS ──────────────────────────────────────────── */
 .etapa-faixa {
     display: block;
@@ -752,7 +1111,7 @@ class GerenciadorEtapas {
     font-family: Arial, sans-serif;
     line-height: 1.5;
 }
-    .etapa-faixa-lock {
+.etapa-faixa-lock {
     background: #FFF8E1;
     color:  #795548;
     border-left: 3px solid #FF8F00;

@@ -69,12 +69,12 @@ async function startServer() {
             }
             return { success: false };
         }
-    
+
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
             const authHeader = req.headers['authorization'];
             const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
-    
+
             if (!token) {
                 return res.status(401).json({
                     success: false,
@@ -90,13 +90,13 @@ async function startServer() {
                         message: 'Token inválido ou expirado'
                     });
                 }
-    
+
                 // Adicionar dados do usuário ao request
                 req.user = decoded;
                 next();
             });
         }
-    
+
         // Middleware para verificar role
         function verificarRole(rolesPermitidas) {
             return (req, res, next) => {
@@ -111,7 +111,7 @@ async function startServer() {
                         }
                     });
                 }
-    
+
                 return res.status(403).json({
                     success: false,
                     message: 'Sem permissão para realizar esta ação'
@@ -180,8 +180,8 @@ async function startServer() {
                 });
             }
         });
-    
-    
+
+
         // ==================== ROTAS CRUD FORMULÁRIOS ====================
 
         // Rota para salvar formulário FR0062 (OPERADOR + ADMIN)
@@ -204,18 +204,18 @@ async function startServer() {
                 dados.data_atualizacao = agora;
                 dados.criado_por = req.user.username;
                 dados.status = dados.status || 'em_andamento';
-        
+
                 // Salvar no MongoDB
                 await db.collection('checklists').insertOne(dados);
-        
+
                 console.log('✅ Formulário salvo no MongoDB');
-        
+
                 res.json({
                     success: true,
                     message: 'Formulário salvo com sucesso',
                     numero_controle: dados.numero_controle
                 });
-        
+
             } catch (error) {
                 console.error('❌ Erro ao salvar formulário:', error);
                 res.status(500).json({
@@ -225,20 +225,176 @@ async function startServer() {
                 });
             }
         });
-        
-        // Rota para listar todos os formulários (OPERADOR + ADMIN)
+
+        // ==================== ROTA PARA GERAR NÚMERO DE CONTROLE ====================
+        // Baseado na quantidade de checklists existentes + 1
+        // Cada reload da página gera um novo número baseado no count atual
+        app.get('/api/fr0062/proximo-numero', verificarOperador, async (req, res) => {
+            try {
+                // 1. Contar quantos checklists existem no banco
+                const totalExistentes = await db.collection('checklists').countDocuments();
+
+                // 2. Próximo número = total + 1
+                const proximoNumero = totalExistentes + 1;
+
+                // 3. Formatar número no padrão: FR0062-000000001, FR0062-000000002, etc.
+                const numero = `FR0062-${String(proximoNumero).padStart(9, '0')}`;
+                
+                console.log(`✅ Número de controle gerado: ${numero} (Total de checklists: ${totalExistentes})`);
+                
+                res.json({ 
+                    success: true, 
+                    numero_controle: numero,
+                    sequencia: proximoNumero,
+                    total_existentes: totalExistentes
+                });
+
+            } catch (error) {
+                console.error('❌ Erro ao gerar número de controle:', error);
+                res.status(500).json({ 
+                    success: false, 
+                    message: 'Erro ao gerar número de controle',
+                    error: error.message 
+                });
+            }
+        });
+
+        // Rota para listar formulários com paginação (OPERADOR + ADMIN)
         app.get('/api/fr0062', verificarOperador, async (req, res) => {
             try {
+                // Mantém compatibilidade com pagina/limite e aceita page/limit
+                const pagina = parseInt(req.query.page || req.query.pagina, 10) || 1;
+                const limite = parseInt(req.query.limit || req.query.limite, 10) || 10;
+                const busca = (req.query.busca || '').trim();
+                const status = (req.query.status || '').trim();
+                const ano = (req.query.ano || '').trim();
+
+                // Validações
+                if (pagina < 1) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Página deve ser maior que 0'
+                    });
+                }
+
+                if (limite < 1 || limite > 100) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Limite deve estar entre 1 e 100'
+                    });
+                }
+
+                // Montar filtro principal da listagem
+                const filtro = {};
+                if (busca.trim()) {
+                    filtro.$or = [
+                        { numero_controle: { $regex: busca, $options: 'i' } },
+                        { criado_por: { $regex: busca, $options: 'i' } },
+                        { status: { $regex: busca, $options: 'i' } }
+                    ];
+                }
+
+                if (status) {
+                    if (status === 'concluido') {
+                        filtro.status = { $in: ['concluido', 'finalizado'] };
+                    } else {
+                        filtro.status = status;
+                    }
+                }
+
+                if (ano) {
+                    filtro.data_criacao = { $regex: `^${ano}` };
+                }
+
+                // Estatísticas seguem a busca/ano, mas ignoram o filtro de status
+                const filtroEstatisticas = { ...filtro };
+                delete filtroEstatisticas.status;
+
+                // Contar total de documentos que correspondem ao filtro
+                const totalDocumentos = await db
+                    .collection('checklists')
+                    .countDocuments(filtro);
+
+                // Calcular total de páginas
+                const totalPaginas = totalDocumentos > 0 ? Math.ceil(totalDocumentos / limite) : 0;
+
+                // Validar se a página existe
+                if (pagina > totalPaginas && totalDocumentos > 0) {
+                    return res.status(400).json({
+                        success: false,
+                        message: `Página ${pagina} não existe. Total de páginas: ${totalPaginas}`
+                    });
+                }
+
+                // Calcular skip
+                const skip = (pagina - 1) * limite;
+
+                // Buscar documentos com paginação
                 const formularios = await db
                     .collection('checklists')
-                    .find()
-                    .sort({ data_criacao: -1 })
+                    .find(filtro)
+                    .sort({ data_atualizacao: -1, data_criacao: -1 })
+                    .skip(skip)
+                    .limit(limite)
                     .toArray();
-        
+
+                const estatisticasPorStatus = await db.collection('checklists').aggregate([
+                    { $match: filtroEstatisticas },
+                    {
+                        $project: {
+                            status_normalizado: {
+                                $cond: [
+                                    { $eq: ['$status', 'finalizado'] },
+                                    'concluido',
+                                    { $ifNull: ['$status', 'em_andamento'] }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: '$status_normalizado',
+                            total: { $sum: 1 }
+                        }
+                    }
+                ]).toArray();
+
+                const stats = {
+                    total: await db.collection('checklists').countDocuments(filtroEstatisticas),
+                    em_andamento: 0,
+                    aguardando_qualidade: 0,
+                    aguardando_aprovacao: 0,
+                    concluido: 0
+                };
+
+                estatisticasPorStatus.forEach((item) => {
+                    if (Object.prototype.hasOwnProperty.call(stats, item._id)) {
+                        stats[item._id] = item.total;
+                    }
+                });
+
+                console.log(`📄 Listando página ${pagina} de ${totalPaginas} (${limite} itens por página)`);
+
                 res.json({
                     success: true,
-                    count: formularios.length,
-                    formularios
+                    data: formularios,
+                    pagination: {
+                        page: pagina,
+                        limit: limite,
+                        total: totalDocumentos,
+                        totalPages: totalPaginas
+                    },
+                    stats,
+                    paginacao: {
+                        pagina_atual: pagina,
+                        limite_por_pagina: limite,
+                        total_documentos: totalDocumentos,
+                        total_paginas: totalPaginas,
+                        tem_proxima: pagina < totalPaginas,
+                        tem_anterior: pagina > 1
+                    },
+                    formularios,
+                    count: formularios.length
                 });
             } catch (error) {
                 console.error('❌ Erro ao listar formulários:', error);
@@ -249,28 +405,28 @@ async function startServer() {
                 });
             }
         });
-        
+
         // Rota para buscar um formulário específico (OPERADOR + ADMIN)
         app.get('/api/fr0062/:numeroControle', verificarOperador, async (req, res) => {
             try {
                 const numeroControle = req.params.numeroControle;
-        
+
                 const formulario = await db
                     .collection('checklists')
                     .findOne({ numero_controle: numeroControle });
-        
+
                 if (!formulario) {
                     return res.status(404).json({
                         success: false,
                         message: 'Formulário não encontrado'
                     });
                 }
-        
+
                 res.json({
                     success: true,
                     formulario
                 });
-        
+
             } catch (error) {
                 console.error('❌ Erro ao buscar formulário:', error);
                 res.status(500).json({
@@ -280,21 +436,20 @@ async function startServer() {
                 });
             }
         });
-        
-        // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
+
         // Rota para atualizar um formulário (OPERADOR + ADMIN com restrições)
         app.put('/api/fr0062/:numeroControle', async (req, res) => {
             try {
                 const { numeroControle } = req.params;
                 const dados = req.body;
-        
+
                 // 1. Extração e limpeza do Token
                 const authHeader = req.headers['authorization'];
                 let token = authHeader && authHeader.split(' ')[1];
-        
+
                 // Se o token for a string "null" ou "undefined" vinda do front, tratamos como nulo
                 if (token === 'null' || token === 'undefined') token = null;
-        
+
                 // Usuário padrão caso não haja token válido
                 let user = { username: 'operador', role: 'operador' };
 
@@ -353,9 +508,9 @@ async function startServer() {
 
                     // Validar transições permitidas (fluxo linear)
                     const transicoesPermitidas = {
-                        'em_andamento':         ['em_andamento', 'aguardando_qualidade'],
-                        'aguardando_qualidade':  ['aguardando_qualidade', 'aguardando_aprovacao'],
-                        'aguardando_aprovacao':  ['aguardando_aprovacao'] // avanço para concluido só por admin
+                        'em_andamento': ['em_andamento', 'aguardando_qualidade'],
+                        'aguardando_qualidade': ['aguardando_qualidade', 'aguardando_aprovacao'],
+                        'aguardando_aprovacao': ['aguardando_aprovacao'] // avanço para concluido só por admin
                     };
 
                     const permitidos = transicoesPermitidas[statusAtual] || [];
@@ -488,6 +643,7 @@ async function startServer() {
                 timestamp: new Date().toISOString(),
                 endpoints: {
                     'POST /api/fr0062/login': 'Login (Admin)',
+                    'GET /api/fr0062/proximo-numero': 'Gerar próximo número sequencial (Operador/Admin)',
                     'POST /api/fr0062': 'Criar novo formulário (Operador/Admin)',
                     'GET /api/fr0062': 'Listar todos os formulários (Operador/Admin)',
                     'GET /api/fr0062/:id': 'Buscar formulário específico (Operador/Admin)',
@@ -505,21 +661,22 @@ async function startServer() {
         // Iniciar servidor
         app.listen(port, () => {
             console.log('');
-            console.log('═══════════════════════════════════════════════════════');
+            console.log('═══════════════════════════════════════════════════════════════════════════');
             console.log('🚀 Servidor FR0062 iniciado com sucesso!');
-            console.log('═══════════════════════════════════════════════════════');
+            console.log('═══════════════════════════════════════════════════════════════════════════');
             console.log(`📡 Porta: ${port}`);
             console.log(`🌐 URL: http://localhost:${port}`);
             console.log(`🗄️  Banco de dados: MongoDB - 4m_checklist`);
             console.log('');
             console.log('📋 Endpoints disponíveis:');
-            console.log(`   POST   /api/fr0062/login       - Login (Admin)`);
-            console.log(`   POST   /api/fr0062              - Criar formulário (Operador/Admin)`);
-            console.log(`   GET    /api/fr0062              - Listar formulários (Operador/Admin)`);
-            console.log(`   GET    /api/fr0062/:id          - Buscar formulário (Operador/Admin)`);
-            console.log(`   PUT    /api/fr0062/:id          - Atualizar formulário (Operador/Admin)`);
-            console.log(`   DELETE /api/fr0062/:id          - Deletar formulário (Apenas Admin)`);
-            console.log(`   GET    /api/status              - Status da API`);
+            console.log(`   POST   /api/fr0062/login           - Login (Admin)`);
+            console.log(`   GET    /api/fr0062/proximo-numero   - Gerar número sequencial ⭐ CORRIGIDO`);
+            console.log(`   POST   /api/fr0062                 - Criar formulário (Operador/Admin)`);
+            console.log(`   GET    /api/fr0062                 - Listar formulários (Operador/Admin)`);
+            console.log(`   GET    /api/fr0062/:id             - Buscar formulário (Operador/Admin)`);
+            console.log(`   PUT    /api/fr0062/:id             - Atualizar formulário (Operador/Admin)`);
+            console.log(`   DELETE /api/fr0062/:id             - Deletar formulário (Apenas Admin)`);
+            console.log(`   GET    /api/status                 - Status da API`);
             console.log('');
             console.log('🔐 PERMISSÕES:');
             console.log(`   OPERADOR: Sem login, acesso direto`);
@@ -534,7 +691,12 @@ async function startServer() {
             console.log(`   - Tudo que operador pode fazer`);
             console.log(`   - Editar checklists finalizados`);
             console.log(`   - Deletar checklists`);
-            console.log('═══════════════════════════════════════════════════════');
+            console.log('');
+            console.log('⭐ CONTADOR SEQUENCIAL:');
+            console.log(`   - Números NUNCA se repetem`);
+            console.log(`   - Independente de deletions`);
+            console.log(`   - Formato: FR0062-000000001, FR0062-000000002, etc.`);
+            console.log('═══════════════════════════════════════════════════════════════════════════');
             console.log('');
         });
 
