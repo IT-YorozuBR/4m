@@ -200,10 +200,21 @@ async function startServer() {
                 }
 
                 // Adicionar timestamps e informações do usuário
+                dados.criador_nome = String(dados.criador_nome || '').trim();
+                dados.criador_matricula = String(dados.criador_matricula || '').trim();
+
+                if (!dados.criador_nome || !dados.criador_matricula) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Nome e matrÃ­cula do criador sÃ£o obrigatÃ³rios'
+                    });
+                }
+
                 const agora = new Date().toISOString();
                 dados.data_criacao = dados.data_criacao || agora;
                 dados.data_atualizacao = agora;
                 dados.criado_por = req.user.username;
+                dados.solicitado_por = dados.solicitado_por || dados.criador_nome;
                 dados.status = dados.status || 'em_andamento';
 
                 // Salvar no MongoDB
@@ -290,6 +301,8 @@ async function startServer() {
                 if (busca.trim()) {
                     filtro.$or = [
                         { numero_controle: { $regex: busca, $options: 'i' } },
+                        { criador_nome: { $regex: busca, $options: 'i' } },
+                        { criador_matricula: { $regex: busca, $options: 'i' } },
                         { criado_por: { $regex: busca, $options: 'i' } },
                         { status: { $regex: busca, $options: 'i' } }
                     ];
@@ -539,6 +552,9 @@ async function startServer() {
                 // 5. Preparação dos dados e Update
                 dados.data_atualizacao = new Date().toISOString();
                 dados.atualizado_por = user.username;
+                dados.criador_nome = String(dados.criador_nome || formularioAtual.criador_nome || '').trim();
+                dados.criador_matricula = String(dados.criador_matricula || formularioAtual.criador_matricula || '').trim();
+                dados.solicitado_por = dados.solicitado_por || formularioAtual.solicitado_por || dados.criador_nome;
 
                 // Removemos o _id dos dados para evitar erro de tentativa de alterar chave primária do Mongo
                 delete dados._id;

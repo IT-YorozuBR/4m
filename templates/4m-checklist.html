@@ -808,7 +808,7 @@
           <span class="material-icons">arrow_back</span>
           Voltar
         </button>
-        <button class="novo-button" onclick="window.location.href='/FR0062-formulario.html'">
+        <button class="novo-button" onclick="window.location.href='/novo-checklist.html'">
           <span class="material-icons">add</span>
           Novo Checklist
         </button>
@@ -1004,7 +1004,7 @@
         }
         if (e.ctrlKey && e.key === 'n') {
           e.preventDefault();
-          window.location.href = '/FR0062-formulario.html';
+          window.location.href = '/novo-checklist.html';
         }
         if (e.ctrlKey && e.key === 'f') {
           e.preventDefault();
@@ -1261,6 +1261,8 @@
       card.className = 'checklist-card';
 
       const dataFormatada = formatarData(checklist.data_criacao);
+      const nomeCriador = checklist.criador_nome || checklist.solicitado_por || checklist.criado_por || 'N/A';
+      const matriculaCriador = checklist.criador_matricula || 'N/A';
       const status = checklist.status || 'em_andamento';
       const isConcluido = status === 'concluido' || status === 'finalizado';
 
@@ -1286,8 +1288,12 @@
     </div>
     <div class="checklist-info">
       <div class="checklist-info-item">
-        <span>Solicitado por</span>
-        <span>${checklist.solicitado_por || 'N/A'}</span>
+        <span>Criado por</span>
+        <span>${nomeCriador}</span>
+      </div>
+      <div class="checklist-info-item">
+        <span>Matricula</span>
+        <span>${matriculaCriador}</span>
       </div>
       <div class="checklist-info-item">
         <span>Criado em</span>
@@ -1428,7 +1434,7 @@
           <div style="font-size: 4rem; margin-bottom: 20px;">📭</div>
           <h3 style="font-size: 1.5rem; margin-bottom: 10px;">Nenhum checklist encontrado</h3>
           <p>Crie um novo checklist para começar</p>
-          <button class="novo-button" onclick="window.location.href='/FR0062-formulario.html'" style="margin-top: 20px; border: 1px solid rgba(0,150,255,0.3);">​
+          <button class="novo-button" onclick="window.location.href='/novo-checklist.html'" style="margin-top: 20px; border: 1px solid rgba(0,150,255,0.3);">​
             <span class="material-icons">add</span>
             Novo Checklist
           </button>

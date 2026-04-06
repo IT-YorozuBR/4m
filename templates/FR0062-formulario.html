@@ -446,6 +446,7 @@
                 this.saidaLiberada = false;
                 this.modalAlertaRefreshAberto = false;
                 this.protecaoSaidaConfigurada = false;
+                this.identificacaoCriador = { nome: '', matricula: '' };
             }
 
             configurarProtecaoDadosNaoSalvos() {
@@ -501,6 +502,40 @@
                 setTimeout(() => {
                     this.saidaLiberada = false;
                 }, 2000);
+            }
+
+            definirIdentificacaoCriador(nome, matricula) {
+                this.identificacaoCriador = {
+                    nome: String(nome || '').trim(),
+                    matricula: String(matricula || '').trim()
+                };
+
+                if (this.identificacaoCriador.nome) {
+                    const campoSolicitadoPor = document.getElementById('solicitadoPor');
+                    if (campoSolicitadoPor && !campoSolicitadoPor.textContent.trim()) {
+                        campoSolicitadoPor.textContent = this.identificacaoCriador.nome;
+                    }
+                }
+            }
+
+            carregarIdentificacaoCriadorDaSessao() {
+                const dadosBrutos = sessionStorage.getItem('fr0062Criador');
+                if (!dadosBrutos) {
+                    return false;
+                }
+
+                try {
+                    const dados = JSON.parse(dadosBrutos);
+                    if (!dados.nome || !dados.matricula) {
+                        return false;
+                    }
+
+                    this.definirIdentificacaoCriador(dados.nome, dados.matricula);
+                    return true;
+                } catch (error) {
+                    console.error('Erro ao carregar identificacao do criador:', error);
+                    return false;
+                }
             }
 
             exibirAlertaRefreshPersonalizado(onConfirmar) {
@@ -776,12 +811,18 @@
 
                 // Campos extras do formulário
                 dados.solicitado_por = document.querySelector('.bloco-controle .input-line')?.textContent.trim() || '';
+                dados.criador_nome = this.identificacaoCriador.nome;
+                dados.criador_matricula = this.identificacaoCriador.matricula;
                 dados.aprovado_por = cabecalho.qualidade_aprovado || '';
                 dados.confirmado_por = cabecalho.qualidade_confirmado || '';
                 dados.elaborado_por = cabecalho.qualidade_executado_por || '';
                 dados.executado_por = this.getTexto('#controleExecutadoPor');
                 dados.controle_elaborado_por = this.getTexto('#controleElaboradoPor');
                 dados.man_numOperacao1 = this.getTexto('#man_numOperacao1');
+
+                if (!dados.solicitado_por && dados.criador_nome) {
+                    dados.solicitado_por = dados.criador_nome;
+                }
 
                 console.log('📦 Dados coletados:', dados);
                 return dados;
@@ -1007,6 +1048,7 @@
                         ? `${API_URL}/fr0062/${this.numeroControleAtual}`
                         : `${API_URL}/fr0062`;
 
+                    const eraEdicao = this.modoEdicao;
                     const method = this.modoEdicao ? 'PUT' : 'POST';
 
                     // 2. Envia o token no cabeçalho Authorization
@@ -1029,6 +1071,9 @@
                     const result = await response.json();
 
                     if (result.success) {
+                        if (!eraEdicao) {
+                            sessionStorage.removeItem('fr0062Criador');
+                        }
                         this.marcarFormularioComoSalvo();
                         this.mensagens.sucesso(`✓ Formulário ${this.modoEdicao ? 'atualizado' : 'salvo'} com sucesso!`);
                         setTimeout(() => {
@@ -1172,6 +1217,7 @@
             preencherFormulario(dados) {
                 // Preservar data de criação original para não sobrescrever em salvamentos futuros
                 this._dataCriacaoOriginal = dados.data_criacao || null;
+                this.definirIdentificacaoCriador(dados.criador_nome, dados.criador_matricula);
                 // Campos extras
                 this.setTexto('#controleElaboradoPor', dados.controle_elaborado_por);
 
@@ -1604,6 +1650,12 @@
             // Verificar se está em modo de edição
             const urlParams = new URLSearchParams(window.location.search);
             const numeroControleEditar = urlParams.get('id');
+
+            if (!numeroControleEditar && !window.sistemaChecklist.carregarIdentificacaoCriadorDaSessao()) {
+                alert('Informe nome e matricula antes de criar um novo checklist.');
+                window.location.href = '/novo-checklist.html';
+                return;
+            }
 
             if (numeroControleEditar) {
                 console.log('📝 Modo edição:', numeroControleEditar);
