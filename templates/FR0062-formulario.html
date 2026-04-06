@@ -129,6 +129,261 @@
             .mensagem-fechar:hover {
                 background: rgba(255,255,255,0.3);
             }
+
+            .alerta-refresh-overlay {
+                position: fixed;
+                inset: 0;
+                background:
+                    radial-gradient(circle at top, rgba(255, 255, 255, 0.12), transparent 32%),
+                    rgba(8, 15, 29, 0.76);
+                backdrop-filter: blur(10px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 24px;
+                z-index: 1000000;
+                animation: fadeInOverlay 0.22s ease;
+            }
+
+            .alerta-refresh-modal {
+                position: relative;
+                width: min(520px, 100%);
+                background: linear-gradient(160deg, #ffffff 0%, #f8fbff 52%, #fff8f2 100%);
+                border: 1px solid rgba(255, 255, 255, 0.55);
+                border-radius: 28px;
+                box-shadow: 0 28px 90px rgba(8, 27, 58, 0.34);
+                overflow: hidden;
+                animation: slideUpModal 0.24s ease;
+            }
+
+            .alerta-refresh-modal::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background:
+                    radial-gradient(circle at top right, rgba(249, 115, 22, 0.16), transparent 28%),
+                    radial-gradient(circle at top left, rgba(217, 72, 65, 0.12), transparent 32%);
+                pointer-events: none;
+            }
+
+            .alerta-refresh-topo {
+                position: relative;
+                padding: 26px 28px 20px;
+                background: linear-gradient(135deg, rgba(255, 245, 245, 0.95) 0%, rgba(255, 231, 207, 0.92) 100%);
+                border-bottom: 1px solid rgba(223, 78, 43, 0.1);
+            }
+
+            .alerta-refresh-fechar {
+                position: absolute;
+                top: 18px;
+                right: 18px;
+                width: 38px;
+                height: 38px;
+                border: none;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.72);
+                color: #8b2733;
+                font-size: 20px;
+                cursor: pointer;
+                box-shadow: 0 8px 18px rgba(139, 39, 51, 0.12);
+                transition: transform 0.18s ease, background 0.18s ease;
+            }
+
+            .alerta-refresh-fechar:hover {
+                transform: scale(1.04);
+                background: rgba(255, 255, 255, 0.92);
+            }
+
+            .alerta-refresh-hero {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding-right: 40px;
+            }
+
+            .alerta-refresh-icone {
+                width: 68px;
+                height: 68px;
+                border-radius: 22px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, #d94841 0%, #fb923c 100%);
+                box-shadow: 0 18px 36px rgba(217, 72, 65, 0.24);
+                color: #ffffff;
+                font-size: 30px;
+                font-weight: 800;
+            }
+
+            .alerta-refresh-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                padding: 7px 12px;
+                border-radius: 999px;
+                background: rgba(255, 255, 255, 0.78);
+                color: #b93816;
+                font-size: 12px;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+
+            .alerta-refresh-topo h3 {
+                margin: 12px 0 8px;
+                color: #172033;
+                font-size: 28px;
+                line-height: 1.15;
+            }
+
+            .alerta-refresh-topo p {
+                margin: 0;
+                color: #556173;
+                font-size: 15px;
+                line-height: 1.6;
+            }
+
+            .alerta-refresh-corpo {
+                position: relative;
+                padding: 24px 28px 28px;
+            }
+
+            .alerta-refresh-destaques {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+                margin-bottom: 18px;
+            }
+
+            .alerta-refresh-card {
+                padding: 14px 16px;
+                border-radius: 18px;
+                background: rgba(255, 255, 255, 0.82);
+                border: 1px solid rgba(32, 57, 94, 0.08);
+                box-shadow: 0 12px 24px rgba(15, 31, 58, 0.06);
+            }
+
+            .alerta-refresh-card strong {
+                display: block;
+                margin-bottom: 6px;
+                color: #172033;
+                font-size: 14px;
+            }
+
+            .alerta-refresh-card span {
+                color: #667085;
+                font-size: 13px;
+                line-height: 1.5;
+            }
+
+            .alerta-refresh-resumo {
+                display: flex;
+                gap: 12px;
+                align-items: flex-start;
+                padding: 16px 18px;
+                border-radius: 18px;
+                background: linear-gradient(135deg, #fff7ed 0%, #fff1f2 100%);
+                border: 1px solid rgba(251, 146, 60, 0.22);
+                color: #9a3412;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+
+            .alerta-refresh-resumo strong {
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(217, 72, 65, 0.12);
+                color: #c2410c;
+                flex-shrink: 0;
+            }
+
+            .alerta-refresh-acoes {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+                margin-top: 24px;
+            }
+
+            .alerta-refresh-btn {
+                border: none;
+                border-radius: 16px;
+                padding: 13px 20px;
+                font-size: 14px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+            }
+
+            .alerta-refresh-btn:hover {
+                transform: translateY(-1px);
+            }
+
+            .alerta-refresh-btn.secundario {
+                background: #eef2f8;
+                color: #24324a;
+                box-shadow: inset 0 0 0 1px rgba(36, 50, 74, 0.08);
+            }
+
+            .alerta-refresh-btn.primario {
+                background: linear-gradient(135deg, #d94841 0%, #f97316 100%);
+                color: #ffffff;
+                box-shadow: 0 14px 30px rgba(217, 72, 65, 0.28);
+            }
+
+            @media (max-width: 640px) {
+                .alerta-refresh-topo,
+                .alerta-refresh-corpo {
+                    padding-left: 20px;
+                    padding-right: 20px;
+                }
+
+                .alerta-refresh-hero {
+                    align-items: flex-start;
+                }
+
+                .alerta-refresh-icone {
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 18px;
+                    font-size: 24px;
+                }
+
+                .alerta-refresh-topo h3 {
+                    font-size: 24px;
+                }
+
+                .alerta-refresh-destaques {
+                    grid-template-columns: 1fr;
+                }
+
+                .alerta-refresh-acoes {
+                    flex-direction: column-reverse;
+                }
+
+                .alerta-refresh-btn {
+                    width: 100%;
+                }
+            }
+
+            @keyframes fadeInOverlay {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+
+            @keyframes slideUpModal {
+                from {
+                    opacity: 0;
+                    transform: translateY(16px) scale(0.98);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
         `;
                 document.head.appendChild(style);
             }
@@ -186,6 +441,128 @@
                 this.mensagens = new SistemaMensagens();
                 this.numeroControleAtual = null;
                 this.modoEdicao = false;
+                this.temAlteracoesNaoSalvas = false;
+                this.monitoramentoSuspenso = false;
+                this.saidaLiberada = false;
+                this.modalAlertaRefreshAberto = false;
+                this.protecaoSaidaConfigurada = false;
+            }
+
+            configurarProtecaoDadosNaoSalvos() {
+                if (this.protecaoSaidaConfigurada) return;
+
+                const monitorarAlteracao = (event) => {
+                    if (this.monitoramentoSuspenso) return;
+                    if (!event.target) return;
+                    if (event.target.closest('#sistema-mensagens, .alerta-refresh-overlay')) return;
+                    this.temAlteracoesNaoSalvas = true;
+                };
+
+                document.addEventListener('input', monitorarAlteracao, true);
+                document.addEventListener('change', monitorarAlteracao, true);
+
+                document.addEventListener('keydown', (event) => {
+                    const tecla = event.key ? event.key.toLowerCase() : '';
+                    const solicitouRefresh = event.key === 'F5' || ((event.ctrlKey || event.metaKey) && tecla === 'r');
+
+                    if (!solicitouRefresh || !this.temAlteracoesNaoSalvas || this.saidaLiberada) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    const confirmouRefresh = window.confirm('Se atualizar agora, voce vai perder tudo o que nao foi salvo. Deseja continuar?');
+
+                    if (!confirmouRefresh) {
+                        return;
+                    }
+
+                    this.liberarSaida();
+                    window.location.reload();
+                });
+
+                window.addEventListener('beforeunload', (event) => {
+                    if (!this.temAlteracoesNaoSalvas || this.saidaLiberada) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.returnValue = '';
+                });
+
+                this.protecaoSaidaConfigurada = true;
+            }
+
+            marcarFormularioComoSalvo() {
+                this.temAlteracoesNaoSalvas = false;
+            }
+
+            liberarSaida() {
+                this.saidaLiberada = true;
+                setTimeout(() => {
+                    this.saidaLiberada = false;
+                }, 2000);
+            }
+
+            exibirAlertaRefreshPersonalizado(onConfirmar) {
+                if (this.modalAlertaRefreshAberto) return;
+                this.modalAlertaRefreshAberto = true;
+
+                const overlay = document.createElement('div');
+                overlay.className = 'alerta-refresh-overlay';
+                overlay.innerHTML = `
+                    <div class="alerta-refresh-modal" role="dialog" aria-modal="true" aria-labelledby="alertaRefreshTitulo">
+                        <div class="alerta-refresh-topo">
+                            <button type="button" class="alerta-refresh-fechar" data-acao="cancelar" aria-label="Fechar alerta">×</button>
+                            <div class="alerta-refresh-hero">
+                                <div class="alerta-refresh-icone">!</div>
+                                <div>
+                                    <span class="alerta-refresh-badge">Alteracoes pendentes</span>
+                                    <h3 id="alertaRefreshTitulo">Atualizar agora vai apagar o que ainda nao foi salvo.</h3>
+                                    <p>Seu checklist tem informacoes preenchidas nesta sessao. Se voce continuar, essas alteracoes serao perdidas.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="alerta-refresh-corpo">
+                            <div class="alerta-refresh-destaques">
+                                <div class="alerta-refresh-card">
+                                    <strong>O que acontece</strong>
+                                    <span>A pagina sera recarregada e os campos alterados desde o ultimo salvamento nao voltam.</span>
+                                </div>
+                                <div class="alerta-refresh-card">
+                                    <strong>Como evitar perda</strong>
+                                    <span>Clique em Cancelar, salve o checklist e so depois atualize a tela.</span>
+                                </div>
+                            </div>
+                            <div class="alerta-refresh-resumo">
+                                <strong>!</strong>
+                                <span>Para preservar seu checklist, clique em <strong>Cancelar</strong> e use <strong>Salvar Check</strong> antes de atualizar a pagina.</span>
+                            </div>
+                            <div class="alerta-refresh-acoes">
+                                <button type="button" class="alerta-refresh-btn secundario" data-acao="cancelar">Cancelar</button>
+                                <button type="button" class="alerta-refresh-btn primario" data-acao="confirmar">Atualizar mesmo assim</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                const fecharModal = () => {
+                    this.modalAlertaRefreshAberto = false;
+                    overlay.remove();
+                };
+
+                overlay.addEventListener('click', (event) => {
+                    if (event.target === overlay) {
+                        fecharModal();
+                    }
+                });
+
+                overlay.querySelector('[data-acao="cancelar"]').addEventListener('click', fecharModal);
+                overlay.querySelector('[data-acao="confirmar"]').addEventListener('click', () => {
+                    fecharModal();
+                    onConfirmar();
+                });
+
+                document.body.appendChild(overlay);
             }
 
             // Adicione este método à classe SistemaChecklist4M
@@ -200,6 +577,10 @@
             }
 
             async gerarNumeroControle() {
+                if (this.numeroControleAtual) {
+                    return this.numeroControleAtual;
+                }
+
                 try {
                     const res = await fetch(`${API_URL}/fr0062/proximo-numero`);
                     const data = await res.json();
@@ -613,6 +994,10 @@
                 try {
                     this.mensagens.informacao('Salvando formulário...', 0);
 
+                    if (!this.modoEdicao && !this.numeroControleAtual) {
+                        await this.gerarNumeroControle();
+                    }
+
                     const dados = this.coletarDados();
 
                     // 1. Recupera o JWT que foi salvo no localStorage durante o Login
@@ -644,8 +1029,10 @@
                     const result = await response.json();
 
                     if (result.success) {
+                        this.marcarFormularioComoSalvo();
                         this.mensagens.sucesso(`✓ Formulário ${this.modoEdicao ? 'atualizado' : 'salvo'} com sucesso!`);
                         setTimeout(() => {
+                            this.liberarSaida();
                             window.location.href = '/4m-checklist.html';
                         }, 2000);
                     } else {
@@ -665,9 +1052,12 @@
                     const result = await response.json();
 
                     if (result.success && result.formulario) {
+                        this.monitoramentoSuspenso = true;
                         this.preencherFormulario(result.formulario);
+                        this.monitoramentoSuspenso = false;
                         this.numeroControleAtual = numeroControle;
                         this.modoEdicao = true;
+                        this.marcarFormularioComoSalvo();
 
                         // Verificar se o checklist já está finalizado
                         if (result.formulario.status === 'finalizado') {
@@ -1068,6 +1458,7 @@
             // Limpar formulário
             async limparFormulario() {
                 if (confirm('Tem certeza que deseja limpar todos os dados do formulário?')) {
+                    this.monitoramentoSuspenso = true;
                     document.querySelectorAll('input[type="text"], input[type="date"], textarea, [contenteditable="true"]').forEach(el => {
                         if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
                             el.value = '';
@@ -1082,7 +1473,8 @@
 
                     this.numeroControleAtual = null;
                     this.modoEdicao = false;
-                    await this.gerarNumeroControle();
+                    this.monitoramentoSuspenso = false;
+                    this.marcarFormularioComoSalvo();
                     this.mensagens.informacao('Formulário limpo com sucesso!');
                 }
             }
@@ -1132,6 +1524,7 @@
                     const result = await response.json();
 
                     if (result.success) {
+                        this.marcarFormularioComoSalvo();
                         this.mensagens.sucesso('✓ Checklist finalizado com sucesso!');
                         this.desabilitarEdicaoFormulario();
 
@@ -1142,7 +1535,10 @@
                             btnFinalizar.style.cssText += '; background-color: #666; cursor: not-allowed;';
                         }
 
-                        setTimeout(() => { window.location.href = '4m-checklist.html'; }, 3000);
+                        setTimeout(() => {
+                            this.liberarSaida();
+                            window.location.href = '4m-checklist.html';
+                        }, 3000);
                     } else {
                         this.mensagens.erro(`✗ Erro ao finalizar: ${result.message || 'Erro desconhecido'}`);
                     }
@@ -1194,6 +1590,7 @@
             // Inicializar o sistema
             iniciar() {
                 console.log('🚀 Sistema Checklist 4M iniciado');
+                this.configurarProtecaoDadosNaoSalvos();
             }
         }
 
@@ -1213,7 +1610,6 @@
                 window.sistemaChecklist.carregarFormulario(numeroControleEditar);
             } else {
                 console.log('➕ Modo criação');
-                await window.sistemaChecklist.gerarNumeroControle();
             }
 
             // Configurar eventos dos botões
@@ -1302,6 +1698,7 @@
                     });
 
                     document.getElementById('btnConfirmarVoltar').addEventListener('click', function () {
+                        window.sistemaChecklist.liberarSaida();
                         window.location.href = '/4m-checklist.html';
                     });
                 });
@@ -1311,7 +1708,6 @@
                     e.preventDefault();
 
                     window.sistemaChecklist.salvarFormulario();
-                    window.location.href = '/4m-checklist.html';
                 });
             }
 

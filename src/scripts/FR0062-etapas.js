@@ -485,6 +485,11 @@ class GerenciadorEtapas {
 
     async _req(dados) {
         const sc = window.sistemaChecklist;
+        if (sc && !sc.modoEdicao && !sc.numeroControleAtual) {
+            await sc.gerarNumeroControle();
+            dados.numero_controle = sc.numeroControleAtual;
+        }
+
         const nc = sc?.numeroControleAtual || dados.numero_controle;
         const modo = sc?.modoEdicao || false;
         const token = localStorage.getItem('authToken');
