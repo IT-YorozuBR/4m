@@ -127,6 +127,101 @@ async function startServer() {
             next();
         }
 
+        function obterUsuarioPorToken(req) {
+            const authHeader = req.headers['authorization'];
+            let token = authHeader && authHeader.split(' ')[1];
+
+            if (token === 'null' || token === 'undefined') {
+                token = null;
+            }
+
+            if (!token) {
+                return null;
+            }
+
+            try {
+                return jwt.verify(token, JWT_SECRET);
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function validarTexto(valor, nomeCampo, tamanhoMaximo) {
+            const texto = String(valor || '').trim();
+
+            if (!texto) {
+                throw new Error(`${nomeCampo} é obrigatório`);
+            }
+
+            if (texto.length > tamanhoMaximo) {
+                throw new Error(`${nomeCampo} deve ter no máximo ${tamanhoMaximo} caracteres`);
+            }
+
+            return texto;
+        }
+
+        function validarUrlModulo(url) {
+            const urlLimpa = validarTexto(url, 'Link do submódulo', 1000);
+
+            try {
+                const urlObj = new URL(urlLimpa);
+                if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                    throw new Error('Link do submódulo deve usar http ou https');
+                }
+            } catch (error) {
+                throw new Error('Link do submódulo inválido');
+            }
+
+            return urlLimpa;
+        }
+
+        function normalizarDashboardModules(modules) {
+            if (!Array.isArray(modules)) {
+                throw new Error('Lista de módulos inválida');
+            }
+
+            if (modules.length > 30) {
+                throw new Error('Limite máximo de 30 módulos excedido');
+            }
+
+            return modules.map((module, moduleIndex) => {
+                const moduleId = validarTexto(
+                    module.id || `modulo-${moduleIndex + 1}`,
+                    `Identificador do módulo ${moduleIndex + 1}`,
+                    80
+                ).toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+
+                const title = validarTexto(module.title, `Nome do módulo ${moduleIndex + 1}`, 80);
+                const description = String(module.description || '').trim().slice(0, 140);
+                const icon = String(module.icon || 'description').trim().slice(0, 50) || 'description';
+                const submodules = Array.isArray(module.submodules) ? module.submodules : [];
+
+                if (submodules.length > 100) {
+                    throw new Error(`Módulo ${title} excedeu o limite de 100 submódulos`);
+                }
+
+                return {
+                    id: moduleId || `modulo-${moduleIndex + 1}`,
+                    title,
+                    description: description || 'Links de formulários',
+                    icon,
+                    submodules: submodules.map((submodule, submoduleIndex) => ({
+                        id: validarTexto(
+                            submodule.id || `${moduleId}-sub-${submoduleIndex + 1}`,
+                            `Identificador do submódulo ${submoduleIndex + 1} de ${title}`,
+                            120
+                        ).toLowerCase().replace(/[^a-z0-9_-]/g, '-'),
+                        name: validarTexto(
+                            submodule.name,
+                            `Nome do submódulo ${submoduleIndex + 1} de ${title}`,
+                            100
+                        ),
+                        url: validarUrlModulo(submodule.url)
+                    }))
+                };
+            });
+        }
+
         // Arquivos estáticos
         app.use(express.static(path.join(__dirname, '..', 'templates')));
         app.use('/css', express.static(path.join(__dirname, '..', 'css')));
@@ -585,6 +680,71 @@ async function startServer() {
                     success: false,
                     message: 'Erro interno ao processar a atualização.',
                     error: error.message
+                });
+            }
+        });
+
+        // Módulos do dashboard 4M
+        app.get('/api/dashboard-modules', verificarOperador, async (req, res) => {
+            try {
+                const configuracao = await db.collection('dashboard_modules').findOne({
+                    key: 'main'
+                });
+
+                res.json({
+                    success: true,
+                    modules: Array.isArray(configuracao?.modules) ? configuracao.modules : []
+                });
+            } catch (error) {
+                console.error('❌ Erro ao listar módulos do dashboard:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao listar módulos do dashboard',
+                    error: error.message
+                });
+            }
+        });
+
+        app.put('/api/dashboard-modules', async (req, res) => {
+            try {
+                const usuario = obterUsuarioPorToken(req);
+
+                if (!usuario || usuario.role !== 'admin') {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas administradores podem alterar os módulos do dashboard'
+                    });
+                }
+
+                const modules = normalizarDashboardModules(req.body.modules);
+                const agora = new Date().toISOString();
+
+                await db.collection('dashboard_modules').updateOne(
+                    { key: 'main' },
+                    {
+                        $set: {
+                            key: 'main',
+                            modules,
+                            updated_at: agora,
+                            updated_by: usuario.username
+                        },
+                        $setOnInsert: {
+                            created_at: agora
+                        }
+                    },
+                    { upsert: true }
+                );
+
+                res.json({
+                    success: true,
+                    message: 'Módulos do dashboard atualizados com sucesso',
+                    modules
+                });
+            } catch (error) {
+                console.error('❌ Erro ao salvar módulos do dashboard:', error);
+                res.status(400).json({
+                    success: false,
+                    message: error.message || 'Erro ao salvar módulos do dashboard'
                 });
             }
         });
