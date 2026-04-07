@@ -608,6 +608,7 @@
     function closeModal() { q('#modalWrap').classList.remove('active') }
     function openModal(html, afterOpen) { q('#modalContent').innerHTML = html; q('#modalWrap').classList.add('active'); if (typeof afterOpen === 'function') afterOpen() }
     function formError(message = '') { const box = q('[data-form-error]'); if (!box) return; if (message) { box.textContent = message; box.classList.add('active'); return } box.textContent = ''; box.classList.remove('active') }
+    function setFormSubmitting(form, submitting, label = 'Salvar') { if (!form) return false; if (submitting && form.dataset.submitting === 'true') return true; form.dataset.submitting = submitting ? 'true' : 'false'; const submitButton = form.querySelector('button[type="submit"]'); if (submitButton) { submitButton.disabled = !!submitting; submitButton.style.opacity = submitting ? '.7' : '1'; submitButton.style.pointerEvents = submitting ? 'none' : 'auto'; submitButton.innerHTML = submitting ? '<span class="material-icons">hourglass_top</span>Salvando...' : label; } return false }
     function readTrimmed(selector, label) { const field = q(selector); const value = (field?.value || '').trim(); if (!value) throw new Error(`${label} é obrigatório`); return value }
     function normalizeOptional(selector, fallback = '') { const field = q(selector); return ((field?.value || '').trim() || fallback).trim() }
     function validateLink(url) { try { const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error(); return parsed.toString() } catch { return null } }
@@ -834,7 +835,7 @@
     async function submitEditModule(e, id) {
       e.preventDefault();
       const mod = modules.find((m) => m.id === id);
-      if (!mod) return;
+      if (!mod) { setFormSubmitting(form, false, '<span class="material-icons">playlist_add</span>Salvar submódulo'); return; }
       const old = { title: mod.title, description: mod.description };
       try {
         formError();
@@ -880,8 +881,10 @@
 
     async function submitCreateSubmodule(e, id) {
       e.preventDefault();
+      const form = e.currentTarget;
+      if (setFormSubmitting(form, true, '<span class="material-icons">playlist_add</span>Salvar submódulo')) return;
       const mod = modules.find((m) => m.id === id);
-      if (!mod) return;
+      if (!mod) { setFormSubmitting(form, false, '<span class="material-icons">playlist_add</span>Salvar submÃ³dulo'); return; }
       let createdId = null;
       try {
         formError();
@@ -896,6 +899,7 @@
         openModule(id);
       } catch (error) {
         if (createdId) mod.submodules = mod.submodules.filter((s) => s.id !== createdId);
+        setFormSubmitting(form, false, '<span class="material-icons">playlist_add</span>Salvar submÃ³dulo');
         formError(error.message || 'Não foi possível salvar o submódulo');
       }
     }
@@ -917,9 +921,11 @@
 
     async function submitEditSubmodule(e, moduleId, subId) {
       e.preventDefault();
+      const form = e.currentTarget;
+      if (setFormSubmitting(form, true, '<span class="material-icons">save</span>Salvar alteraÃ§Ãµes')) return;
       const mod = modules.find((m) => m.id === moduleId);
       const sub = mod?.submodules.find((s) => s.id === subId);
-      if (!mod || !sub) return;
+      if (!mod || !sub) { setFormSubmitting(form, false, '<span class="material-icons">save</span>Salvar alteraÃ§Ãµes'); return; }
       const old = { name: sub.name, url: sub.url };
       try {
         formError();
@@ -934,6 +940,7 @@
       } catch (error) {
         sub.name = old.name;
         sub.url = old.url;
+        setFormSubmitting(form, false, '<span class="material-icons">save</span>Salvar alteraÃ§Ãµes');
         formError(error.message || 'Não foi possível atualizar o submódulo');
       }
     }
