@@ -450,7 +450,8 @@
     }
 
     .field input,
-    .field textarea {
+    .field textarea,
+    .field select {
       width: 100%;
       padding: 13px 14px;
       border-radius: 14px;
@@ -462,11 +463,16 @@
     }
 
     .field input:focus,
-    .field textarea:focus {
+    .field textarea:focus,
+    .field select:focus {
       outline: none;
       border-color: rgba(255, 214, 0, .34);
       box-shadow: 0 0 0 4px rgba(255, 214, 0, .08);
       background: rgba(255, 255, 255, .07)
+    }
+
+    .field select {
+      appearance: none
     }
 
     .field textarea {
@@ -506,6 +512,22 @@
 
     .form-error.active {
       display: block
+    }
+
+    .user-list {
+      display: grid;
+      gap: 10px
+    }
+
+    .user-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .08)
     }
 
     @media (max-width:700px) {
@@ -578,6 +600,7 @@
     const getUser = () => JSON.parse(localStorage.getItem('currentUser') || '{}');
     const getToken = () => { const t = localStorage.getItem('authToken'); return t && t !== 'null' && t !== 'undefined' ? t : null };
     const isAdmin = () => getUser().role === 'admin' && !!getToken();
+    const isMasterAdmin = () => isAdmin() && getUser().username === 'admin.ti';
     const esc = (v) => String(v || '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
     const slug = (v) => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
 
@@ -591,9 +614,10 @@
 
     function renderNavbar() {
       const user = getUser();
+      const userBtn = isMasterAdmin() ? '<button class="btn" type="button" onclick="openUserManagement()"><span class="material-icons">manage_accounts</span>Usuários</button>' : '';
       const adminBtn = isAdmin() ? '<button class="btn btn-admin" type="button" onclick="createModule()"><span class="material-icons">add_circle</span>Novo módulo</button>' : '';
       if (user.username && user.role) {
-        q('#navbarRight').innerHTML = `${adminBtn}<div class="chip"><span class="material-icons">account_circle</span>${esc(user.username)}<span class="chip ${user.role === 'admin' ? 'btn-danger' : ''}">${user.role === 'admin' ? 'ADM' : 'APR'}</span></div><button class="btn btn-danger" type="button" onclick="logout()"><span class="material-icons">logout</span>Sair</button>`;
+        q('#navbarRight').innerHTML = `${adminBtn}${userBtn}<div class="chip"><span class="material-icons">account_circle</span>${esc(user.username)}<span class="chip ${user.role === 'admin' ? 'btn-danger' : ''}">${user.role === 'admin' ? 'ADM' : 'APR'}</span></div><button class="btn btn-danger" type="button" onclick="logout()"><span class="material-icons">logout</span>Sair</button>`;
         return;
       }
       q('#navbarRight').innerHTML = '<a href="/login.html" class="login-prompt"><span class="material-icons">login</span>Entrar</a>';
@@ -689,6 +713,67 @@
       modules = Array.isArray(d.modules) ? d.modules : modules;
       renderModules();
       if (msg) toast(msg);
+    }
+
+    async function loadUsers() {
+      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'NÃ£o foi possÃ­vel carregar os usuÃ¡rios');
+      return Array.isArray(data.users) ? data.users : [];
+    }
+
+    function renderUsersList(users) {
+      if (!users.length) {
+        return '<div class="empty">Nenhum usuÃ¡rio cadastrado.</div>';
+      }
+
+      return `<div class="user-list">${users.map((user) => `<div class="user-row"><div><div class="sub-name">${esc(user.username)}</div></div><span class="badge">${user.role === 'admin' ? 'Admin' : 'Operador'}</span></div>`).join('')}</div>`;
+    }
+
+    async function openUserManagement() {
+      if (!isMasterAdmin()) return toast('Apenas admin.ti pode gerenciar usuÃ¡rios');
+
+      let usersHtml = '<div class="empty">Carregando usuÃ¡rios...</div>';
+      try {
+        usersHtml = renderUsersList(await loadUsers());
+      } catch (error) {
+        usersHtml = `<div class="empty">${esc(error.message || 'NÃ£o foi possÃ­vel carregar os usuÃ¡rios')}</div>`;
+      }
+
+      openModal(`<div class="modal-header"><div class="modal-header-main"><div class="modal-icon-badge"><span class="material-icons">manage_accounts</span></div><div><h2>Gerenciar usuÃ¡rios</h2><p class="modal-subtitle">Crie novos logins do sistema. Esta Ã¡rea Ã© exclusiva do admin.ti.</p></div></div><button class="btn btn-ghost" type="button" onclick="closeModal()"><span class="material-icons">close</span>Fechar</button></div><form id="userForm" class="form-grid"><div class="form-banner"><span class="material-icons">admin_panel_settings</span><div><strong>Acesso controlado</strong><br>UsuÃ¡rios novos passam a autenticar pelo MongoDB e nÃ£o dependem mais de credenciais hardcoded.</div></div><div class="form-error" data-form-error></div><div class="field"><label for="newUsername">Username</label><input id="newUsername" name="newUsername" maxlength="40" placeholder="Ex.: maria.silva" /><small>Use apenas letras minÃºsculas, nÃºmeros, ponto, hÃ­fen ou underline.</small></div><div class="field"><label for="newPassword">Senha</label><input id="newPassword" name="newPassword" type="password" maxlength="80" placeholder="MÃ­nimo de 6 caracteres" /></div><div class="field"><label for="newRole">Perfil</label><select id="newRole" name="newRole"><option value="admin">Admin</option><option value="operador">Operador</option></select></div><div class="modal-actions end"><button class="btn btn-admin" type="submit"><span class="material-icons">person_add</span>Criar usuÃ¡rio</button></div></form><div class="modal-section"><div class="modal-section-title"><h3>UsuÃ¡rios cadastrados</h3><span class="badge">admin.ti</span></div>${usersHtml}</div>`, () => {
+        const form = q('#userForm');
+        q('#newUsername')?.focus();
+        form?.addEventListener('submit', submitCreateUser);
+      });
+    }
+
+    async function submitCreateUser(e) {
+      e.preventDefault();
+      try {
+        formError();
+        const username = readTrimmed('#newUsername', 'Username').toLowerCase();
+        const password = readTrimmed('#newPassword', 'Senha');
+        const role = normalizeOptional('#newRole', 'admin').toLowerCase();
+
+        const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getToken()}`
+          },
+          body: JSON.stringify({ username, password, role })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'NÃ£o foi possÃ­vel criar o usuÃ¡rio');
+
+        toast('UsuÃ¡rio criado com sucesso.');
+        await openUserManagement();
+      } catch (error) {
+        formError(error.message || 'NÃ£o foi possÃ­vel criar o usuÃ¡rio');
+      }
     }
 
     function openModuleForm(config) {

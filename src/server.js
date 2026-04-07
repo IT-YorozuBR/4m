@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const crypto = require('crypto');
 const { MongoClient } = require('mongodb');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
@@ -13,6 +14,7 @@ async function startServer() {
         // Conectar ao MongoDB
         await client.connect();
         const db = client.db("4m_checklist");
+        const usersCollection = db.collection('users');
         console.log("✅ Conectado ao MongoDB");
 
         const app = express();
@@ -56,20 +58,91 @@ async function startServer() {
         // ==================== AUTHENTICATION HELPERS ====================
         const JWT_SECRET = process.env.JWT_SECRET || 'seu-secret-key-super-seguro-2026';
         const JWT_EXPIRES_IN = '24h';
+        const MASTER_ADMIN_USERNAME = 'admin.ti';
 
-        function verificarCredenciais(username, password) {
-            // Buscar credenciais no .env
-            const envUser = process.env[`USER_${username.toUpperCase()}`];
-            const envPassword = process.env[`USER_${username.toUpperCase()}_PASSWORD`];
-
-            if (envUser && envPassword && envUser === username && envPassword === password) {
-                // Determinar role do usuário
-                // Usuários começados com "admin" são admins
-                const role = username.toLowerCase().includes('admin') ? 'admin' : 'admin';
-                return { success: true, user: { username, role } };
-            }
-            return { success: false };
+        function normalizarUsername(username) {
+            return String(username || '').trim().toLowerCase();
         }
+
+        function gerarHashSenha(password, salt = crypto.randomBytes(16).toString('hex')) {
+            const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+            return `${salt}:${hash}`;
+        }
+
+        function verificarHashSenha(password, storedHash) {
+            const [salt, originalHash] = String(storedHash || '').split(':');
+
+            if (!salt || !originalHash) {
+                return false;
+            }
+
+            const candidateHash = crypto.scryptSync(String(password), salt, 64).toString('hex');
+            const originalBuffer = Buffer.from(originalHash, 'hex');
+            const candidateBuffer = Buffer.from(candidateHash, 'hex');
+
+            if (originalBuffer.length !== candidateBuffer.length) {
+                return false;
+            }
+
+            return crypto.timingSafeEqual(originalBuffer, candidateBuffer);
+        }
+
+        function isMasterAdmin(user) {
+            return !!user && user.role === 'admin' && user.username === MASTER_ADMIN_USERNAME;
+        }
+
+        async function garantirUsuariosIniciais() {
+            await usersCollection.createIndex({ username: 1 }, { unique: true });
+
+            const envUserKeys = Object.keys(process.env).filter((key) => key.startsWith('USER_') && !key.endsWith('_PASSWORD') && !key.endsWith('_ROLE'));
+
+            for (const envUserKey of envUserKeys) {
+                const username = normalizarUsername(process.env[envUserKey]);
+                const password = String(process.env[`${envUserKey}_PASSWORD`] || '').trim();
+                const role = String(process.env[`${envUserKey}_ROLE`] || 'admin').trim().toLowerCase() || 'admin';
+
+                if (!username || !password) {
+                    continue;
+                }
+
+                const existente = await usersCollection.findOne({ username });
+
+                if (existente) {
+                    continue;
+                }
+
+                await usersCollection.insertOne({
+                    username,
+                    password_hash: gerarHashSenha(password),
+                    role: role === 'operador' ? 'operador' : 'admin',
+                    active: true,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    created_by: 'system_env'
+                });
+            }
+        }
+
+        async function verificarCredenciais(username, password) {
+            const usernameNormalizado = normalizarUsername(username);
+            const user = await usersCollection.findOne({
+                username: usernameNormalizado,
+                active: true
+            });
+
+            if (!user || !verificarHashSenha(password, user.password_hash)) {
+                return { success: false };
+            }
+            return {
+                success: true,
+                user: {
+                    username: user.username,
+                    role: user.role === 'operador' ? 'operador' : 'admin'
+                }
+            };
+        }
+
+        await garantirUsuariosIniciais();
 
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
@@ -241,7 +314,7 @@ async function startServer() {
                     });
                 }
 
-                const resultado = verificarCredenciais(username, password);
+                const resultado = await verificarCredenciais(username, password);
 
                 if (resultado.success) {
                     // Gerar JWT token
@@ -281,6 +354,111 @@ async function startServer() {
         // ==================== ROTAS CRUD FORMULÁRIOS ====================
 
         // Rota para salvar formulário FR0062 (OPERADOR + ADMIN)
+        app.get('/api/admin/users', autenticarJWT, async (req, res) => {
+            try {
+                if (!isMasterAdmin(req.user)) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas admin.ti pode gerenciar usuários'
+                    });
+                }
+
+                const users = await usersCollection
+                    .find({}, { projection: { _id: 0, password_hash: 0 } })
+                    .sort({ username: 1 })
+                    .toArray();
+
+                res.json({
+                    success: true,
+                    users
+                });
+            } catch (error) {
+                console.error('❌ Erro ao listar usuários:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao listar usuários',
+                    error: error.message
+                });
+            }
+        });
+
+        app.post('/api/admin/users', autenticarJWT, async (req, res) => {
+            try {
+                if (!isMasterAdmin(req.user)) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas admin.ti pode criar usuários'
+                    });
+                }
+
+                const username = normalizarUsername(req.body.username);
+                const password = String(req.body.password || '').trim();
+                const role = String(req.body.role || 'admin').trim().toLowerCase();
+
+                if (!username) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Username é obrigatório'
+                    });
+                }
+
+                if (!/^[a-z0-9._-]{3,40}$/.test(username)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Username deve ter entre 3 e 40 caracteres e usar apenas letras, números, ponto, hífen ou underline'
+                    });
+                }
+
+                if (password.length < 6) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'A senha deve ter pelo menos 6 caracteres'
+                    });
+                }
+
+                const roleNormalizado = role === 'operador' ? 'operador' : 'admin';
+                const existente = await usersCollection.findOne({ username });
+
+                if (existente) {
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Já existe um usuário com esse username'
+                    });
+                }
+
+                const agora = new Date().toISOString();
+
+                await usersCollection.insertOne({
+                    username,
+                    password_hash: gerarHashSenha(password),
+                    role: roleNormalizado,
+                    active: true,
+                    created_at: agora,
+                    updated_at: agora,
+                    created_by: req.user.username
+                });
+
+                res.status(201).json({
+                    success: true,
+                    message: 'Usuário criado com sucesso',
+                    user: {
+                        username,
+                        role: roleNormalizado,
+                        active: true,
+                        created_at: agora,
+                        created_by: req.user.username
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Erro ao criar usuário:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao criar usuário',
+                    error: error.message
+                });
+            }
+        });
+
         app.post('/api/fr0062', verificarOperador, async (req, res) => {
             try {
                 const dados = req.body;
@@ -820,6 +998,8 @@ async function startServer() {
                 timestamp: new Date().toISOString(),
                 endpoints: {
                     'POST /api/fr0062/login': 'Login (Admin)',
+                    'GET /api/admin/users': 'Listar usuários (Apenas admin.ti)',
+                    'POST /api/admin/users': 'Criar usuário (Apenas admin.ti)',
                     'GET /api/fr0062/proximo-numero': 'Gerar próximo número sequencial (Operador/Admin)',
                     'POST /api/fr0062': 'Criar novo formulário (Operador/Admin)',
                     'GET /api/fr0062': 'Listar todos os formulários (Operador/Admin)',
@@ -847,6 +1027,8 @@ async function startServer() {
             console.log('');
             console.log('📋 Endpoints disponíveis:');
             console.log(`   POST   /api/fr0062/login           - Login (Admin)`);
+            console.log(`   GET    /api/admin/users            - Listar usuários (Apenas admin.ti)`);
+            console.log(`   POST   /api/admin/users            - Criar usuário (Apenas admin.ti)`);
             console.log(`   GET    /api/fr0062/proximo-numero   - Gerar número sequencial ⭐ CORRIGIDO`);
             console.log(`   POST   /api/fr0062                 - Criar formulário (Operador/Admin)`);
             console.log(`   GET    /api/fr0062                 - Listar formulários (Operador/Admin)`);
