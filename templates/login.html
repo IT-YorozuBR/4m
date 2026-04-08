@@ -23,6 +23,26 @@
             color: #fff;
         }
 
+        .returnButton {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            /* background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px; */
+            color: #fff;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .returnButton:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 255, 255, 0.2);
+        }
+        
         .login-container {
             background: rgba(30, 30, 30, 0.9);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -190,8 +210,8 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h1>🔐 Login</h1>
-            <p>Sistema FR0062 - Controle de Qualidade</p>
+            <h1>Login</h1>
+            <p>Sistema - Controle de Qualidade</p>
         </div>
 
         <form id="loginForm">
@@ -228,6 +248,9 @@
             </div>
 
             <button type="submit">Entrar</button>
+            <div>
+                <a href="/4m.html" class="returnButton"> Voltar </a>
+            </div>
         </form>
 
         <div class="login-footer">
