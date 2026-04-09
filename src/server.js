@@ -289,6 +289,7 @@ async function startServer() {
                             `Nome do submódulo ${submoduleIndex + 1} de ${title}`,
                             100
                         ),
+                        description: String(submodule.description || '').trim().slice(0, 220),
                         url: validarUrlModulo(submodule.url)
                     }))
                 };

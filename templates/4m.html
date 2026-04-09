@@ -378,6 +378,13 @@
       font-weight: 600;
       word-break: break-word
     }
+    .sub-description {
+      margin-top: 6px;
+      color: rgba(255, 255, 255, .76);
+      font-size: .93rem;
+      word-break: break-word
+    }
+
 
     .sub-link {
       margin-top: 6px;
@@ -612,6 +619,15 @@
     function readTrimmed(selector, label) { const field = q(selector); const value = (field?.value || '').trim(); if (!value) throw new Error(`${label} é obrigatório`); return value }
     function normalizeOptional(selector, fallback = '') { const field = q(selector); return ((field?.value || '').trim() || fallback).trim() }
     function validateLink(url) { try { const parsed = new URL(url); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error(); return parsed.toString() } catch { return null } }
+    function hydrateSubmoduleDescriptionField(value = '') {
+      const urlField = q('#submoduleUrl');
+      if (!urlField || q('#submoduleDescription')) return;
+      const wrapper = document.createElement('div');
+      wrapper.className = 'field';
+      wrapper.innerHTML = '<label for="submoduleDescription">Descri\u00e7\u00e3o opcional</label><textarea id="submoduleDescription" name="submoduleDescription" maxlength="220" placeholder="Resumo curto do formul\u00e1rio"></textarea><small>Esse campo \u00e9 opcional e ajuda a identificar o objetivo do subm\u00f3dulo.</small>';
+      wrapper.querySelector('#submoduleDescription').value = value;
+      urlField.closest('.field')?.before(wrapper);
+    }
 
     function renderNavbar() {
       const user = getUser();
@@ -702,7 +718,7 @@
     function openModule(id) {
       const m = modules.find((x) => x.id === id);
       if (!m) return;
-      const list = m.submodules.length ? m.submodules.map((s) => `<div class="sub-item"><div><div class="sub-name">${esc(s.name)}</div></div><div class="sub-actions"><a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><span class="material-icons">open_in_new</span></a>${isAdmin() ? `<button class="btn" type="button" onclick="editSubmodule('${m.id}','${s.id}')">Editar</button><button class="btn btn-danger" type="button" onclick="deleteSubmodule('${m.id}','${s.id}')">Excluir</button>` : ''}</div></div>`).join('') : '<div class="empty">Nenhum submódulo cadastrado neste card.</div>';
+      const list = m.submodules.length ? m.submodules.map((s) => `<div class="sub-item"><div><div class="sub-name">${esc(s.name)}</div>${s.description ? `<div class="sub-description">${esc(s.description)}</div>` : ''}</div><div class="sub-actions"><a class="btn" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer"><span class="material-icons">open_in_new</span></a>${isAdmin() ? `<button class="btn" type="button" onclick="editSubmodule('${m.id}','${s.id}')">Editar</button><button class="btn btn-danger" type="button" onclick="deleteSubmodule('${m.id}','${s.id}')">Excluir</button>` : ''}</div></div>`).join('') : '<div class="empty">Nenhum subm??dulo cadastrado neste card.</div>';
       const actions = isAdmin() ? `<div class="modal-actions"><button class="btn btn-admin" type="button" onclick="addSubmodule('${m.id}')"><span class="material-icons">playlist_add</span>Novo submódulo</button><button class="btn" type="button" onclick="editModule('${m.id}')"><span class="material-icons">edit</span>Editar módulo</button><button class="btn btn-danger" type="button" onclick="deleteModule('${m.id}')"><span class="material-icons">delete</span>Excluir módulo</button></div>` : '';
       openModal(`<div class="modal-header"><div class="modal-header-main"><div class="modal-icon-badge"><span class="material-icons">${esc(m.icon || 'description')}</span></div><div><h2>${esc(m.title)}</h2></div></div><button class="btn btn-ghost" type="button" onclick="closeModal()"><span class="material-icons">close</span>Fechar</button></div><div class="modal-section"><div class="modal-section-title"><h3>Formulários</h3>${isAdmin() ? '<span class="badge">Gerenciamento</span>' : ''}</div><div class="sub-list">${list}</div></div>${actions}`);
     }
@@ -871,12 +887,13 @@
       openSubmoduleForm({
         title: 'Novo submódulo',
         subtitle: `Vincule um formulário ao módulo ${mod.title}.`,
-        values: { name: '', url: '' },
+        values: { name: '', description: '', url: '' },
         submitLabel: 'Salvar submódulo',
         submitIcon: 'playlist_add',
         onCancel: `openModule('${mod.id}')`,
         onSubmit: (e) => submitCreateSubmodule(e, id)
       });
+      hydrateSubmoduleDescriptionField();
     }
 
     async function submitCreateSubmodule(e, id) {
@@ -889,10 +906,11 @@
       try {
         formError();
         const name = readTrimmed('#submoduleName', 'Nome do submódulo');
+        const description = normalizeOptional('#submoduleDescription');
         const rawUrl = readTrimmed('#submoduleUrl', 'Link');
         const url = validateLink(rawUrl);
         if (!url) throw new Error('Informe um link http ou https válido');
-        const sub = { id: `${slug(name) || 'submodulo'}-${Date.now()}`, name, url };
+        const sub = { id: `${slug(name) || 'submodulo'}-${Date.now()}`, name, description, url };
         createdId = sub.id;
         mod.submodules.push(sub);
         await saveModules('Submódulo salvo com sucesso.');
@@ -911,12 +929,13 @@
       openSubmoduleForm({
         title: 'Editar submódulo',
         subtitle: `Atualize o nome e o link de ${sub.name}.`,
-        values: { name: sub.name, url: sub.url },
+        values: { name: sub.name, description: sub.description || '', url: sub.url },
         submitLabel: 'Salvar alterações',
         submitIcon: 'save',
         onCancel: `openModule('${mod.id}')`,
         onSubmit: (e) => submitEditSubmodule(e, moduleId, subId)
       });
+      hydrateSubmoduleDescriptionField(sub.description || '');
     }
 
     async function submitEditSubmodule(e, moduleId, subId) {
@@ -926,19 +945,22 @@
       const mod = modules.find((m) => m.id === moduleId);
       const sub = mod?.submodules.find((s) => s.id === subId);
       if (!mod || !sub) { setFormSubmitting(form, false, '<span class="material-icons">save</span>Salvar alteraÃ§Ãµes'); return; }
-      const old = { name: sub.name, url: sub.url };
+      const old = { name: sub.name, description: sub.description, url: sub.url };
       try {
         formError();
         const name = readTrimmed('#submoduleName', 'Nome do submódulo');
+        const description = normalizeOptional('#submoduleDescription');
         const rawUrl = readTrimmed('#submoduleUrl', 'Link');
         const url = validateLink(rawUrl);
         if (!url) throw new Error('Informe um link http ou https válido');
         sub.name = name;
+        sub.description = description;
         sub.url = url;
         await saveModules('Submódulo atualizado com sucesso.');
         openModule(moduleId);
       } catch (error) {
         sub.name = old.name;
+        sub.description = old.description;
         sub.url = old.url;
         setFormSubmitting(form, false, '<span class="material-icons">save</span>Salvar alteraÃ§Ãµes');
         formError(error.message || 'Não foi possível atualizar o submódulo');
