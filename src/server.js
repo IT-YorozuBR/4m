@@ -19,6 +19,12 @@ async function startServer() {
 
         const app = express();
         const port = process.env.PORT || 3001;
+        const publicApiBaseUrl = String(process.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
+        const publicApiUrl = String(process.env.PUBLIC_API_URL || '').trim().replace(/\/+$/, '') || (publicApiBaseUrl ? `${publicApiBaseUrl}/api` : '/api');
+        const envCorsOrigins = String(process.env.CORS_ORIGINS || '')
+            .split(',')
+            .map((origin) => origin.trim().replace(/\/+$/, ''))
+            .filter(Boolean);
 
         // CORS - Configuração detalhada
         const corsOptions = {
@@ -30,11 +36,12 @@ async function startServer() {
                     'http://127.0.0.1:3000',
                     'http://localhost:3001',
                     'http://127.0.0.1:3001',
-                    'https://fourm-znis.onrender.com',
-                    'https://fourm-znis.onrender.com'
+                    ...envCorsOrigins
                 ];
 
-                if (!origin || allowedOrigins.includes(origin)) {
+                const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : origin;
+
+                if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
                     callback(null, true);
                 } else {
                     callback(new Error('Not allowed by CORS'));
@@ -297,6 +304,15 @@ async function startServer() {
         }
 
         // Arquivos estáticos
+        app.get('/scripts/api-config.js', (req, res) => {
+            res.type('application/javascript').send(
+                `window.APP_CONFIG = Object.freeze(${JSON.stringify({
+                    API_BASE_URL: publicApiBaseUrl,
+                    API_URL: publicApiUrl
+                })});`
+            );
+        });
+
         app.use(express.static(path.join(__dirname, '..', 'templates')));
         app.use('/css', express.static(path.join(__dirname, '..', 'css')));
         app.use('/scripts', express.static(path.join(__dirname, 'scripts')));

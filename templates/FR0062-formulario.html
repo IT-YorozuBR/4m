@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/FR0062-estilos.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="icon" href="./4m-logo.png" type="image/x-icon">
+    <script src="/scripts/api-config.js"></script>
     <script src="./scripts/validacao-colunas.js"></script>
     <script src="./scripts/validacao-campos-obrigatorios.js"></script>
 
@@ -16,9 +17,7 @@
         document.addEventListener('DOMContentLoaded', function () {
             initValidacao4M('form-4m'); // passe o ID do seu form
         });
-        const API_URL = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-            ? 'http://localhost:3001/api'
-            : 'https://fourm-znis.onrender.com/api';
+        const API_URL = window.APP_CONFIG?.API_URL || '/api';
 
         // ========== SISTEMA DE MENSAGENS ==========
         class SistemaMensagens {
@@ -1671,6 +1670,158 @@
             const btnCancelar = document.getElementById('btnCancelar');
             const btnFinalizarCheck = document.getElementById('btnFinalizarcheck');
 
+            function sincronizarEstadoFormulario(origem, clone) {
+                const camposOrigem = origem.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+                const camposClone = clone.querySelectorAll('input, textarea, select, [contenteditable="true"]');
+
+                camposOrigem.forEach((campoOrigem, index) => {
+                    const campoClone = camposClone[index];
+                    if (!campoClone) return;
+
+                    if (campoOrigem.matches('[contenteditable="true"]')) {
+                        campoClone.innerHTML = campoOrigem.innerHTML;
+                        return;
+                    }
+
+                    if (campoOrigem instanceof HTMLInputElement) {
+                        if (campoOrigem.type === 'checkbox' || campoOrigem.type === 'radio') {
+                            campoClone.checked = campoOrigem.checked;
+                        } else {
+                            campoClone.value = campoOrigem.value;
+                        }
+                        return;
+                    }
+
+                    campoClone.value = campoOrigem.value;
+                });
+            }
+
+            function imprimirChecklistNativo(btnGerarPDF, botaoOriginal) {
+                const restaurar = () => {
+                    document.body.classList.remove('gerando-pdf');
+
+                    if (btnGerarPDF) {
+                        btnGerarPDF.disabled = false;
+                        btnGerarPDF.innerHTML = botaoOriginal || 'GERAR PDF';
+                    }
+                };
+
+                document.body.classList.add('gerando-pdf');
+
+                if (btnGerarPDF) {
+                    btnGerarPDF.disabled = true;
+                    btnGerarPDF.innerHTML = 'ABRINDO IMPRESSÃO...';
+                }
+
+                const concluir = () => {
+                    window.removeEventListener('afterprint', concluir);
+                    restaurar();
+                };
+
+                window.addEventListener('afterprint', concluir, { once: true });
+
+                setTimeout(() => {
+                    try {
+                        window.print();
+                    } catch (error) {
+                        console.error('Erro ao abrir impressão:', error);
+                        restaurar();
+                        alert('Não foi possível abrir a impressão. Tente novamente.');
+                    }
+                }, 50);
+            }
+
+            async function gerarPDFChecklist() {
+                const formulario = document.getElementById('formularioFR0062');
+                const jsPDFCtor = window.jspdf?.jsPDF;
+                if (!formulario) {
+                    alert('Formulário não encontrado para gerar o PDF.');
+                    return;
+                }
+
+                const numeroControle = window.sistemaChecklist?.numeroControleAtual || 'FR0062';
+                const nomeArquivo = `${numeroControle}.pdf`;
+                const botaoOriginal = btnGerarPDF ? btnGerarPDF.innerHTML : '';
+
+                if (typeof window.html2pdf === 'undefined' || !jsPDFCtor) {
+                    imprimirChecklistNativo(btnGerarPDF, botaoOriginal);
+                    return;
+                }
+
+                const larguraCaptura = Math.max(formulario.scrollWidth, 1800);
+                const hostCaptura = document.createElement('div');
+                const cloneFormulario = formulario.cloneNode(true);
+
+                hostCaptura.className = 'captura-pdf';
+                hostCaptura.style.position = 'fixed';
+                hostCaptura.style.left = '-100000px';
+                hostCaptura.style.top = '0';
+                hostCaptura.style.width = `${larguraCaptura}px`;
+                hostCaptura.style.background = '#fff';
+                hostCaptura.style.zIndex = '-1';
+                hostCaptura.style.pointerEvents = 'none';
+
+                cloneFormulario.style.width = `${larguraCaptura}px`;
+                cloneFormulario.style.maxWidth = 'none';
+
+                sincronizarEstadoFormulario(formulario, cloneFormulario);
+                hostCaptura.appendChild(cloneFormulario);
+
+                try {
+                    document.body.appendChild(hostCaptura);
+
+                    if (btnGerarPDF) {
+                        btnGerarPDF.disabled = true;
+                        btnGerarPDF.innerHTML = 'GERANDO PDF...';
+                    }
+
+                    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+                    const worker = window.html2pdf().set({
+                        html2canvas: {
+                            scale: 2,
+                            useCORS: true,
+                            backgroundColor: '#ffffff',
+                            width: larguraCaptura,
+                            windowWidth: larguraCaptura,
+                            scrollX: 0,
+                            scrollY: 0
+                        }
+                    }).from(cloneFormulario).toCanvas();
+
+                    const canvas = await worker.get('canvas');
+                    const imgData = canvas.toDataURL('image/jpeg', 0.98);
+                    const pdf = new jsPDFCtor({
+                        unit: 'mm',
+                        format: 'a4',
+                        orientation: 'landscape',
+                        compress: true
+                    });
+
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imgProps = pdf.getImageProperties(imgData);
+                    const escala = Math.min(pageWidth / imgProps.width, pageHeight / imgProps.height);
+                    const larguraFinal = imgProps.width * escala;
+                    const alturaFinal = imgProps.height * escala;
+                    const offsetX = (pageWidth - larguraFinal) / 2;
+                    const offsetY = (pageHeight - alturaFinal) / 2;
+
+                    pdf.addImage(imgData, 'JPEG', offsetX, offsetY, larguraFinal, alturaFinal, undefined, 'FAST');
+                    pdf.save(nomeArquivo);
+                } catch (error) {
+                    console.error('Erro ao gerar PDF:', error);
+                    alert('Não foi possível gerar o PDF. Tente novamente.');
+                } finally {
+                    hostCaptura.remove();
+
+                    if (btnGerarPDF) {
+                        btnGerarPDF.disabled = false;
+                        btnGerarPDF.innerHTML = botaoOriginal || 'GERAR PDF';
+                    }
+                }
+            }
+
 
             if (btnFinalizarCheck) {
                 btnFinalizarCheck.addEventListener('click', function (e) {
@@ -1771,9 +1922,9 @@
             }
 
             if (btnGerarPDF) {
-                btnGerarPDF.addEventListener('click', function (e) {
+                btnGerarPDF.addEventListener('click', async function (e) {
                     e.preventDefault();
-                    window.sistemaChecklist.mensagens.informacao('Funcionalidade de PDF em desenvolvimento...');
+                    await gerarPDFChecklist();
                 });
             }
 
@@ -1800,7 +1951,7 @@
                 <div class="celula no-border-top" contenteditable="true" aria-label="Visto Retenção QA"
                     id="vistoRetencaoQA" name="vistoRetencaoQA" data-field="visto_retencao_qa"></div>
                 <button class="btn-salvar-check" id="btnSalvarCheck">SALVAR CHECK</button>
-                <!-- <button class="btn-gerar-pdf" id="btnGerarPDF">GERAR PDF</button> -->
+                <button class="btn-gerar-pdf" id="btnGerarPDF" type="button">GERAR PDF</button>
                 <!-- <button class="btn-limpar-dados" id="btnLimparDados">LIMPAR DADOS</button> -->
                 <button class="btn-cancelar" id="btnCancelar">CANCELAR</button>
                 <!-- <div class="origem">ORIGEM &larr;</div> -->

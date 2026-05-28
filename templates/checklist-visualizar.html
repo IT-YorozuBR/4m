@@ -404,6 +404,7 @@
         </div>
     </div>
 
+    <script src="/scripts/api-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const contentContainer = document.getElementById('contentContainer');
@@ -445,10 +446,8 @@
                     contentContainer.innerHTML = '';
                     infoBar.style.display = 'none';
                     
-                    const apiUrl = window.location.hostname === 'localhost' 
-                        ? 'http://localhost:3001' 
-                        : 'https://fourm-znis.onrender.com';
-                    const response = await fetch(`${apiUrl}/api/fr0062/${numeroControle}`);
+                    const apiUrl = window.APP_CONFIG?.API_URL || '/api';
+                    const response = await fetch(`${apiUrl}/fr0062/${numeroControle}`);
                     const result = await response.json();
                     
                     if (result.success && result.data) {

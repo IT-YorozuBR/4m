@@ -1039,6 +1039,11 @@ input[type="checkbox"]:checked::after {
    ============================================================================ */
 
 @media print {
+    @page {
+        size: A4 landscape;
+        margin: 0;
+    }
+
     body {
         margin: 0 !important;
         padding: 0 !important;
@@ -1178,10 +1183,9 @@ body.gerando-pdf .formulario-completo {
 }
 
 /* Esconde botões na impressão */
-.gerando-pdf .btn-salvar-check,
-.gerando-pdf .btn-gerar-pdf,
-.gerando-pdf .btn-limpar-dados,
-.gerando-pdf .btn-voltar {
+.gerando-pdf button,
+.gerando-pdf #barra-etapas,
+.gerando-pdf #_status_badge {
     display: none !important;
 }
 
@@ -1208,6 +1212,24 @@ body.gerando-pdf .formulario-completo {
 
 .btn-voltar-lista:hover {
     background-color: #545b62;
+}
+
+/* Captura offscreen para PDF sem alterar o layout da tela */
+.captura-pdf {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+}
+
+.captura-pdf .formulario-completo {
+    margin: 0 auto !important;
+    max-width: none !important;
+}
+
+.captura-pdf button,
+.captura-pdf #barra-etapas,
+.captura-pdf #_status_badge {
+    display: none !important;
 }
 
 /* ============================================================================

@@ -596,8 +596,9 @@
   <div class="modal-wrap" id="modalWrap">
     <div class="modal" id="modalContent"></div>
   </div>
+  <script src="/scripts/api-config.js"></script>
   <script>
-    const API_BASE_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : '';
+    const API_URL = window.APP_CONFIG?.API_URL || '/api';
     const LAYOUT_KEY = 'dashboardLayout';
     let modules = [];
     let draggedItem = null;
@@ -649,7 +650,7 @@
 
     async function loadModules() {
       try {
-        const r = await fetch(`${API_BASE_URL}/api/dashboard-modules`);
+        const r = await fetch(`${API_URL}/dashboard-modules`);
         const d = await r.json();
         modules = Array.isArray(d.modules) ? d.modules : [];
       } catch (e) {
@@ -724,7 +725,7 @@
     }
 
     async function saveModules(msg) {
-      const r = await fetch(`${API_BASE_URL}/api/dashboard-modules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify({ modules }) });
+      const r = await fetch(`${API_URL}/dashboard-modules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` }, body: JSON.stringify({ modules }) });
       const d = await r.json();
       if (!r.ok || !d.success) throw new Error(d.message || 'Não foi possível salvar');
       modules = Array.isArray(d.modules) ? d.modules : modules;
@@ -733,7 +734,7 @@
     }
 
     async function loadUsers() {
-      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+      const response = await fetch(`${API_URL}/admin/users`, {
         headers: { 'Authorization': `Bearer ${getToken()}` }
       });
       const data = await response.json();
@@ -774,7 +775,7 @@
         const password = readTrimmed('#newPassword', 'Senha');
         const role = normalizeOptional('#newRole', 'admin').toLowerCase();
 
-        const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+        const response = await fetch(`${API_URL}/admin/users`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

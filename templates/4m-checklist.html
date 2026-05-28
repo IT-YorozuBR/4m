@@ -936,6 +936,7 @@
     </div>
   </div>
 
+  <script src="/scripts/api-config.js"></script>
   <script>
     const viewGridBtn = document.getElementById('viewGrid');
     const viewListBtn = document.getElementById('viewList');
@@ -961,9 +962,7 @@
       limite: 10
     };
 
-    const API_URL = window.location.hostname === 'localhost'
-      ? 'http://localhost:3001/api'
-      : 'https://fourm-znis.onrender.com/api';
+    const API_URL = window.APP_CONFIG?.API_URL || '/api';
 
     document.addEventListener('DOMContentLoaded', function () {
       configurarEventos();
