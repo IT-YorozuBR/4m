@@ -520,7 +520,12 @@ class GerenciadorEtapas {
             );
         }
         if (!r.ok) {
-            throw new Error(payload.message || `Falha ao salvar (HTTP ${r.status}).`);
+            // O backend devolve a causa técnica em `payload.error`; mostramos junto
+            // da mensagem amigável para não esconder o motivo real do 500.
+            const base = payload.message || `Falha ao salvar (HTTP ${r.status}).`;
+            const detalhe = payload.error ? ` (${payload.error})` : '';
+            console.error('Falha na requisição:', r.status, payload);
+            throw new Error(base + detalhe);
         }
         return payload;
     }

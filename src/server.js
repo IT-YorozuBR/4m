@@ -83,8 +83,23 @@ async function buildApp() {
         // Preflight request handler
         app.options('*', cors(corsOptions));
 
-        app.use(express.json({ limit: '50mb' }));
-        app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+        // Parsers do corpo da requisição.
+        // ATENÇÃO (serverless/Vercel): a plataforma pode JÁ ter lido e parseado o
+        // corpo da requisição, populando `req.body` e consumindo o stream. Se o
+        // express.json() tentar ler de novo, ele fica esperando um 'end' que nunca
+        // vem e a função trava até o timeout -> a Vercel devolve 500/504. Isso
+        // afeta só POST/PUT (que têm corpo); GET continua funcionando. Por isso só
+        // rodamos os parsers quando o corpo ainda NÃO foi parseado pela plataforma.
+        const jsonParser = express.json({ limit: '50mb' });
+        const urlencodedParser = express.urlencoded({ extended: true, limit: '50mb' });
+
+        app.use((req, res, next) => {
+            // Corpo já parseado pela plataforma (objeto pronto) -> não reparsear.
+            if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) {
+                return next();
+            }
+            jsonParser(req, res, (err) => (err ? next(err) : urlencodedParser(req, res, next)));
+        });
 
         // ==================== AUTHENTICATION HELPERS ====================
         const JWT_SECRET = process.env.JWT_SECRET || 'seu-secret-key-super-seguro-2026';
