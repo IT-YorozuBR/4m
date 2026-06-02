@@ -502,7 +502,27 @@ class GerenciadorEtapas {
             headers['Authorization'] = `Bearer ${token}`;
 
         const r = await fetch(url, { method, headers, body: JSON.stringify(dados) });
-        return r.json();
+        return this._lerResposta(r);
+    }
+
+    // Lê a resposta tratando o caso em que o servidor devolve algo que não é JSON
+    // (ex.: página de erro HTML 500/504 da plataforma), evitando o críptico
+    // "Unexpected token '<'" e mostrando uma mensagem útil ao usuário.
+    async _lerResposta(r) {
+        const texto = await r.text();
+        let payload = null;
+        try {
+            payload = texto ? JSON.parse(texto) : {};
+        } catch {
+            throw new Error(
+                `O servidor respondeu de forma inesperada (HTTP ${r.status}). ` +
+                `Pode ser uma instabilidade momentânea — aguarde alguns segundos e tente novamente.`
+            );
+        }
+        if (!r.ok) {
+            throw new Error(payload.message || `Falha ao salvar (HTTP ${r.status}).`);
+        }
+        return payload;
     }
 
     /* ════════════════════════════════════════════════════════════

@@ -7,18 +7,42 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
 
-async function startServer() {
+// Conexão MongoDB reutilizada entre invocações.
+// Em serverless (Vercel) o módulo é reaproveitado em instâncias "quentes":
+// reconectar a cada requisição causa lentidão e timeouts, e quando a função
+// estoura o tempo limite a plataforma devolve uma página HTML 500 — o que no
+// front aparece como "Unexpected token '<'" ao tentar dar JSON.parse na resposta.
+const globalForMongo = globalThis;
+
+// Retorna uma promise (cacheada) do client conectado. Se a conexão falhar,
+// limpa o cache para permitir nova tentativa na próxima invocação — assim uma
+// falha transitória no cold start não "trava" a instância para sempre.
+function getMongoClient() {
+    if (!globalForMongo._mongoClientPromise) {
+        const client = new MongoClient(uri, {
+            // Falha rápido se o banco não responder, em vez de travar a função
+            // até o timeout da plataforma. Assim o erro vira JSON, não HTML.
+            serverSelectionTimeoutMS: 8000,
+            maxPoolSize: 10
+        });
+        globalForMongo._mongoClientPromise = client.connect().catch((err) => {
+            globalForMongo._mongoClientPromise = null;
+            throw err;
+        });
+    }
+    return globalForMongo._mongoClientPromise;
+}
+
+async function buildApp() {
     try {
-        // Conectar ao MongoDB
-        await client.connect();
+        // Reaproveita a conexão já estabelecida (não reconecta a cada requisição)
+        const client = await getMongoClient();
         const db = client.db("4m_checklist");
         const usersCollection = db.collection('users');
         console.log("✅ Conectado ao MongoDB");
 
         const app = express();
-        const port = process.env.PORT || 3001;
         const publicApiBaseUrl = String(process.env.PUBLIC_API_BASE_URL || '').trim().replace(/\/+$/, '');
         const publicApiUrl = String(process.env.PUBLIC_API_URL || '').trim().replace(/\/+$/, '') || (publicApiBaseUrl ? `${publicApiBaseUrl}/api` : '/api');
         const envCorsOrigins = String(process.env.CORS_ORIGINS || '')
@@ -1032,55 +1056,62 @@ async function startServer() {
             res.sendFile(path.join(__dirname, '..', 'templates', '4m.html'));
         });
 
-        // Iniciar servidor
-        app.listen(port, () => {
-            console.log('');
-            console.log('═══════════════════════════════════════════════════════════════════════════');
-            console.log('🚀 Servidor FR0062 iniciado com sucesso!');
-            console.log('═══════════════════════════════════════════════════════════════════════════');
-            console.log(`📡 Porta: ${port}`);
-            console.log(`🌐 URL: http://localhost:${port}`);
-            console.log(`🗄️  Banco de dados: MongoDB - 4m_checklist`);
-            console.log('');
-            console.log('📋 Endpoints disponíveis:');
-            console.log(`   POST   /api/fr0062/login           - Login (Admin)`);
-            console.log(`   GET    /api/admin/users            - Listar usuários (Apenas admin.ti)`);
-            console.log(`   POST   /api/admin/users            - Criar usuário (Apenas admin.ti)`);
-            console.log(`   GET    /api/fr0062/proximo-numero   - Gerar número sequencial ⭐ CORRIGIDO`);
-            console.log(`   POST   /api/fr0062                 - Criar formulário (Operador/Admin)`);
-            console.log(`   GET    /api/fr0062                 - Listar formulários (Operador/Admin)`);
-            console.log(`   GET    /api/fr0062/:id             - Buscar formulário (Operador/Admin)`);
-            console.log(`   PUT    /api/fr0062/:id             - Atualizar formulário (Operador/Admin)`);
-            console.log(`   DELETE /api/fr0062/:id             - Deletar formulário (Apenas Admin)`);
-            console.log(`   GET    /api/status                 - Status da API`);
-            console.log('');
-            console.log('🔐 PERMISSÕES:');
-            console.log(`   OPERADOR: Sem login, acesso direto`);
-            console.log(`   - Criar checklists`);
-            console.log(`   - Editar checklists em andamento`);
-            console.log(`   - Finalizar checklists`);
-            console.log(`   - Visualizar tudo (read-only em finalizados)`);
-            console.log(`   - NÃO pode editar finalizados`);
-            console.log(`   - NÃO pode deletar`);
-            console.log('');
-            console.log(`   ADMIN: Login obrigatório`);
-            console.log(`   - Tudo que operador pode fazer`);
-            console.log(`   - Editar checklists finalizados`);
-            console.log(`   - Deletar checklists`);
-            console.log('');
-            console.log('⭐ CONTADOR SEQUENCIAL:');
-            console.log(`   - Números NUNCA se repetem`);
-            console.log(`   - Independente de deletions`);
-            console.log(`   - Formato: FR0062-000000001, FR0062-000000002, etc.`);
-            console.log('═══════════════════════════════════════════════════════════════════════════');
-            console.log('');
-        });
+        // App pronto. Quem decide entre "ouvir uma porta" (local/Render) ou
+        // "ser usado como handler" (Vercel) é o final do arquivo.
+        return app;
 
     } catch (error) {
         console.error('❌ Erro ao iniciar servidor:', error);
-        process.exit(1);
+        throw error;
     }
 }
 
-// Iniciar o servidor
-startServer();
+// Cache do app entre invocações. Em serverless o módulo é reaproveitado em
+// instâncias quentes, então construímos o app (e a conexão) apenas uma vez.
+let appPromise = null;
+function getApp() {
+    if (!appPromise) {
+        appPromise = buildApp().catch((error) => {
+            // Zera o cache para permitir nova tentativa na próxima requisição
+            appPromise = null;
+            throw error;
+        });
+    }
+    return appPromise;
+}
+
+// Handler exportado para a Vercel (serverless). Garante que erros de
+// inicialização virem JSON, e não uma página HTML da plataforma.
+module.exports = async (req, res) => {
+    try {
+        const app = await getApp();
+        return app(req, res);
+    } catch (error) {
+        console.error('❌ Erro ao inicializar a aplicação:', error);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({
+            success: false,
+            message: 'Erro ao inicializar a aplicação',
+            error: error.message
+        }));
+    }
+};
+
+// Execução local / Render (`node src/server.js` ou `npm start`):
+// sobe um servidor HTTP tradicional escutando uma porta.
+if (require.main === module) {
+    const port = process.env.PORT || 3001;
+    getApp()
+        .then((app) => app.listen(port, () => {
+            console.log('═══════════════════════════════════════════════════════════════════════════');
+            console.log('🚀 Servidor FR0062 iniciado com sucesso!');
+            console.log(`📡 Porta: ${port}  |  🌐 http://localhost:${port}`);
+            console.log(`🗄️  Banco de dados: MongoDB - 4m_checklist`);
+            console.log('═══════════════════════════════════════════════════════════════════════════');
+        }))
+        .catch((error) => {
+            console.error('❌ Erro ao iniciar servidor local:', error);
+            process.exit(1);
+        });
+}
