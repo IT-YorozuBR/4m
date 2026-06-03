@@ -50,38 +50,58 @@ async function buildApp() {
             .map((origin) => origin.trim().replace(/\/+$/, ''))
             .filter(Boolean);
 
-        // CORS - Configuração detalhada
-        const corsOptions = {
-            origin: function (origin, callback) {
-                const allowedOrigins = [
-                    'http://127.0.0.1:5500',
-                    'http://localhost:5500',
-                    'http://localhost:3000',
-                    'http://127.0.0.1:3000',
-                    'http://localhost:3001',
-                    'http://127.0.0.1:3001',
-                    ...envCorsOrigins
-                ];
+        // CORS - Configuração detalhada.
+        // Usamos a forma "delegate" do cors (recebe `req`) para conseguir liberar
+        // requisições same-origin: o front e a API são servidos pelo MESMO domínio
+        // na Vercel, então o navegador manda o header Origin em POST/PUT/DELETE
+        // (mas não em GET same-origin). Comparando o Origin com o Host da própria
+        // requisição liberamos o tráfego do próprio site sem depender de configurar
+        // CORS_ORIGINS com o domínio de produção. Sem isso, o cors lançava
+        // "Not allowed by CORS" e — como não há middleware de erro — o Express
+        // devolvia uma página HTML 500, que no front vira "Unexpected token '<'".
+        const corsOptionsDelegate = (req, callback) => {
+            const allowedOrigins = [
+                'http://127.0.0.1:5500',
+                'http://localhost:5500',
+                'http://localhost:3000',
+                'http://127.0.0.1:3000',
+                'http://localhost:3001',
+                'http://127.0.0.1:3001',
+                ...envCorsOrigins
+            ];
 
-                const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : origin;
+            const origin = req.headers.origin;
+            const normalizedOrigin = origin ? origin.replace(/\/+$/, '') : origin;
 
-                if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
-                    callback(null, true);
-                } else {
-                    callback(new Error('Not allowed by CORS'));
-                }
-            },
-            methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
-            exposedHeaders: ['Content-Type', 'Authorization'],
-            credentials: true,
-            maxAge: 86400 // 24 horas
+            // Same-origin: o host do Origin bate com o Host da requisição.
+            const forwardedProto = req.headers['x-forwarded-proto'];
+            const host = req.headers.host;
+            const sameOrigin =
+                !!normalizedOrigin &&
+                !!host &&
+                (normalizedOrigin === `https://${host}` ||
+                    normalizedOrigin === `http://${host}` ||
+                    (forwardedProto && normalizedOrigin === `${forwardedProto}://${host}`));
+
+            const permitido =
+                !normalizedOrigin ||
+                sameOrigin ||
+                allowedOrigins.includes(normalizedOrigin);
+
+            callback(null, {
+                origin: permitido,
+                methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+                allowedHeaders: ['Content-Type', 'Authorization'],
+                exposedHeaders: ['Content-Type', 'Authorization'],
+                credentials: true,
+                maxAge: 86400 // 24 horas
+            });
         };
 
-        app.use(cors(corsOptions));
+        app.use(cors(corsOptionsDelegate));
 
         // Preflight request handler
-        app.options('*', cors(corsOptions));
+        app.options('*', cors(corsOptionsDelegate));
 
         // Parsers do corpo da requisição.
         // ATENÇÃO (serverless/Vercel): a plataforma pode JÁ ter lido e parseado o
@@ -1069,6 +1089,27 @@ async function buildApp() {
         // Rota raiz
         app.get('/', (req, res) => {
             res.sendFile(path.join(__dirname, '..', 'templates', '4m.html'));
+        });
+
+        // Middleware de tratamento de erros (DEVE ser o último, com 4 argumentos).
+        // Garante que qualquer erro lançado em middleware — CORS bloqueado, JSON
+        // malformado no body-parser, etc. — vire uma resposta JSON e não a página
+        // HTML padrão do Express (que no front quebra com "Unexpected token '<'").
+        // eslint-disable-next-line no-unused-vars
+        app.use((err, req, res, next) => {
+            const corsBloqueado = err && /not allowed by cors/i.test(err.message || '');
+            const status = corsBloqueado ? 403 : (err.status || err.statusCode || 500);
+            console.error('❌ Erro não tratado em middleware:', err);
+            if (res.headersSent) {
+                return next(err);
+            }
+            res.status(status).json({
+                success: false,
+                message: corsBloqueado
+                    ? 'Origem não autorizada (CORS)'
+                    : 'Erro interno ao processar a requisição',
+                error: err && err.message
+            });
         });
 
         // App pronto. Quem decide entre "ouvir uma porta" (local/Render) ou
