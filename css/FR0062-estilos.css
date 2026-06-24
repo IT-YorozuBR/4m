@@ -164,6 +164,21 @@ body.gerando-pdf .formulario-completo {
     background-color: #f0f0f0;
 }
 
+/* Garante que QUALQUER rótulo de cabeçalho/célula quebre o texto em vez de
+   transbordar a caixa. Itens de grid/flex têm min-width:auto por padrão, o que
+   faz palavras longas (ex.: "EXECUTADO POR") empurrarem o conteúdo para fora do
+   quadro em telas mais estreitas (tablets). Aqui não alteramos o fluxo original,
+   apenas evitamos o vazamento horizontal. */
+.celula,
+.celula.cabecalho,
+.label-bold,
+.list-item span,
+.celula-4m label {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
 .celula.vazia {
     min-height: 35px;
 }
@@ -945,6 +960,47 @@ input[type="checkbox"]:checked::after {
     /* REDUZIDO padding */
 }
 
+/* ============================================================================
+   CORREÇÃO DE LAYOUT: SEÇÃO "RESULTADO AVALIAÇÃO"
+   As labels (2D, CMM, MACRO, OUTROS) e as linhas de preenchimento estavam
+   ultrapassando a borda vertical do grid. Aqui contemos tudo dentro da célula,
+   mantendo a seção compacta e o alinhamento checkbox + label + campo.
+   ============================================================================ */
+
+/* Padding à direita para nada encostar na borda vertical do grid */
+.celula-3.secao-resultado {
+    padding-right: 8px;
+}
+
+/* minmax(0,1fr) impede que cada coluna interna cresça além da metade disponível
+   (1fr puro tem min-width:auto e estoura a célula com conteúdo largo).
+   min-width:0 nos contêineres permite que encolham dentro da célula. */
+.secao-resultado .resultado-duas-colunas {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    min-width: 0;
+}
+
+.secao-resultado .resultado-col-interna,
+.secao-resultado .input-item {
+    min-width: 0;
+}
+
+/* Checkbox + label permanecem fixos e alinhados; só a linha de preenchimento
+   ocupa o espaço restante da coluna. */
+.secao-resultado .input-item label {
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* A linha pontilhada encolhe junto com a coluna e termina antes da borda
+   vertical (remove o min-width:50px herdado de .input-line). */
+.secao-resultado .input-item .input-line {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+}
+
 /* Ajuste adicional para texto nas células da lista de verificação */
 .list-item .input-line {
     width: 40px;
@@ -1295,6 +1351,38 @@ body.gerando-pdf .formulario-completo {
     .checkbox-lista-verificacao {
         width: 22px;
         height: 22px;
+    }
+}
+
+/* ----------------------------------------------------------------------------
+   TABLETS (768px a 1199px) — portrait e landscape
+   Mantém exatamente o mesmo layout/fluxo do desktop, apenas garante que os
+   rótulos do cabeçalho superior caibam dentro dos seus quadros em vez de
+   transbordar. Não muda a ordem nem a estrutura das colunas.
+   ---------------------------------------------------------------------------- */
+@media screen and (min-width: 768px) and (max-width: 1199px) {
+    /* Cabeçalhos com textos longos (RESULTADO SETOR QUALIDADE, EXECUTADO POR,
+       ELABORADO POR, etc.) quebram e centralizam dentro da célula */
+    .celula.cabecalho {
+        font-size: clamp(7px, 0.8vw, 10px);
+        line-height: 1.15;
+        white-space: normal;
+        hyphens: auto;
+    }
+
+    /* Permite que o texto vertical/pequeno do controle quebre sem vazar */
+    .texto-pequeno {
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    /* O rótulo flutuante "Se programado" não deve ultrapassar a borda do quadro */
+    .label-flutuante {
+        max-width: calc(100% - 12px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: clamp(8px, 0.8vw, 10px);
     }
 }
 
