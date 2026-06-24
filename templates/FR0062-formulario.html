@@ -1940,6 +1940,17 @@
 <body>
 
     <form id="formularioFR0062" class="formulario-completo" data-form-type="FR0062">
+        <!-- Barra de ações horizontal: topo do formulário. Os botões de etapa
+             (SALVAR / AVANÇAR / FINALIZAR) são anexados aqui dinamicamente por
+             FR0062-etapas.js, preservando a ordem:
+             GERAR PDF | CANCELAR | SALVAR | AVANÇAR -->
+        <div class="barra-acoes">
+            <button class="btn-salvar-check" id="btnSalvarCheck">SALVAR CHECK</button>
+            <button class="btn-gerar-pdf" id="btnGerarPDF" type="button">GERAR PDF</button>
+            <!-- <button class="btn-limpar-dados" id="btnLimparDados">LIMPAR DADOS</button> -->
+            <button class="btn-cancelar" id="btnCancelar">CANCELAR</button>
+        </div>
+
         <div class="cabecalho-superior">
             <div class="bloco-titulo">
                 <span class="texto-grande sublinhado">RELATÓRIO</span>
@@ -1950,10 +1961,6 @@
                 <div class="celula cabecalho">VISTO</div>
                 <div class="celula no-border-top" contenteditable="true" aria-label="Visto Retenção QA"
                     id="vistoRetencaoQA" name="vistoRetencaoQA" data-field="visto_retencao_qa"></div>
-                <button class="btn-salvar-check" id="btnSalvarCheck">SALVAR CHECK</button>
-                <button class="btn-gerar-pdf" id="btnGerarPDF" type="button">GERAR PDF</button>
-                <!-- <button class="btn-limpar-dados" id="btnLimparDados">LIMPAR DADOS</button> -->
-                <button class="btn-cancelar" id="btnCancelar">CANCELAR</button>
                 <!-- <div class="origem">ORIGEM &larr;</div> -->
             </div>
 

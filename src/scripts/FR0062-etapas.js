@@ -332,7 +332,9 @@ class GerenciadorEtapas {
     }
 
     _criarBotoes() {
-        const bloco = document.querySelector('.bloco-visto');
+        // Botões agora vivem na barra de ações horizontal abaixo do cabeçalho.
+        // Mantém fallback para .bloco-visto caso a barra não exista.
+        const bloco = document.querySelector('.barra-acoes') || document.querySelector('.bloco-visto');
         if (!bloco) return;
 
         // ─── Salvar (mantém status) ───────────────────────────────

@@ -945,6 +945,30 @@ input[type="checkbox"]:checked::after {
     margin-top: 5px;
 }
 
+/* ============================================================================
+   BARRA DE AÇÕES HORIZONTAL
+   Rodapé do bloco principal do formulário, acima da próxima seção.
+   Ordem: GERAR PDF | CANCELAR | SALVAR | AVANÇAR
+   ============================================================================ */
+.barra-acoes {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;            /* quebra de linha organizada em telas menores */
+    justify-content: flex-start;/* alinhados à esquerda */
+    align-items: center;
+    gap: 10px;                  /* espaçamento uniforme entre os botões (8–12px) */
+    width: 100%;                /* dentro da largura do container, sem vazar a borda */
+    padding: 0 2px;
+    margin: 10px 0 14px;        /* separação do conteúdo acima e da seção abaixo */
+}
+
+/* Cada botão ocupa apenas a largura necessária, sem esticar.
+   Zera o margin-top herdado (vinha do layout vertical) para alinhar a linha. */
+.barra-acoes button {
+    flex: 0 0 auto;
+    margin-top: 0;
+}
+
 /* Estilos para campos de input-line (garante que sejam editáveis) */
 .input-line {
     min-height: 15px;
@@ -1240,6 +1264,7 @@ body.gerando-pdf .formulario-completo {
 
 /* Esconde botões na impressão */
 .gerando-pdf button,
+.gerando-pdf .barra-acoes,
 .gerando-pdf #barra-etapas,
 .gerando-pdf #_status_badge {
     display: none !important;
@@ -1283,6 +1308,7 @@ body.gerando-pdf .formulario-completo {
 }
 
 .captura-pdf button,
+.captura-pdf .barra-acoes,
 .captura-pdf #barra-etapas,
 .captura-pdf #_status_badge {
     display: none !important;
