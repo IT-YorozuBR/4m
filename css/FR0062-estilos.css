@@ -1026,14 +1026,14 @@ input[type="checkbox"]:checked::after {
 }
 
 /* ----------------------------------------------------------------------------
-   TABLET — Seção "RESULTADO AVALIAÇÃO"
-   Em tablets a célula ocupa ~1/4 da largura e o layout em duas colunas deixava
-   os campos minúsculos, fazendo o texto digitado quebrar caractere a caractere
-   ("escrevendo para baixo"). Aqui empilhamos os itens (OK / 2D / CMM / MACRO /
-   OUTROS) verticalmente e damos largura total aos inputs, sem alterar o
-   restante do fluxo. Tudo permanece dentro da célula.
+   TABLET E ABAIXO — Seção "RESULTADO AVALIAÇÃO"
+   A partir de 1199px para baixo, a célula fica estreita e o layout em duas
+   colunas deixava os campos minúsculos, fazendo o texto digitado quebrar
+   caractere a caractere ("escrevendo para baixo"). Aqui empilhamos os itens
+   (OK / 2D / CMM / MACRO / OUTROS) verticalmente e damos largura total aos
+   inputs, sem alterar o restante do fluxo. Tudo permanece dentro da célula.
    ---------------------------------------------------------------------------- */
-@media screen and (min-width: 768px) and (max-width: 1199px) {
+@media screen and (max-width: 1199px) {
     /* Mais respiro vertical entre os itens da seção */
     .celula-3.secao-resultado {
         gap: 10px;
