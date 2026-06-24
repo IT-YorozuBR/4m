@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     setTimeout(() => {
         const validador = new ValidadorColunas();
+        window.validadorColunas = validador;
         validador.inicializar();
     }, 1000);
 });
@@ -63,7 +64,54 @@ class ValidadorColunas {
         // Interceptar botão "Limpar Dados"
         this.interceptarBotaoLimpar();
 
+        // Reaplica o bloqueio quando um checklist salvo é reaberto:
+        // - configurarReaplicacaoAoCarregar(): cobre o carregamento que termina
+        //   DEPOIS desta inicialização (fetch mais lento).
+        // - aplicarBloqueioColunaPreenchida(): cobre o carregamento que já
+        //   terminou ANTES desta inicialização (fetch mais rápido).
+        this.configurarReaplicacaoAoCarregar();
+        this.aplicarBloqueioColunaPreenchida();
+
         console.log('✅ Sistema de Validação Pronto!');
+    }
+
+    // Detecta a coluna 4M que já vem preenchida (checklist salvo) e bloqueia
+    // as demais. Sem isso, ao reabrir, todas as colunas ficavam editáveis.
+    aplicarBloqueioColunaPreenchida() {
+        // Só atua na etapa de produção (em_andamento), onde as colunas 4M são
+        // editáveis. Nas demais etapas, o gerenciador de etapas já controla os
+        // bloqueios e NÃO devemos reabilitar a coluna preenchida.
+        const status = window.gerenciadorEtapas?.statusAtual || 'em_andamento';
+        if (status !== 'em_andamento') return;
+
+        // Se já existe coluna ativa, nada a fazer.
+        if (this.colunaAtiva !== null) return;
+
+        for (let indice = 0; indice < 4; indice++) {
+            if (this.colunaTemDados(indice)) {
+                console.log(`🔒 Coluna ${indice} já preenchida ao carregar — bloqueando as demais.`);
+                this.ativarColuna(indice, true); // silencioso, sem popup
+                break;
+            }
+        }
+    }
+
+    // Envolve preencherFormulario para reaplicar o bloqueio APÓS os dados serem
+    // carregados e o gerenciador de etapas aplicar os bloqueios de status.
+    configurarReaplicacaoAoCarregar() {
+        const sc = window.sistemaChecklist;
+        if (!sc || typeof sc.preencherFormulario !== 'function') return;
+        if (sc._validadorColunasHook) return; // evita hook duplicado
+        sc._validadorColunasHook = true;
+
+        const original = sc.preencherFormulario.bind(sc);
+        const self = this;
+        sc.preencherFormulario = function (dados) {
+            original(dados);
+            // setTimeout(0): garante que rode depois do gerenciador de etapas,
+            // que também envolve preencherFormulario e aplica _aplicar(status).
+            setTimeout(() => self.aplicarBloqueioColunaPreenchida(), 0);
+        };
     }
 
     armazenarValoresIniciais() {
@@ -226,27 +274,15 @@ class ValidadorColunas {
             return campo.checked;
         }
 
-        // Obtém o valor atual
-        let valorAtual;
-        if (campo.contentEditable === 'true') {
-            valorAtual = campo.textContent || '';
-        } else {
-            valorAtual = campo.value || '';
-        }
-        valorAtual = valorAtual.trim();
-
-        // Obtém o valor inicial armazenado
-        const valorInicial = this.valoresIniciais.get(campo);
-        let valorInicialStr = '';
-        if (typeof valorInicial === 'string') {
-            valorInicialStr = valorInicial.trim();
-        } else if (typeof valorInicial === 'boolean') {
-            // Não se aplica a checkbox aqui, pois já tratamos acima
-            return false;
-        }
-
-        // Se o valor atual for diferente do inicial, considera preenchido
-        return valorAtual !== valorInicialStr;
+        // Verificação ABSOLUTA de conteúdo (não comparação com valor inicial).
+        // Isso garante que, ao reabrir um checklist salvo, a coluna já preenchida
+        // seja detectada corretamente — os campos carregados via JS não passam
+        // por interação do usuário e não teriam "valor inicial" confiável.
+        // Lê por tagName para funcionar mesmo quando o campo está bloqueado
+        // (contentEditable="false").
+        const ehInput = campo.tagName === 'INPUT' || campo.tagName === 'TEXTAREA';
+        const valorAtual = (ehInput ? campo.value : campo.textContent) || '';
+        return valorAtual.trim() !== '';
     }
 
     obterValorCampo(campo) {
@@ -256,7 +292,7 @@ class ValidadorColunas {
         return campo.textContent?.trim() || campo.value?.trim() || '';
     }
 
-    ativarColuna(indiceAtivo) {
+    ativarColuna(indiceAtivo, silencioso = false) {
         // Evita reativar a mesma coluna
         if (this.colunaAtiva === indiceAtivo) return;
 
@@ -352,13 +388,15 @@ class ValidadorColunas {
             });
         }
 
-        // Mostrar mensagem apenas uma vez
-        this.mostrarMensagem(
-            `✅ Coluna ${this.nomesColunas[indiceAtivo]} selecionada!\n` +
-            `❌ Outras colunas estão bloqueadas (vermelhas).\n` +
-            `Limpe os dados para desbloquear.`,
-            'sucesso'
-        );
+        // Mostrar mensagem apenas uma vez (omitida ao reabrir um checklist salvo)
+        if (!silencioso) {
+            this.mostrarMensagem(
+                `✅ Coluna ${this.nomesColunas[indiceAtivo]} selecionada!\n` +
+                `❌ Outras colunas estão bloqueadas (vermelhas).\n` +
+                `Limpe os dados para desbloquear.`,
+                'sucesso'
+            );
+        }
     }
 
     desbloquearTodas() {
