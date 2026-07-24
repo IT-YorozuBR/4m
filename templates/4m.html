@@ -632,7 +632,7 @@
 
     function renderNavbar() {
       const user = getUser();
-      const userBtn = isMasterAdmin() ? '<button class="btn" type="button" onclick="openUserManagement()"><span class="material-icons">manage_accounts</span>Usuários</button>' : '';
+      const userBtn = isAdmin() ? '<a class="btn" href="/usuarios.html"><span class="material-icons">manage_accounts</span>Usuários</a>' : '';
       const adminBtn = isAdmin() ? '<button class="btn btn-admin" type="button" onclick="createModule()"><span class="material-icons">add_circle</span>Novo módulo</button>' : '';
       if (user.username && user.role) {
         q('#navbarRight').innerHTML = `${adminBtn}${userBtn}<div class="chip"><span class="material-icons">account_circle</span>${esc(user.username)}<span class="chip ${user.role === 'admin' ? 'btn-danger' : ''}">${user.role === 'admin' ? 'ADM' : 'APR'}</span></div><button class="btn btn-danger" type="button" onclick="logout()"><span class="material-icons">logout</span>Sair</button>`;

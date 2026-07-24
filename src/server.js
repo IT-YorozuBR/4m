@@ -126,6 +126,34 @@ async function buildApp() {
         const JWT_EXPIRES_IN = '24h';
         const MASTER_ADMIN_USERNAME = 'admin.ti';
 
+        // ──────────────────────────────────────────────────────────────
+        // CONTROLE DE ACESSO POR ETAPA (níveis hierárquicos de role)
+        //   operador (0)            → Produção (não exige conta)
+        //   qualidade (1)           → Qualidade
+        //   aprovador_qualidade (2) → Aprovação Qualidade
+        //   admin (3)               → Aprovação / Conclusão (faz tudo)
+        // Um nível mais alto pode atuar nas etapas de nível mais baixo.
+        // ──────────────────────────────────────────────────────────────
+        const ROLES_VALIDOS = ['operador', 'qualidade', 'aprovador_qualidade', 'admin'];
+        // "operador" é o nível implícito da Produção (sem conta). Contas só existem
+        // para Qualidade, Aprovação Qualidade e Admin.
+        const ROLES_CONTA = ['qualidade', 'aprovador_qualidade', 'admin'];
+        const NIVEL_ROLE = { operador: 0, qualidade: 1, aprovador_qualidade: 2, admin: 3 };
+        // Nível mínimo necessário para EDITAR / avançar a partir de cada status.
+        const NIVEL_MINIMO_POR_STATUS = {
+            em_andamento: 0,
+            aguardando_qualidade: 1,
+            aguardando_aprovacao_qualidade: 2,
+            aguardando_aprovacao: 3,
+            concluido: 3,
+            finalizado: 3
+        };
+
+        function normalizarRole(role) {
+            const r = String(role || '').trim().toLowerCase();
+            return ROLES_VALIDOS.includes(r) ? r : 'operador';
+        }
+
         function normalizarUsername(username) {
             return String(username || '').trim().toLowerCase();
         }
@@ -157,6 +185,10 @@ async function buildApp() {
             return !!user && user.role === 'admin' && user.username === MASTER_ADMIN_USERNAME;
         }
 
+        function isAdminUser(user) {
+            return !!user && normalizarRole(user.role) === 'admin';
+        }
+
         async function garantirUsuariosIniciais() {
             await usersCollection.createIndex({ username: 1 }, { unique: true });
 
@@ -180,12 +212,46 @@ async function buildApp() {
                 await usersCollection.insertOne({
                     username,
                     password_hash: gerarHashSenha(password),
-                    role: role === 'operador' ? 'operador' : 'admin',
+                    role: normalizarRole(role),
                     active: true,
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                     created_by: 'system_env'
                 });
+            }
+        }
+
+        // Contas fixas das etapas do fluxo. Garante que existam (e com o role
+        // correto) independentemente da configuração de ambiente. Não sobrescreve
+        // a senha de uma conta já existente — apenas corrige o role se divergir.
+        const CONTAS_ETAPAS = [
+            { username: 'qualidade', password: 'qualidade123', role: 'qualidade' },
+            { username: 'aprovador.qualidade', password: 'aprovador123', role: 'aprovador_qualidade' }
+        ];
+
+        async function garantirContasEtapas() {
+            for (const conta of CONTAS_ETAPAS) {
+                const username = normalizarUsername(conta.username);
+                const existente = await usersCollection.findOne({ username });
+
+                if (!existente) {
+                    await usersCollection.insertOne({
+                        username,
+                        password_hash: gerarHashSenha(conta.password),
+                        role: conta.role,
+                        active: true,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        created_by: 'system_stage_seed'
+                    });
+                    console.log(`👤 Conta de etapa criada: ${username} (${conta.role})`);
+                } else if (normalizarRole(existente.role) !== conta.role) {
+                    await usersCollection.updateOne(
+                        { username },
+                        { $set: { role: conta.role, updated_at: new Date().toISOString() } }
+                    );
+                    console.log(`🔁 Role da conta '${username}' ajustado para '${conta.role}'`);
+                }
             }
         }
 
@@ -203,12 +269,13 @@ async function buildApp() {
                 success: true,
                 user: {
                     username: user.username,
-                    role: user.role === 'operador' ? 'operador' : 'admin'
+                    role: normalizarRole(user.role)
                 }
             };
         }
 
         await garantirUsuariosIniciais();
+        await garantirContasEtapas();
 
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
@@ -432,10 +499,10 @@ async function buildApp() {
         // Rota para salvar formulário FR0062 (OPERADOR + ADMIN)
         app.get('/api/admin/users', autenticarJWT, async (req, res) => {
             try {
-                if (!isMasterAdmin(req.user)) {
+                if (!isAdminUser(req.user)) {
                     return res.status(403).json({
                         success: false,
-                        message: 'Apenas admin.ti pode gerenciar usuários'
+                        message: 'Apenas administradores podem gerenciar usuários'
                     });
                 }
 
@@ -460,16 +527,16 @@ async function buildApp() {
 
         app.post('/api/admin/users', autenticarJWT, async (req, res) => {
             try {
-                if (!isMasterAdmin(req.user)) {
+                if (!isAdminUser(req.user)) {
                     return res.status(403).json({
                         success: false,
-                        message: 'Apenas admin.ti pode criar usuários'
+                        message: 'Apenas administradores podem criar usuários'
                     });
                 }
 
                 const username = normalizarUsername(req.body.username);
                 const password = String(req.body.password || '').trim();
-                const role = String(req.body.role || 'admin').trim().toLowerCase();
+                const role = String(req.body.role || 'operador').trim().toLowerCase();
 
                 if (!username) {
                     return res.status(400).json({
@@ -492,7 +559,15 @@ async function buildApp() {
                     });
                 }
 
-                const roleNormalizado = role === 'operador' ? 'operador' : 'admin';
+                const roleNormalizado = normalizarRole(role);
+
+                if (!ROLES_CONTA.includes(roleNormalizado)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'O perfil Operador (Produção) não possui conta. Escolha Qualidade, Aprovação Qualidade ou Administrador.'
+                    });
+                }
+
                 const existente = await usersCollection.findOne({ username });
 
                 if (existente) {
@@ -530,6 +605,100 @@ async function buildApp() {
                 res.status(500).json({
                     success: false,
                     message: 'Erro ao criar usuário',
+                    error: error.message
+                });
+            }
+        });
+
+        // Editar usuário: alterar o perfil (role) e/ou trocar a senha.
+        // A senha nunca é exposta — apenas substituída por uma nova.
+        app.put('/api/admin/users/:username', autenticarJWT, async (req, res) => {
+            try {
+                if (!isAdminUser(req.user)) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas administradores podem gerenciar usuários'
+                    });
+                }
+
+                const alvo = normalizarUsername(req.params.username);
+                const usuarioAlvo = await usersCollection.findOne({ username: alvo });
+
+                if (!usuarioAlvo) {
+                    return res.status(404).json({
+                        success: false,
+                        message: 'Usuário não encontrado'
+                    });
+                }
+
+                const ehMaster = alvo === MASTER_ADMIN_USERNAME;
+                const set = {
+                    updated_at: new Date().toISOString(),
+                    updated_by: req.user.username
+                };
+
+                // Alterar perfil (role)
+                const roleEnviado = req.body.role != null ? String(req.body.role).trim() : '';
+                if (roleEnviado) {
+                    if (ehMaster) {
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Não é permitido alterar o perfil do administrador master.'
+                        });
+                    }
+                    const novoRole = normalizarRole(roleEnviado);
+                    if (!ROLES_CONTA.includes(novoRole)) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'O perfil Operador (Produção) não possui conta. Escolha Qualidade, Aprovação Qualidade ou Administrador.'
+                        });
+                    }
+                    set.role = novoRole;
+                }
+
+                // Trocar senha (sem expor a atual — apenas define a nova)
+                const senhaEnviada = req.body.password != null ? String(req.body.password).trim() : '';
+                if (senhaEnviada) {
+                    if (senhaEnviada.length < 6) {
+                        return res.status(400).json({
+                            success: false,
+                            message: 'A nova senha deve ter pelo menos 6 caracteres'
+                        });
+                    }
+                    if (ehMaster && req.user.username !== MASTER_ADMIN_USERNAME) {
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Apenas o próprio administrador master pode trocar a senha dele.'
+                        });
+                    }
+                    set.password_hash = gerarHashSenha(senhaEnviada);
+                }
+
+                if (!set.role && !set.password_hash) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Informe um novo perfil ou uma nova senha para atualizar.'
+                    });
+                }
+
+                await usersCollection.updateOne({ username: alvo }, { $set: set });
+
+                console.log(`🔧 Admin ${req.user.username} atualizou usuário ${alvo}` +
+                    `${set.role ? ` (role → ${set.role})` : ''}${set.password_hash ? ' (senha trocada)' : ''}`);
+
+                res.json({
+                    success: true,
+                    message: 'Usuário atualizado com sucesso',
+                    user: {
+                        username: alvo,
+                        role: set.role || normalizarRole(usuarioAlvo.role)
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Erro ao atualizar usuário:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao atualizar usuário',
                     error: error.message
                 });
             }
@@ -726,6 +895,7 @@ async function buildApp() {
                     total: await db.collection('checklists').countDocuments(filtroEstatisticas),
                     em_andamento: 0,
                     aguardando_qualidade: 0,
+                    aguardando_aprovacao_qualidade: 0,
                     aguardando_aprovacao: 0,
                     concluido: 0
                 };
@@ -847,21 +1017,24 @@ async function buildApp() {
                 const statusAtual = formularioAtual.status || 'em_andamento';
                 const statusNovo = dados.status || statusAtual;
 
-                // 4. Validação de Regras de Negócio por Role
-                // Garantimos que o role seja comparado sempre em minúsculo para evitar erros de digitação
-                const userRole = user.role ? user.role.toLowerCase() : 'operador';
+                // 4. Validação de Regras de Negócio por Role (controle por etapa)
+                const userRole = normalizarRole(user.role);
+                const nivelUser = NIVEL_ROLE[userRole] ?? 0;
 
-                if (userRole === 'operador') {
-                    // Regra: Nenhum operador edita checklist concluído/finalizado
+                if (nivelUser >= NIVEL_ROLE.admin) {
+                    // Admin: permissão total (faz qualquer etapa, inclusive concluir)
+                    console.log(`👑 Admin ${user.username} atualizando: ${numeroControle} (Permissão Total)`);
+                } else {
+                    // Nenhum não-admin edita checklist concluído/finalizado
                     if (statusAtual === 'concluido' || statusAtual === 'finalizado') {
-                        console.log(`🚫 Bloqueado: Operador ${user.username} tentou editar checklist concluído.`);
+                        console.log(`🚫 Bloqueado: ${user.username} (${userRole}) tentou editar checklist concluído.`);
                         return res.status(403).json({
                             success: false,
                             message: 'Não é possível editar um checklist já concluído.'
                         });
                     }
 
-                    // Operador/Qualidade nunca podem definir status 'concluido' — só admin pode
+                    // Apenas admin pode concluir/finalizar
                     if (statusNovo === 'concluido' || statusNovo === 'finalizado') {
                         return res.status(403).json({
                             success: false,
@@ -869,14 +1042,25 @@ async function buildApp() {
                         });
                     }
 
+                    // Nível mínimo exigido pela etapa atual (Produção/Qualidade/Aprov. Qualidade)
+                    const nivelNecessario = NIVEL_MINIMO_POR_STATUS[statusAtual] ?? 0;
+                    if (nivelUser < nivelNecessario) {
+                        console.log(`🚫 Nível insuficiente: ${user.username} (${userRole}) na etapa ${statusAtual}`);
+                        return res.status(403).json({
+                            success: false,
+                            message: 'Sua conta não tem permissão para editar esta etapa.'
+                        });
+                    }
+
                     // Validar transições permitidas (fluxo linear)
                     const transicoesPermitidas = {
                         'em_andamento': ['em_andamento', 'aguardando_qualidade'],
-                        'aguardando_qualidade': ['aguardando_qualidade', 'aguardando_aprovacao'],
+                        'aguardando_qualidade': ['aguardando_qualidade', 'aguardando_aprovacao_qualidade'],
+                        'aguardando_aprovacao_qualidade': ['aguardando_aprovacao_qualidade', 'aguardando_aprovacao'],
                         'aguardando_aprovacao': ['aguardando_aprovacao'] // avanço para concluido só por admin
                     };
 
-                    const permitidos = transicoesPermitidas[statusAtual] || [];
+                    const permitidos = transicoesPermitidas[statusAtual] || [statusAtual];
                     if (statusNovo !== statusAtual && !permitidos.includes(statusNovo)) {
                         console.log(`🚫 Transição inválida: ${statusAtual} → ${statusNovo} por ${user.username}`);
                         return res.status(403).json({
@@ -885,17 +1069,7 @@ async function buildApp() {
                         });
                     }
 
-                    console.log(`📝 Operador/Qualidade ${user.username} atualizando: ${numeroControle} (${statusAtual} → ${statusNovo})`);
-
-                } else if (userRole === 'admin') {
-                    console.log(`👑 Admin ${user.username} atualizando: ${numeroControle} (Permissão Total)`);
-                } else {
-                    // Caso o role no token seja algo bizarro (ex: "user", "manager")
-                    console.error(`⚠️ Role desconhecido detectado: ${userRole}`);
-                    return res.status(403).json({
-                        success: false,
-                        message: 'Seu nível de acesso não permite esta ação.'
-                    });
+                    console.log(`📝 ${userRole} ${user.username} atualizando: ${numeroControle} (${statusAtual} → ${statusNovo})`);
                 }
 
                 // 5. Preparação dos dados e Update

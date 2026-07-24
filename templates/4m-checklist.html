@@ -832,7 +832,8 @@
             <option value="">Todos os status</option>
             <option value="em_andamento">Etapa 1 — Produção</option>
             <option value="aguardando_qualidade">Etapa 2 — Qualidade</option>
-            <option value="aguardando_aprovacao">Etapa 3 — Aprovação</option>
+            <option value="aguardando_aprovacao_qualidade">Etapa 3 — Aprovação Qualidade</option>
+            <option value="aguardando_aprovacao">Etapa 4 — Aprovação</option>
             <option value="concluido">Concluído</option>
           </select>
         </div>
@@ -1266,11 +1267,12 @@
       const isConcluido = status === 'concluido' || status === 'finalizado';
 
       const STATUS_MAP = {
-        'em_andamento':         { cor: '#1565C0', bg: 'rgba(21,101,192,.15)',  label: 'Etapa 1 — Produção',  icone: 'engineering', etapa: 1 },
-        'aguardando_qualidade': { cor: '#E65100', bg: 'rgba(230,81,0,.15)',    label: 'Etapa 2 — Qualidade', icone: 'rule',        etapa: 2 },
-        'aguardando_aprovacao': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)',  label: 'Etapa 3 — Aprovação', icone: 'verified',    etapa: 3 },
-        'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 4 },
-        'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 4 },
+        'em_andamento':                  { cor: '#1565C0', bg: 'rgba(21,101,192,.15)',  label: 'Etapa 1 — Produção',            icone: 'engineering', etapa: 1 },
+        'aguardando_qualidade':          { cor: '#E65100', bg: 'rgba(230,81,0,.15)',    label: 'Etapa 2 — Qualidade',           icone: 'rule',        etapa: 2 },
+        'aguardando_aprovacao_qualidade':{ cor: '#00838F', bg: 'rgba(0,131,143,.15)',   label: 'Etapa 3 — Aprovação Qualidade', icone: 'fact_check',  etapa: 3 },
+        'aguardando_aprovacao': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)',  label: 'Etapa 4 — Aprovação', icone: 'verified',    etapa: 4 },
+        'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 5 },
+        'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 5 },
       };
       const statusInfo = STATUS_MAP[status] || STATUS_MAP['em_andamento'];
 
