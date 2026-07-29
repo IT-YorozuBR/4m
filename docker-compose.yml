@@ -30,17 +30,23 @@ services:
       NODE_ENV: production
       PORT: 3020
       MONGODB_URI: mongodb://${MONGO_ROOT_USER:-admin}:${MONGO_ROOT_PASSWORD:-changeme}@mongodb:27017/4m_checklist?authSource=admin
-    ports:
-      - "3020:3020"
+    # Sem "ports": o app não fica publicado no host, só acessível dentro do
+    # Docker (NPM alcança via rede compartilhada abaixo).
     depends_on:
       mongodb:
         condition: service_healthy
     networks:
       - 4m_network
+      - npm_network
 
 networks:
   4m_network:
     driver: bridge
+  # Rede do Nginx Proxy Manager (definida em /opt/nginx-proxy-manager na VM).
+  # external: true = não recriar, só se conectar à que já existe.
+  npm_network:
+    external: true
+    name: nginx-proxy-manager_default
 
 volumes:
   mongodb_data:
