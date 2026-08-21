@@ -156,6 +156,9 @@
     const ROLES = [
       { value: 'qualidade', label: 'Qualidade' },
       { value: 'aprovador_qualidade', label: 'Aprovação Qualidade' },
+      { value: 'engenharia', label: 'Aprovação Engenharia (se programado)' },
+      { value: 'logistica_pc', label: 'Aprovação Log. / P.C. (se programado)' },
+      { value: 'producao_aprovacao', label: 'Aprovação Produção (se programado)' },
       { value: 'admin', label: 'Administrador' },
     ];
     const ROLE_LABEL = Object.fromEntries(ROLES.map(r => [r.value, r.label]));

@@ -40,6 +40,8 @@ async function buildApp() {
         const client = await getMongoClient();
         const db = client.db("4m_checklist");
         const usersCollection = db.collection('users');
+        const checklistsCollection = db.collection('checklists');
+        const countersCollection = db.collection('counters');
         console.log("✅ Conectado ao MongoDB");
 
         const app = express();
@@ -134,11 +136,22 @@ async function buildApp() {
         //   admin (3)               → Aprovação / Conclusão (faz tudo)
         // Um nível mais alto pode atuar nas etapas de nível mais baixo.
         // ──────────────────────────────────────────────────────────────
-        const ROLES_VALIDOS = ['operador', 'qualidade', 'aprovador_qualidade', 'admin'];
+        const ROLES_VALIDOS = [
+            'operador', 'qualidade', 'aprovador_qualidade', 'admin',
+            'engenharia', 'logistica_pc', 'producao_aprovacao'
+        ];
         // "operador" é o nível implícito da Produção (sem conta). Contas só existem
-        // para Qualidade, Aprovação Qualidade e Admin.
-        const ROLES_CONTA = ['qualidade', 'aprovador_qualidade', 'admin'];
-        const NIVEL_ROLE = { operador: 0, qualidade: 1, aprovador_qualidade: 2, admin: 3 };
+        // para Qualidade, Aprovação Qualidade, Admin e as etapas "se programado".
+        const ROLES_CONTA = [
+            'qualidade', 'aprovador_qualidade', 'admin',
+            'engenharia', 'logistica_pc', 'producao_aprovacao'
+        ];
+        const NIVEL_ROLE = {
+            operador: 0, qualidade: 1, aprovador_qualidade: 2, admin: 3,
+            // Papéis das etapas "se programado" não são hierárquicos — o acesso é
+            // resolvido por ROLES_ETAPA_ESPECIAL, não por nível.
+            engenharia: 0, logistica_pc: 0, producao_aprovacao: 0
+        };
         // Nível mínimo necessário para EDITAR / avançar a partir de cada status.
         const NIVEL_MINIMO_POR_STATUS = {
             em_andamento: 0,
@@ -147,6 +160,13 @@ async function buildApp() {
             aguardando_aprovacao: 3,
             concluido: 3,
             finalizado: 3
+        };
+        // Etapas "se programado": acesso por papel específico (não hierárquico).
+        const ROLES_ETAPA_ESPECIAL = {
+            aguardando_aprovacao_engenharia: ['engenharia'],
+            aguardando_aprovacao_logistica: ['logistica_pc'],
+            aguardando_aprovacao_producao: ['producao_aprovacao'],
+            aguardando_conclusao_qualidade: ['qualidade', 'aprovador_qualidade']
         };
 
         function normalizarRole(role) {
@@ -226,7 +246,11 @@ async function buildApp() {
         // a senha de uma conta já existente — apenas corrige o role se divergir.
         const CONTAS_ETAPAS = [
             { username: 'qualidade', password: 'qualidade123', role: 'qualidade' },
-            { username: 'aprovador.qualidade', password: 'aprovador123', role: 'aprovador_qualidade' }
+            { username: 'aprovador.qualidade', password: 'aprovador123', role: 'aprovador_qualidade' },
+            // Contas das etapas "se programado" (Engenharia → Log./P.C. → Produção)
+            { username: 'engenharia', password: 'engenharia123', role: 'engenharia' },
+            { username: 'logistica.pc', password: 'logistica123', role: 'logistica_pc' },
+            { username: 'producao.aprovacao', password: 'producao123', role: 'producao_aprovacao' }
         ];
 
         async function garantirContasEtapas() {
@@ -255,6 +279,71 @@ async function buildApp() {
             }
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // NÚMERO DE CONTROLE — geração atômica (corrige bug de duplicidade)
+        //
+        // O gerador antigo calculava o próximo número como
+        // `countDocuments() + 1` a cada chamada de /proximo-numero, sem
+        // reservar o valor. Duas criações de checklist próximas no tempo
+        // (duas abas, dois usuários, ou só o usuário recarregando a tela de
+        // "novo checklist" antes de salvar) recebiam o MESMO número, e como
+        // não havia índice único em `numero_controle`, o Mongo aceitava os
+        // dois documentos. A partir daí, GET/PUT por numero_controle
+        // (`findOne`/`updateOne`) podiam pegar/alterar o registro errado —
+        // exatamente o sintoma de "aparecem dados que não fui eu".
+        //
+        // Fix: sequência atômica via $inc numa collection `counters` (não
+        // tem como duas chamadas concorrentes saírem com o mesmo valor) +
+        // índice único em checklists.numero_controle como segunda barreira.
+        // ──────────────────────────────────────────────────────────────
+        const CONTADOR_ID = 'fr0062_numero_controle';
+
+        async function garantirIndiceChecklists() {
+            try {
+                await checklistsCollection.createIndex({ numero_controle: 1 }, { unique: true });
+            } catch (err) {
+                // Se já existirem duplicados no banco (resíduo do bug antigo), a
+                // criação do índice falha. Não derruba o servidor por isso — loga
+                // um alerta bem visível para que os duplicados sejam limpos.
+                console.error('⚠️ ATENÇÃO: não foi possível criar índice único em checklists.numero_controle.');
+                console.error('   Provavelmente já existem checklists com numero_controle duplicado no banco.');
+                console.error('   Detalhe:', err.message);
+            }
+        }
+
+        async function garantirContadorChecklists() {
+            const existente = await countersCollection.findOne({ _id: CONTADOR_ID });
+            if (existente) return;
+
+            // Semeia o contador a partir do maior número já usado nos checklists
+            // existentes (mais seguro que countDocuments() se já houver gaps ou
+            // duplicados deixados pelo gerador antigo).
+            const registros = await checklistsCollection
+                .find({ numero_controle: { $exists: true } }, { projection: { numero_controle: 1 } })
+                .toArray();
+
+            let maiorNumero = 0;
+            for (const registro of registros) {
+                const match = /^FR0062-(\d+)$/.exec(registro.numero_controle || '');
+                if (match) {
+                    const n = parseInt(match[1], 10);
+                    if (n > maiorNumero) maiorNumero = n;
+                }
+            }
+
+            await countersCollection.insertOne({ _id: CONTADOR_ID, seq: maiorNumero });
+        }
+
+        async function obterProximoNumeroControle() {
+            const resultado = await countersCollection.findOneAndUpdate(
+                { _id: CONTADOR_ID },
+                { $inc: { seq: 1 } },
+                { upsert: true, returnDocument: 'after' }
+            );
+            const seq = resultado?.value?.seq ?? resultado?.seq;
+            return `FR0062-${String(seq).padStart(9, '0')}`;
+        }
+
         async function verificarCredenciais(username, password) {
             const usernameNormalizado = normalizarUsername(username);
             const user = await usersCollection.findOne({
@@ -276,6 +365,8 @@ async function buildApp() {
 
         await garantirUsuariosIniciais();
         await garantirContasEtapas();
+        await garantirContadorChecklists();
+        await garantirIndiceChecklists();
 
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
@@ -734,9 +825,10 @@ async function buildApp() {
                 dados.criado_por = req.user.username;
                 dados.solicitado_por = dados.solicitado_por || dados.criador_nome;
                 dados.status = dados.status || 'em_andamento';
+                dados.programado = dados.programado === true;
 
                 // Salvar no MongoDB
-                await db.collection('checklists').insertOne(dados);
+                await checklistsCollection.insertOne(dados);
 
                 console.log('✅ Formulário salvo no MongoDB');
 
@@ -747,6 +839,19 @@ async function buildApp() {
                 });
 
             } catch (error) {
+                // Índice único em numero_controle: se por algum motivo um número já
+                // usado for enviado (ex.: aba antiga aberta antes da correção do
+                // gerador atômico), barra aqui em vez de deixar dois checklists
+                // diferentes compartilharem o mesmo numero_controle.
+                if (error.code === 11000) {
+                    console.error('🚫 numero_controle duplicado, insert rejeitado:', dados.numero_controle);
+                    return res.status(409).json({
+                        success: false,
+                        message: 'Este número de controle já está em uso. Recarregue a página para gerar um novo número.',
+                        error: error.message
+                    });
+                }
+
                 console.error('❌ Erro ao salvar formulário:', error);
                 res.status(500).json({
                     success: false,
@@ -757,34 +862,25 @@ async function buildApp() {
         });
 
         // ==================== ROTA PARA GERAR NÚMERO DE CONTROLE ====================
-        // Baseado na quantidade de checklists existentes + 1
-        // Cada reload da página gera um novo número baseado no count atual
+        // Sequência atômica (collection `counters`) — ver comentário em
+        // obterProximoNumeroControle() para o porquê da mudança.
         app.get('/api/fr0062/proximo-numero', verificarOperador, async (req, res) => {
             try {
-                // 1. Contar quantos checklists existem no banco
-                const totalExistentes = await db.collection('checklists').countDocuments();
+                const numero = await obterProximoNumeroControle();
 
-                // 2. Próximo número = total + 1
-                const proximoNumero = totalExistentes + 1;
+                console.log(`✅ Número de controle gerado: ${numero}`);
 
-                // 3. Formatar número no padrão: FR0062-000000001, FR0062-000000002, etc.
-                const numero = `FR0062-${String(proximoNumero).padStart(9, '0')}`;
-                
-                console.log(`✅ Número de controle gerado: ${numero} (Total de checklists: ${totalExistentes})`);
-                
-                res.json({ 
-                    success: true, 
-                    numero_controle: numero,
-                    sequencia: proximoNumero,
-                    total_existentes: totalExistentes
+                res.json({
+                    success: true,
+                    numero_controle: numero
                 });
 
             } catch (error) {
                 console.error('❌ Erro ao gerar número de controle:', error);
-                res.status(500).json({ 
-                    success: false, 
+                res.status(500).json({
+                    success: false,
                     message: 'Erro ao gerar número de controle',
-                    error: error.message 
+                    error: error.message
                 });
             }
         });
@@ -798,6 +894,16 @@ async function buildApp() {
                 const busca = (req.query.busca || '').trim();
                 const status = (req.query.status || '').trim();
                 const ano = (req.query.ano || '').trim();
+                const dataInicio = (req.query.data_inicio || '').trim();
+                const dataFim = (req.query.data_fim || '').trim();
+                const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+                if ((dataInicio && !DATA_REGEX.test(dataInicio)) || (dataFim && !DATA_REGEX.test(dataFim))) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Data inválida. Use o formato AAAA-MM-DD'
+                    });
+                }
 
                 // Validações
                 if (pagina < 1) {
@@ -822,7 +928,9 @@ async function buildApp() {
                         { criador_nome: { $regex: busca, $options: 'i' } },
                         { criador_matricula: { $regex: busca, $options: 'i' } },
                         { criado_por: { $regex: busca, $options: 'i' } },
-                        { status: { $regex: busca, $options: 'i' } }
+                        { status: { $regex: busca, $options: 'i' } },
+                        { 'mudancas_4m.item_modificado': { $regex: busca, $options: 'i' } },
+                        { 'mudancas_4m.modificacao': { $regex: busca, $options: 'i' } }
                     ];
                 }
 
@@ -836,6 +944,19 @@ async function buildApp() {
 
                 if (ano) {
                     filtro.data_criacao = { $regex: `^${ano}` };
+                }
+
+                // Período específico (data_inicio/data_fim) tem prioridade sobre "ano".
+                // Comparação por string funciona porque data_criacao é ISO 8601
+                // (AAAA-MM-DDTHH:mm:ss.sssZ), que ordena lexicograficamente como data real.
+                if (dataInicio || dataFim) {
+                    filtro.data_criacao = {};
+                    if (dataInicio) {
+                        filtro.data_criacao.$gte = `${dataInicio}T00:00:00.000Z`;
+                    }
+                    if (dataFim) {
+                        filtro.data_criacao.$lte = `${dataFim}T23:59:59.999Z`;
+                    }
                 }
 
                 // Estatísticas seguem a busca/ano, mas ignoram o filtro de status
@@ -1034,29 +1155,45 @@ async function buildApp() {
                         });
                     }
 
-                    // Apenas admin pode concluir/finalizar
-                    if (statusNovo === 'concluido' || statusNovo === 'finalizado') {
+                    // Conclusão normal: só admin. Exceção: no fluxo "se programado", a
+                    // Qualidade (ou Aprovador Qualidade) conclui a partir da etapa
+                    // "aguardando_conclusao_qualidade".
+                    const podeConcluirComoQualidade = statusAtual === 'aguardando_conclusao_qualidade'
+                        && ['qualidade', 'aprovador_qualidade'].includes(userRole);
+
+                    if ((statusNovo === 'concluido' || statusNovo === 'finalizado') && !podeConcluirComoQualidade) {
                         return res.status(403).json({
                             success: false,
                             message: 'Apenas administradores podem concluir checklists.'
                         });
                     }
 
-                    // Nível mínimo exigido pela etapa atual (Produção/Qualidade/Aprov. Qualidade)
-                    const nivelNecessario = NIVEL_MINIMO_POR_STATUS[statusAtual] ?? 0;
-                    if (nivelUser < nivelNecessario) {
-                        console.log(`🚫 Nível insuficiente: ${user.username} (${userRole}) na etapa ${statusAtual}`);
+                    // Nível mínimo (etapas hierárquicas) ou papel específico (etapas
+                    // "se programado": Engenharia / Log.PC / Produção / Conclusão Qualidade)
+                    const rolesEspeciais = ROLES_ETAPA_ESPECIAL[statusAtual];
+                    const temPermissaoEtapa = rolesEspeciais
+                        ? rolesEspeciais.includes(userRole)
+                        : nivelUser >= (NIVEL_MINIMO_POR_STATUS[statusAtual] ?? 0);
+
+                    if (!temPermissaoEtapa) {
+                        console.log(`🚫 Sem permissão: ${user.username} (${userRole}) na etapa ${statusAtual}`);
                         return res.status(403).json({
                             success: false,
                             message: 'Sua conta não tem permissão para editar esta etapa.'
                         });
                     }
 
-                    // Validar transições permitidas (fluxo linear)
+                    // Validar transições permitidas (fluxo linear, com ramal "se programado")
                     const transicoesPermitidas = {
                         'em_andamento': ['em_andamento', 'aguardando_qualidade'],
                         'aguardando_qualidade': ['aguardando_qualidade', 'aguardando_aprovacao_qualidade'],
-                        'aguardando_aprovacao_qualidade': ['aguardando_aprovacao_qualidade', 'aguardando_aprovacao'],
+                        'aguardando_aprovacao_qualidade': formularioAtual.programado
+                            ? ['aguardando_aprovacao_qualidade', 'aguardando_aprovacao_engenharia']
+                            : ['aguardando_aprovacao_qualidade', 'aguardando_aprovacao'],
+                        'aguardando_aprovacao_engenharia': ['aguardando_aprovacao_engenharia', 'aguardando_aprovacao_logistica'],
+                        'aguardando_aprovacao_logistica': ['aguardando_aprovacao_logistica', 'aguardando_aprovacao_producao'],
+                        'aguardando_aprovacao_producao': ['aguardando_aprovacao_producao', 'aguardando_conclusao_qualidade'],
+                        'aguardando_conclusao_qualidade': ['aguardando_conclusao_qualidade', 'concluido'],
                         'aguardando_aprovacao': ['aguardando_aprovacao'] // avanço para concluido só por admin
                     };
 

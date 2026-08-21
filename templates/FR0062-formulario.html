@@ -7,7 +7,8 @@
     <meta name="pdf-optimization" content="true">
     <title>RELATÓRIO MUDANÇA 4M - FR0062</title>
     <link rel="stylesheet" href="../css/FR0062-estilos.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="/scripts/vendor/jspdf.umd.min.js"></script>
+    <script src="/scripts/vendor/html2pdf.bundle.min.js"></script>
     <link rel="icon" href="./4m-logo.png" type="image/x-icon">
     <script src="/scripts/api-config.js"></script>
     <script src="./scripts/validacao-colunas.js"></script>
@@ -445,7 +446,7 @@
                 this.saidaLiberada = false;
                 this.modalAlertaRefreshAberto = false;
                 this.protecaoSaidaConfigurada = false;
-                this.identificacaoCriador = { nome: '', matricula: '' };
+                this.identificacaoCriador = { nome: '', matricula: '', programado: false };
             }
 
             configurarProtecaoDadosNaoSalvos() {
@@ -503,10 +504,11 @@
                 }, 2000);
             }
 
-            definirIdentificacaoCriador(nome, matricula) {
+            definirIdentificacaoCriador(nome, matricula, programado) {
                 this.identificacaoCriador = {
                     nome: String(nome || '').trim(),
-                    matricula: String(matricula || '').trim()
+                    matricula: String(matricula || '').trim(),
+                    programado: programado === true
                 };
 
                 if (this.identificacaoCriador.nome) {
@@ -515,6 +517,10 @@
                         campoSolicitadoPor.textContent = this.identificacaoCriador.nome;
                     }
                 }
+
+                this.setChecked('#seProgramado', this.identificacaoCriador.programado);
+                const badge = document.getElementById('badgeProgramado');
+                if (badge) badge.style.display = this.identificacaoCriador.programado ? '' : 'none';
             }
 
             carregarIdentificacaoCriadorDaSessao() {
@@ -529,7 +535,7 @@
                         return false;
                     }
 
-                    this.definirIdentificacaoCriador(dados.nome, dados.matricula);
+                    this.definirIdentificacaoCriador(dados.nome, dados.matricula, dados.programado);
                     return true;
                 } catch (error) {
                     console.error('Erro ao carregar identificacao do criador:', error);
@@ -812,6 +818,7 @@
                 dados.solicitado_por = document.querySelector('.bloco-controle .input-line')?.textContent.trim() || '';
                 dados.criador_nome = this.identificacaoCriador.nome;
                 dados.criador_matricula = this.identificacaoCriador.matricula;
+                dados.programado = this.identificacaoCriador.programado === true;
                 dados.aprovado_por = cabecalho.qualidade_aprovado || '';
                 dados.confirmado_por = cabecalho.qualidade_confirmado || '';
                 dados.elaborado_por = cabecalho.qualidade_executado_por || '';
@@ -833,7 +840,8 @@
                     setor_producao: this.getTexto('#setorProducao'),
                     setor_logistica_pc: this.getTexto('#setorLogistica'),
                     setor_engenharia: this.getTexto('#setorEngenharia'),
-                    qualidade_aprovado: this.getTexto('#controleAprovado'),
+                    qualidade_aprovado: this.getTexto('#qualidadeAprovado'),
+                    controle_aprovado: this.getTexto('#controleAprovado'),
                     qualidade_confirmado: this.getTexto('#qualidadeConfirmado'),
                     qualidade_executado_por: this.getTexto('#qualidadeExecutadoPor'),
                     recebimento_qa: this.getTexto('#recebimentoQA'),
@@ -1016,7 +1024,11 @@
 
             getTexto(selector) {
                 const element = document.querySelector(selector);
-                return element ? element.textContent.trim() : '';
+                if (!element) return '';
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    return (element.value || '').trim();
+                }
+                return element.textContent.trim();
             }
 
             getTextoNth(selector, index) {
@@ -1216,7 +1228,7 @@
             preencherFormulario(dados) {
                 // Preservar data de criação original para não sobrescrever em salvamentos futuros
                 this._dataCriacaoOriginal = dados.data_criacao || null;
-                this.definirIdentificacaoCriador(dados.criador_nome, dados.criador_matricula);
+                this.definirIdentificacaoCriador(dados.criador_nome, dados.criador_matricula, dados.programado);
                 // Campos extras
                 this.setTexto('#controleElaboradoPor', dados.controle_elaborado_por);
 
@@ -1228,7 +1240,7 @@
                     this.setTexto('#setorProducao', dados.cabecalho.setor_producao);
                     this.setTexto('#setorLogistica', dados.cabecalho.setor_logistica_pc);
                     this.setTexto('#setorEngenharia', dados.cabecalho.setor_engenharia);
-                    this.setTexto('#controleAprovado', dados.cabecalho.qualidade_aprovado);
+                    this.setTexto('#controleAprovado', dados.cabecalho.controle_aprovado);
                     this.setTexto('#qualidadeConfirmado', dados.cabecalho.qualidade_confirmado);
                     this.setTexto('#qualidadeExecutadoPor', dados.cabecalho.qualidade_executado_por);
                     this.setTexto('#recebimentoQA', dados.cabecalho.recebimento_qa);
@@ -1480,7 +1492,19 @@
 
             setTexto(selector, valor) {
                 const element = document.querySelector(selector);
-                if (element && valor) {
+                if (!element || !valor) return;
+
+                if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                    element.value = valor;
+                    // Compatibilidade com dados antigos: campos de data eram
+                    // contenteditable (texto livre, ex.: "05/03/2026") antes de
+                    // virarem <input type="date">. Se o navegador rejeitar o
+                    // valor (formato não-ISO), tenta converter de DD/MM/AAAA.
+                    if (element.type === 'date' && !element.value) {
+                        const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(valor).trim());
+                        if (m) element.value = `${m[3]}-${m[2]}-${m[1]}`;
+                    }
+                } else {
                     element.textContent = valor;
                 }
             }
@@ -1748,7 +1772,6 @@
                     return;
                 }
 
-                const larguraCaptura = Math.max(formulario.scrollWidth, 1800);
                 const hostCaptura = document.createElement('div');
                 const cloneFormulario = formulario.cloneNode(true);
 
@@ -1756,13 +1779,23 @@
                 hostCaptura.style.position = 'fixed';
                 hostCaptura.style.left = '-100000px';
                 hostCaptura.style.top = '0';
-                hostCaptura.style.width = `${larguraCaptura}px`;
+                hostCaptura.style.display = 'inline-block';
                 hostCaptura.style.background = '#fff';
                 hostCaptura.style.zIndex = '-1';
                 hostCaptura.style.pointerEvents = 'none';
 
-                cloneFormulario.style.width = `${larguraCaptura}px`;
+                // Sem largura fixa ainda: deixa o clone assumir sua largura
+                // natural (max-content) para medirmos quanto espaço o
+                // conteúdo realmente precisa antes de capturar.
                 cloneFormulario.style.maxWidth = 'none';
+                cloneFormulario.style.width = 'max-content';
+
+                // html2pdf reclona este elemento internamente antes de renderizar,
+                // e o clone interno perde o ancestral ".captura-pdf" — por isso as
+                // regras de CSS que escondem estes elementos nesse escopo não
+                // chegam a valer no momento da captura. Removendo direto do DOM
+                // aqui, a remoção sobrevive à reclonagem do html2pdf.
+                cloneFormulario.querySelectorAll('#barra-etapas, .barra-acoes, #_status_badge').forEach((el) => el.remove());
 
                 sincronizarEstadoFormulario(formulario, cloneFormulario);
                 hostCaptura.appendChild(cloneFormulario);
@@ -1776,6 +1809,14 @@
                     }
 
                     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+                    // Agora que o clone está renderizado sem restrição de largura,
+                    // mede o espaço real que ele ocupa (inclui a coluna de
+                    // acompanhamento) e trava a captura nesse tamanho exato, para
+                    // não cortar nada na borda direita do PDF.
+                    const larguraCaptura = Math.max(cloneFormulario.scrollWidth, 1800);
+                    hostCaptura.style.width = `${larguraCaptura}px`;
+                    cloneFormulario.style.width = `${larguraCaptura}px`;
 
                     const worker = window.html2pdf().set({
                         html2canvas: {
@@ -1952,6 +1993,9 @@
         </div>
 
         <div class="cabecalho-superior">
+            <span id="badgeProgramado" class="badge-programado" style="display:none;">SE PROGRAMADO</span>
+            <input type="checkbox" id="seProgramado" name="seProgramado" disabled style="display:none;">
+
             <div class="bloco-titulo">
                 <span class="texto-grande sublinhado">RELATÓRIO</span>
                 <span class="texto-grande sublinhado">MUDANÇA 4M</span>
@@ -1965,8 +2009,6 @@
             </div>
 
             <div class="bloco-setor">
-                <span class="label-flutuante">Se programado</span>
-
                 <div class="celula cabecalho">PRODUÇÃO</div>
                 <div class="celula cabecalho">Log. / P.C</div>
                 <div class="celula cabecalho">ENGENHARIA</div>
@@ -2244,8 +2286,8 @@
 
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="man_dataTurno1" data-categoria="MAN"
-                            name="man_dataTurno1" data-field="man_data_turno_1"></span>
+                        <input type="date" class="input-line input-date" id="man_dataTurno1" data-categoria="MAN"
+                            name="man_dataTurno1" data-field="man_data_turno_1">
                         <label><input type="checkbox" aria-label="MAN Turno 1T" id="man_turno1T" data-categoria="MAN"
                                 name="man_turno1T" data-field="man_turno_1t"> 1T</label>
                         <label><input type="checkbox" aria-label="MAN Turno 2T" id="man_turno2T" data-categoria="MAN"
@@ -2255,9 +2297,8 @@
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="machine_dataTurno1" data-categoria="MACHINE"
-                            name="machine_dataTurno1" data-field="machine_data_turno_1" data-categoria="MACHINE">
-                        </span>
+                        <input type="date" class="input-line input-date" id="machine_dataTurno1"
+                            data-categoria="MACHINE" name="machine_dataTurno1" data-field="machine_data_turno_1">
                         <label><input type="checkbox" aria-label="MACHINE Turno 1T" data-categoria="MACHINE"
                                 id="machine_turno1T" name="machine_turno1T" data-field="machine_turno_1t"> 1T</label>
                         <label><input type="checkbox" aria-label="MACHINE Turno 2T" data-categoria="MACHINE"
@@ -2269,10 +2310,8 @@
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="material_dataTurno1"
-                            data-categoria="MATERIAL" name="material_dataTurno1" data-field="material_data_turno_1"
-                            data-categoria="MATERIAL">
-                        </span>
+                        <input type="date" class="input-line input-date" id="material_dataTurno1"
+                            data-categoria="MATERIAL" name="material_dataTurno1" data-field="material_data_turno_1">
                         <label><input type="checkbox" aria-label="MATERIAL Turno 1T" data-categoria="MATERIAL"
                                 id="material_turno1T" name="material_turno1T" data-field="material_turno_1t"> 1T</label>
                         <label><input type="checkbox" aria-label="MATERIAL Turno 2T" data-categoria="MATERIAL"
@@ -2284,8 +2323,8 @@
                     </div>
                     <div class="celula data-turno">
                         <span class="label-bold">DATA, TURNO</span>
-                        <span class="input-line" contenteditable="true" id="method_dataTurno1" data-categoria="METHOD"
-                            name="method_dataTurno1" data-field="method_data_turno_1"> </span>
+                        <input type="date" class="input-line input-date" id="method_dataTurno1" data-categoria="METHOD"
+                            name="method_dataTurno1" data-field="method_data_turno_1">
                         <label><input type="checkbox" aria-label="METHOD Turno 1T" data-categoria="METHOD"
                                 id="method_turno1T" name="method_turno1T" data-field="method_turno_1t"
                                 data-categoria="METHOD"> 1T</label>

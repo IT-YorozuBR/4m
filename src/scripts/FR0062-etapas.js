@@ -14,7 +14,7 @@
  *    Bloqueado: cabeçalho, container-4
  *
  *  ETAPA 3 — APROVAÇÃO QUALIDADE  (aguardando_aprovacao_qualidade)
- *    Editável : TUDO (para correções)
+ *    Editável : apenas "Confirmado" (sempre) e "Aprovado" (só se programado)
  *    Obrigatório: apenas "Confirmado" (Resultado Setor Qualidade)
  *
  *  ETAPA 4 — APROVAÇÃO  (aguardando_aprovacao — só admin JWT)
@@ -36,7 +36,12 @@ const COL3_PARA_CATEGORIA = { 1: 'MAN', 2: 'MACHINE', 3: 'MATERIAL', 4: 'METHOD'
 // ─── Controle de acesso por etapa (espelha o backend) ────────────
 //   operador (0) → Produção (sem conta)   | qualidade (1) → Qualidade
 //   aprovador_qualidade (2) → Aprov. Qual.| admin (3) → Aprovação / Conclusão
-const NIVEL_ROLE = { operador: 0, qualidade: 1, aprovador_qualidade: 2, admin: 3 };
+const NIVEL_ROLE = {
+    operador: 0, qualidade: 1, aprovador_qualidade: 2, admin: 3,
+    // Papéis das etapas "se programado" — não fazem parte da hierarquia linear,
+    // o acesso é resolvido por ROLES_ETAPA_ESPECIAL, não por nível.
+    engenharia: 0, logistica_pc: 0, producao_aprovacao: 0
+};
 const NIVEL_MINIMO_ETAPA = {
     em_andamento: 0,
     aguardando_qualidade: 1,
@@ -44,6 +49,14 @@ const NIVEL_MINIMO_ETAPA = {
     aguardando_aprovacao: 3,
     concluido: 3,
     finalizado: 3
+};
+
+// ─── Etapas "se programado": acesso por papel específico (não hierárquico) ─
+const ROLES_ETAPA_ESPECIAL = {
+    aguardando_aprovacao_engenharia: ['engenharia'],
+    aguardando_aprovacao_logistica: ['logistica_pc'],
+    aguardando_aprovacao_producao: ['producao_aprovacao'],
+    aguardando_conclusao_qualidade: ['qualidade', 'aprovador_qualidade']
 };
 // ─────────────────────────────────────────────────────────────────
 
@@ -55,6 +68,8 @@ class GerenciadorEtapas {
         this.usuarioAtual = null;
         this.role = 'operador';
         this.nivel = 0;
+        this.programado = false;
+        this.etapas = [];
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -64,13 +79,14 @@ class GerenciadorEtapas {
     inicializar() {
         this._verificarAuth();
         this._injetarCSS();
-        this._criarBarraProgresso();
         this._criarBotoes();
         this._ocultarAntigos();
 
         const id = new URLSearchParams(window.location.search).get('id');
 
         if (!id) {
+            this.programado = window.sistemaChecklist?.identificacaoCriador?.programado === true;
+            this._criarBarraProgresso();
             this._aplicar('em_andamento');
         } else {
             // Hook: aplica bloqueios APÓS preencherFormulario() popular os dados
@@ -80,6 +96,8 @@ class GerenciadorEtapas {
                     .bind(window.sistemaChecklist);
                 window.sistemaChecklist.preencherFormulario = function (dados) {
                     orig(dados);
+                    self.programado = dados.programado === true;
+                    self._criarBarraProgresso();
                     self._aplicar(dados.status || 'em_andamento');
                 };
             }
@@ -108,14 +126,22 @@ class GerenciadorEtapas {
        DESPACHADOR
     ════════════════════════════════════════════════════════════ */
 
+    // Controle de acesso por etapa: etapas hierárquicas usam NIVEL_MINIMO_ETAPA;
+    // etapas "se programado" (Engenharia/Log.P.C./Produção/Conclusão Qualidade)
+    // usam papel específico via ROLES_ETAPA_ESPECIAL. Admin sempre tem acesso.
+    _temPermissao(status) {
+        if (this.isAdmin) return true;
+        const rolesEspeciais = ROLES_ETAPA_ESPECIAL[status];
+        if (rolesEspeciais) return rolesEspeciais.includes(this.role);
+        const nivelNecessario = NIVEL_MINIMO_ETAPA[status] ?? 0;
+        return this.nivel >= nivelNecessario;
+    }
+
     _aplicar(status) {
         this.statusAtual = status;
         this._atualizarBarra();
 
-        // Controle de acesso por etapa: se a conta logada não tiver o nível
-        // necessário, a etapa fica somente-leitura com aviso para login.
-        const nivelNecessario = NIVEL_MINIMO_ETAPA[status] ?? 0;
-        const temPermissao = this.nivel >= nivelNecessario;
+        const temPermissao = this._temPermissao(status);
 
         switch (status) {
             case 'em_andamento':
@@ -126,6 +152,18 @@ class GerenciadorEtapas {
                 break;
             case 'aguardando_aprovacao_qualidade':
                 temPermissao ? this._etapaAprovacaoQualidade() : this._bloquearSemPermissao('APROVAÇÃO QUALIDADE');
+                break;
+            case 'aguardando_aprovacao_engenharia':
+                temPermissao ? this._etapaAprovacaoEngenharia() : this._bloquearSemPermissao('APROVAÇÃO ENGENHARIA');
+                break;
+            case 'aguardando_aprovacao_logistica':
+                temPermissao ? this._etapaAprovacaoLogistica() : this._bloquearSemPermissao('APROVAÇÃO LOG. / P.C.');
+                break;
+            case 'aguardando_aprovacao_producao':
+                temPermissao ? this._etapaAprovacaoProducao() : this._bloquearSemPermissao('APROVAÇÃO PRODUÇÃO');
+                break;
+            case 'aguardando_conclusao_qualidade':
+                temPermissao ? this._etapaConclusaoQualidade() : this._bloquearSemPermissao('CONCLUSÃO QUALIDADE');
                 break;
             case 'aguardando_aprovacao':
                 temPermissao ? this._etapa3() : this._bloquearSemPermissao('APROVAÇÃO');
@@ -216,26 +254,22 @@ class GerenciadorEtapas {
 
     /* ════════════════════════════════════════════════════════════
        ETAPA 3 — APROVAÇÃO QUALIDADE
-       Preenche o campo "Confirmado" (Resultado Setor Qualidade) e permite
-       corrigir APENAS as partes da Qualidade. A Produção permanece bloqueada.
+       Libera apenas o que esta etapa precisa preencher: "Confirmado"
+       (sempre obrigatório) e "Aprovado" (só quando é "se programado").
+       Todo o resto — inclusive as demais partes da Qualidade já
+       preenchidas na etapa anterior — permanece bloqueado.
     ════════════════════════════════════════════════════════════ */
 
     _etapaAprovacaoQualidade() {
         this._lockAll();
         this._limparBanners();
 
-        // Libera somente as áreas da QUALIDADE (produção continua bloqueada):
-        //  - quadro-container-3 (resultado / justificativa / tratativa)
-        //  - sidebar de acompanhamento
-        //  - bloco RESULTADO SETOR QUALIDADE + Recebimento Q.A.
-        this._unlock('.quadro-container-3');
-        this._unlock('.sidebar-acompanhamento');
-        this._unlockCampos([
-            '#qualidadeAprovado',
-            '#qualidadeConfirmado',
-            '#qualidadeExecutadoPor',
-            '#recebimentoQA',
-        ]);
+        const camposQualidade = ['#qualidadeConfirmado'];
+        // "Aprovado" (Resultado Setor Qualidade) só é editável aqui quando o
+        // checklist é "se programado" — segue as 3 etapas extras e conclusão
+        // pela Qualidade. Sem programado, esse campo só abre na etapa 4 (Aprovação).
+        if (this.programado) camposQualidade.push('#qualidadeAprovado');
+        this._unlockCampos(camposQualidade);
 
         this._show('btnSalvarEtapa');
         this._show('btnAvancarEtapa');
@@ -246,12 +280,118 @@ class GerenciadorEtapas {
     }
 
     /* ════════════════════════════════════════════════════════════
+       ETAPAS "SE PROGRAMADO" — ENGENHARIA → LOG. / P.C. → PRODUÇÃO
+       Cada etapa libera apenas o campo do seu setor + o respectivo
+       checkbox "Mudança 4M" (bloco-setor / bloco-mudanca no cabeçalho).
+       Produção/Qualidade seguem bloqueadas.
+    ════════════════════════════════════════════════════════════ */
+
+    _etapaAprovacaoEngenharia() {
+        this._lockAll();
+        this._limparBanners();
+        this._unlockCampos([
+            '#setorEngenharia',
+            'input[aria-label="Engenharia Mudança 4M"]',
+        ]);
+
+        this._show('btnSalvarEtapa');
+        this._show('btnAvancarEtapa');
+        this._hide('btnVoltarSalvar');
+        this._hide('btnAprovarFinalizar');
+        this._atualTexto('btnAvancarEtapa', '📤 AVANÇAR');
+        this._atualClasse('btnAvancarEtapa', 'btn-avancar btn-avancar-engenharia');
+    }
+
+    _etapaAprovacaoLogistica() {
+        this._lockAll();
+        this._limparBanners();
+        this._unlockCampos([
+            '#setorLogistica',
+            'input[aria-label="Controle Prod. Mudança 4M"]',
+        ]);
+
+        this._show('btnSalvarEtapa');
+        this._show('btnAvancarEtapa');
+        this._hide('btnVoltarSalvar');
+        this._hide('btnAprovarFinalizar');
+        this._atualTexto('btnAvancarEtapa', '📤 AVANÇAR');
+        this._atualClasse('btnAvancarEtapa', 'btn-avancar btn-avancar-logistica');
+    }
+
+    _etapaAprovacaoProducao() {
+        this._lockAll();
+        this._limparBanners();
+        this._unlockCampos([
+            '#setorProducao',
+            'input[aria-label="Produção Mudança 4M"]',
+        ]);
+
+        this._show('btnSalvarEtapa');
+        this._show('btnAvancarEtapa');
+        this._hide('btnVoltarSalvar');
+        this._hide('btnAprovarFinalizar');
+        this._atualTexto('btnAvancarEtapa', '📤 AVANÇAR');
+        this._atualClasse('btnAvancarEtapa', 'btn-avancar btn-avancar-producao-aprov');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       CONCLUSÃO QUALIDADE (fluxo "se programado")
+       Última etapa: a Qualidade confere as assinaturas do cabeçalho
+       e finaliza. Produção/Engenharia/Log.PC/Produção(aprov.) já
+       foram confirmadas nas etapas anteriores e seguem bloqueadas.
+    ════════════════════════════════════════════════════════════ */
+
+    _etapaConclusaoQualidade() {
+        this._lockAll();
+        this._limparBanners();
+
+        // Libera para correção o que é domínio da QUALIDADE (mesmas áreas que
+        // ela já edita nas etapas anteriores) + as assinaturas finais do
+        // cabeçalho. NÃO libera os campos de Engenharia / Log.PC / Produção
+        // (aprovação) nem container-1/2 — esses já foram confirmados pelos
+        // respectivos setores nas etapas anteriores e são exclusivos deles.
+        this._unlock('.quadro-container-3');
+        this._unlock('.sidebar-acompanhamento');
+        this._unlockCampos([
+            '#solicitadoPor',
+            '#vistoRetencaoQA',
+            '#qualidadeAprovado',
+            '#qualidadeConfirmado',
+            '#qualidadeExecutadoPor',
+            '#recebimentoQA',
+            '#controleAprovado',
+        ]);
+
+        this._show('btnSalvarEtapa');
+        this._hide('btnAvancarEtapa');
+        this._hide('btnVoltarSalvar');
+        this._show('btnAprovarFinalizar');
+    }
+
+    /* ════════════════════════════════════════════════════════════
        ETAPA 4 — APROVAÇÃO
     ════════════════════════════════════════════════════════════ */
 
     _etapa3() {
         this._unlockAll();
         this._limparBanners();
+
+        // Campos do bloco "Se programado" (Setor Engenharia/Log.PC/Produção +
+        // Mudança 4M) e o "Aprovado" (Resultado Setor Qualidade) só existem
+        // quando o checklist é "se programado" — nesse fluxo eles são
+        // preenchidos pelas etapas dedicadas (Engenharia/Log.PC/Produção/
+        // Conclusão Qualidade), não por esta etapa (Aprovação sem programado).
+        if (!this.programado) {
+            this._lockCampos([
+                '#qualidadeAprovado',
+                '#setorEngenharia',
+                '#setorLogistica',
+                '#setorProducao',
+                'input[aria-label="Engenharia Mudança 4M"]',
+                'input[aria-label="Controle Prod. Mudança 4M"]',
+                'input[aria-label="Produção Mudança 4M"]',
+            ]);
+        }
 
         this._show('btnSalvarEtapa');
         this._hide('btnAvancarEtapa');
@@ -360,6 +500,25 @@ class GerenciadorEtapas {
                     el.disabled = false;
                 }
                 el.classList.remove('etapa-lock', 'etapa-readonly');
+            });
+        });
+    }
+
+    /**
+     * Bloqueia campos individuais por seletor CSS — inverso de _unlockCampos.
+     * Útil para relocar um campo específico dentro de uma etapa que, de resto,
+     * já foi liberada (ex.: _unlockAll()).
+     */
+    _lockCampos(seletores) {
+        seletores.forEach(sel => {
+            document.querySelectorAll(sel).forEach(el => {
+                if (el.hasAttribute('contenteditable')) {
+                    el.setAttribute('contenteditable', 'false');
+                }
+                if ('disabled' in el && !['submit', 'button', 'hidden', 'reset'].includes(el.type)) {
+                    el.disabled = true;
+                }
+                el.classList.add('etapa-lock');
             });
         });
     }
@@ -522,11 +681,19 @@ class GerenciadorEtapas {
 
     // Avançar para próxima etapa
     async _avancar() {
-        const proximo = {
+        const proximoMap = this.programado ? {
+            'em_andamento': 'aguardando_qualidade',
+            'aguardando_qualidade': 'aguardando_aprovacao_qualidade',
+            'aguardando_aprovacao_qualidade': 'aguardando_aprovacao_engenharia',
+            'aguardando_aprovacao_engenharia': 'aguardando_aprovacao_logistica',
+            'aguardando_aprovacao_logistica': 'aguardando_aprovacao_producao',
+            'aguardando_aprovacao_producao': 'aguardando_conclusao_qualidade'
+        } : {
             'em_andamento': 'aguardando_qualidade',
             'aguardando_qualidade': 'aguardando_aprovacao_qualidade',
             'aguardando_aprovacao_qualidade': 'aguardando_aprovacao'
-        }[this.statusAtual];
+        };
+        const proximo = proximoMap[this.statusAtual];
 
         if (!proximo) return;
 
@@ -541,6 +708,10 @@ class GerenciadorEtapas {
         const label = {
             'aguardando_qualidade': 'Qualidade',
             'aguardando_aprovacao_qualidade': 'Aprovação da Qualidade',
+            'aguardando_aprovacao_engenharia': 'Engenharia',
+            'aguardando_aprovacao_logistica': 'Log. / P.C.',
+            'aguardando_aprovacao_producao': 'Produção (Aprovação)',
+            'aguardando_conclusao_qualidade': 'Conclusão da Qualidade',
             'aguardando_aprovacao': 'Aprovação'
         }[proximo] || 'próxima etapa';
 
@@ -761,6 +932,13 @@ class GerenciadorEtapas {
                     testarTexto(el, `${cat} › ${label}`);
                 });
 
+                // Campo de data (agora é <input type="date">, não contenteditable —
+                // não entra no sweep acima, por isso a checagem é feita à parte).
+                const campoData = document.getElementById(`${cat.toLowerCase()}_dataTurno1`);
+                if (campoData && !bloqueado(campoData) && !campoData.value) {
+                    erros.push({ el: campoData, msg: `${cat} › DATA, TURNO` });
+                }
+
                 testarGrupo(
                     `input[aria-label*="${cat} Importância"]:not(:disabled)`,
                     `${cat} › IMPORTÂNCIA`
@@ -969,6 +1147,45 @@ class GerenciadorEtapas {
             if (el && !bloqueado(el)) testarTexto(el, 'Qualidade Confirmado');
         }
 
+        // ── ETAPAS "SE PROGRAMADO" — ENGENHARIA / LOG.PC / PRODUÇÃO ─
+        else if (this.statusAtual === 'aguardando_aprovacao_engenharia') {
+            const campo = document.getElementById('setorEngenharia');
+            if (campo && !bloqueado(campo)) testarTexto(campo, 'Setor Engenharia');
+            testarGrupo(
+                'input[aria-label="Engenharia Mudança 4M"]:not(:disabled)',
+                'MUDANÇA 4M › ENGENHARIA: confirme marcando a caixa'
+            );
+        }
+        else if (this.statusAtual === 'aguardando_aprovacao_logistica') {
+            const campo = document.getElementById('setorLogistica');
+            if (campo && !bloqueado(campo)) testarTexto(campo, 'Setor Log. / P.C.');
+            testarGrupo(
+                'input[aria-label="Controle Prod. Mudança 4M"]:not(:disabled)',
+                'MUDANÇA 4M › CONTROLE PROD.: confirme marcando a caixa'
+            );
+        }
+        else if (this.statusAtual === 'aguardando_aprovacao_producao') {
+            const campo = document.getElementById('setorProducao');
+            if (campo && !bloqueado(campo)) testarTexto(campo, 'Setor Produção');
+            testarGrupo(
+                'input[aria-label="Produção Mudança 4M"]:not(:disabled)',
+                'MUDANÇA 4M › PRODUÇÃO: confirme marcando a caixa'
+            );
+        }
+
+        // ── CONCLUSÃO QUALIDADE (fluxo "se programado") ────────
+        else if (this.statusAtual === 'aguardando_conclusao_qualidade') {
+            [
+                ['solicitadoPor', 'Solicitado Por'],
+                ['vistoRetencaoQA', 'Visto Retenção QA'],
+                ['qualidadeAprovado', 'Qualidade Aprovado'],
+                ['controleAprovado', 'Controle Aprovado'],
+            ].forEach(([id, label]) => {
+                const el = document.getElementById(id);
+                if (el && !bloqueado(el)) testarTexto(el, label);
+            });
+        }
+
         // ── ETAPA 4 — APROVAÇÃO ────────────────────────────────
         else if (this.statusAtual === 'aguardando_aprovacao') {
 
@@ -1055,21 +1272,45 @@ class GerenciadorEtapas {
        BARRA DE PROGRESSO
     ════════════════════════════════════════════════════════════ */
 
+    // Define a sequência de etapas exibida na barra de progresso.
+    // Quando "programado" está marcado, insere Engenharia → Log./P.C. →
+    // Produção (aprov.) entre "Aprov. Qualidade" e a conclusão (feita pela
+    // Qualidade, não mais só pelo admin).
+    _definirEtapas() {
+        const base = [
+            { status: 'em_andamento', label: 'PRODUÇÃO', cor: '#1565C0' },
+            { status: 'aguardando_qualidade', label: 'QUALIDADE', cor: '#E65100' },
+            { status: 'aguardando_aprovacao_qualidade', label: 'APROV. QUALIDADE', cor: '#00838F' }
+        ];
+
+        if (this.programado) {
+            return [
+                ...base,
+                { status: 'aguardando_aprovacao_engenharia', label: 'ENGENHARIA', cor: '#6A1B9A' },
+                { status: 'aguardando_aprovacao_logistica', label: 'LOG. / P.C.', cor: '#4527A0' },
+                { status: 'aguardando_aprovacao_producao', label: 'PRODUÇÃO', cor: '#283593' },
+                { status: 'aguardando_conclusao_qualidade', label: 'CONCLUSÃO QUALIDADE', cor: '#1B5E20' }
+            ];
+        }
+
+        return [
+            ...base,
+            { status: 'aguardando_aprovacao', label: 'APROVAÇÃO', cor: '#1B5E20' }
+        ];
+    }
+
     _criarBarraProgresso() {
+        document.getElementById('barra-etapas')?.remove();
+
+        this.etapas = this._definirEtapas();
+
         const barra = document.createElement('div');
         barra.id = 'barra-etapas';
 
-        const etapas = [
-            { n: 1, label: 'PRODUÇÃO', cor: '#1565C0' },
-            { n: 2, label: 'QUALIDADE', cor: '#E65100' },
-            { n: 3, label: 'APROV. QUALIDADE', cor: '#00838F' },
-            { n: 4, label: 'APROVAÇÃO', cor: '#1B5E20' }
-        ];
-
-        barra.innerHTML = etapas.map((e, i) => `
+        barra.innerHTML = this.etapas.map((e, i) => `
             ${i > 0 ? '<div class="barra-conector" data-after="' + i + '"></div>' : ''}
-            <div class="barra-step" data-n="${e.n}" style="--cor:${e.cor}">
-                <div class="barra-circulo"><span class="barra-num">${e.n}</span></div>
+            <div class="barra-step" data-n="${i + 1}" style="--cor:${e.cor}">
+                <div class="barra-circulo"><span class="barra-num">${i + 1}</span></div>
                 <div class="barra-label">${e.label}</div>
             </div>
         `).join('');
@@ -1082,15 +1323,17 @@ class GerenciadorEtapas {
         const barra = document.getElementById('barra-etapas');
         if (!barra) return;
 
-        const etapaN = { 'em_andamento': 1, 'aguardando_qualidade': 2, 'aguardando_aprovacao_qualidade': 3, 'aguardando_aprovacao': 4, 'concluido': 5, 'finalizado': 5 };
-        const ativa = etapaN[this.statusAtual] || 1;
+        const total = this.etapas.length || 1;
+        const idx = this.etapas.findIndex(e => e.status === this.statusAtual);
+        const concluidoOuFinalizado = this.statusAtual === 'concluido' || this.statusAtual === 'finalizado';
+        const ativa = concluidoOuFinalizado ? total + 1 : (idx >= 0 ? idx + 1 : 1);
 
         barra.querySelectorAll('.barra-step').forEach(step => {
             const n = +step.dataset.n;
             step.classList.remove('step-ok', 'step-ativa', 'step-inativa');
             const num = step.querySelector('.barra-num');
 
-            if (ativa > 4 || n < ativa) { step.classList.add('step-ok'); num.textContent = '✓'; }
+            if (ativa > total || n < ativa) { step.classList.add('step-ok'); num.textContent = '✓'; }
             else if (n === ativa) { step.classList.add('step-ativa'); num.textContent = n; }
             else { step.classList.add('step-inativa'); num.textContent = n; }
         });
@@ -1198,9 +1441,19 @@ class GerenciadorEtapas {
 .barra-step.step-ativa .barra-circulo {
     background: var(--cor);
     color: #fff;
-    box-shadow: 0 0 0 5px color-mix(in srgb, var(--cor) 25%, transparent);
 }
 .barra-step.step-ativa .barra-label { color: var(--cor); }
+
+/* Sombra do círculo ativo em rgba() fixo por etapa — color-mix() é
+   serializado pelo Chrome como color(srgb ...) no computed style, e o
+   html2canvas (usado no GERAR PDF) não sabe interpretar essa sintaxe. */
+.barra-step[data-n="1"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(21,101,192,.25); }
+.barra-step[data-n="2"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(230,81,0,.25); }
+.barra-step[data-n="3"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(0,131,143,.25); }
+.barra-step[data-n="4"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(27,94,32,.25); }
+.barra-step[data-n="5"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(106,27,154,.25); }
+.barra-step[data-n="6"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(69,39,160,.25); }
+.barra-step[data-n="7"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(40,53,147,.25); }
 
 /* Concluída */
 .barra-step.step-ok .barra-circulo { background: #43A047; color: #fff; }
@@ -1242,6 +1495,9 @@ class GerenciadorEtapas {
 .btn-avancar-producao          { background: #1565C0; }
 .btn-avancar-qualidade         { background: #E65100; }
 .btn-avancar-aprovacao-qualidade { background: #00838F; }
+.btn-avancar-engenharia        { background: #6A1B9A; }
+.btn-avancar-logistica         { background: #4527A0; }
+.btn-avancar-producao-aprov    { background: #283593; }
 
 .btn-aprovar {
     padding: 7px 16px;
@@ -1265,8 +1521,8 @@ class GerenciadorEtapas {
 .etapa-lock {
     background-color: #f4f4f4 !important;
     cursor: not-allowed  !important;
-    opacity: .65         !important;
-    color: #757575       !important;
+    opacity: .9          !important;
+    color: #424242       !important;
 }
 [contenteditable="false"].etapa-lock {
     pointer-events: none;

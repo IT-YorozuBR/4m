@@ -158,6 +158,12 @@
       color: rgba(255, 255, 255, 0.3);
     }
 
+    /* Sem isso o ícone nativo do calendário (input type=date) renderiza em
+       preto e some contra o fundo escuro. */
+    .filter-group input[type="date"] {
+      color-scheme: dark;
+    }
+
     .filter-actions {
       display: flex;
       gap: 15px;
@@ -266,15 +272,25 @@
     .checklist-grid.list-view {
       display: flex;
       flex-direction: column;
-      gap: 15px;
+      gap: 6px;
     }
 
     .checklist-grid.list-view .checklist-card {
       display: grid;
-      grid-template-columns: auto 1fr auto auto;
+      grid-template-columns: auto 1fr auto auto auto;
       align-items: center;
       gap: 20px;
-      padding: 20px;
+      padding: 10px 16px;
+    }
+
+    /* Sem essa correção, os botões (invisíveis até o hover) "quebram" para uma
+       2ª linha do grid — a linha de ações continua reservando sua altura
+       mesmo escondida (visibility:hidden ainda ocupa espaço no layout),
+       deixando cada linha da lista bem mais alta do que devia. */
+    .checklist-grid.list-view .checklist-actions {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
     }
 
     .checklist-grid.list-view .checklist-header {
@@ -284,8 +300,11 @@
     .checklist-grid.list-view .checklist-info {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px 30px;
+      gap: 4px 30px;
       margin-bottom: 0;
+      /* Sem isso, o texto de modificação (sem quebra de linha) empurra a
+         largura do grid item e "engole" a coluna do título ao lado. */
+      min-width: 0;
     }
 
     .checklist-grid.list-view .checklist-info-item {
@@ -363,6 +382,27 @@
     .checklist-info-item span:last-child {
       color: rgba(255, 255, 255, 0.9);
       font-size: 0.95rem;
+    }
+
+    .checklist-info-item-modificacao {
+      /* Sem isso o item flex assume o min-content do texto (que não quebra
+         linha) como largura mínima e ignora o overflow/ellipsis abaixo. */
+      min-width: 0;
+    }
+
+    .checklist-info-item-modificacao span:last-child {
+      display: block;
+      width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Ocupa a linha inteira embaixo dos outros dados, em vez de disputar
+       espaço na mesma linha (o texto de modificação costuma ser longo). */
+    .checklist-grid.list-view .checklist-info-item-modificacao {
+      flex-basis: 100%;
+      min-width: 0;
     }
 
     .checklist-status {
@@ -823,7 +863,7 @@
       <div class="filter-grid">
         <div class="filter-group">
           <label for="numero"><span class="material-icons">tag</span> Buscar</label>
-          <input type="text" id="numero" name="numero" placeholder="Número, criado por ou status...">
+          <input type="text" id="numero" name="numero" placeholder="Número, criado por, status, item modificado ou modificação...">
         </div>
 
         <div class="filter-group">
@@ -834,18 +874,22 @@
             <option value="aguardando_qualidade">Etapa 2 — Qualidade</option>
             <option value="aguardando_aprovacao_qualidade">Etapa 3 — Aprovação Qualidade</option>
             <option value="aguardando_aprovacao">Etapa 4 — Aprovação</option>
+            <option value="aguardando_aprovacao_engenharia">Etapa 4 — Aprovação Engenharia (se programado)</option>
+            <option value="aguardando_aprovacao_logistica">Etapa 5 — Aprovação Log. / P.C. (se programado)</option>
+            <option value="aguardando_aprovacao_producao">Etapa 6 — Aprovação Produção (se programado)</option>
+            <option value="aguardando_conclusao_qualidade">Etapa 7 — Conclusão Qualidade (se programado)</option>
             <option value="concluido">Concluído</option>
           </select>
         </div>
 
         <div class="filter-group">
-          <label for="ano"><span class="material-icons">event</span> Ano</label>
-          <select id="ano" name="ano">
-            <option value="">Todos os anos</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-          </select>
+          <label for="dataInicio"><span class="material-icons">event</span> De</label>
+          <input type="date" id="dataInicio" name="dataInicio">
+        </div>
+
+        <div class="filter-group">
+          <label for="dataFim"><span class="material-icons">event</span> Até</label>
+          <input type="date" id="dataFim" name="dataFim">
         </div>
 
         <div class="filter-group">
@@ -873,11 +917,11 @@
 
     <div class="view-controls">
       <div class="view-buttons">
-        <button class="view-button active" id="viewGrid">
+        <button class="view-button" id="viewGrid">
           <span class="material-icons">grid_view</span>
           Grade
         </button>
-        <button class="view-button" id="viewList">
+        <button class="view-button active" id="viewList">
           <span class="material-icons">view_list</span>
           Lista
         </button>
@@ -907,7 +951,7 @@
       </div>
     </div>
 
-    <div class="checklist-grid" id="checklistList">
+    <div class="checklist-grid list-view" id="checklistList">
       <div class="loading" id="loading">
         <span class="material-icons">refresh</span>
         <p>Carregando checklists...</p>
@@ -958,7 +1002,8 @@
     let filtroAtual = {
       busca: '',
       status: '',
-      ano: '',
+      dataInicio: '',
+      dataFim: '',
       pagina: 1,
       limite: 10
     };
@@ -968,7 +1013,7 @@
     document.addEventListener('DOMContentLoaded', function () {
       configurarEventos();
       carregarChecklists();
-      const savedViewMode = localStorage.getItem('viewMode') || 'grid';
+      const savedViewMode = localStorage.getItem('viewMode') || 'list';
       alternarVisualizacao(savedViewMode);
     });
 
@@ -1044,8 +1089,12 @@
         params.append('status', filtroAtual.status);
       }
 
-      if (filtroAtual.ano) {
-        params.append('ano', filtroAtual.ano);
+      if (filtroAtual.dataInicio) {
+        params.append('data_inicio', filtroAtual.dataInicio);
+      }
+
+      if (filtroAtual.dataFim) {
+        params.append('data_fim', filtroAtual.dataFim);
       }
 
       return params;
@@ -1116,21 +1165,33 @@
     }
 
     function aplicarFiltros() {
+      const dataInicio = document.getElementById('dataInicio').value;
+      const dataFim = document.getElementById('dataFim').value;
+
+      if (dataInicio && dataFim && dataInicio > dataFim) {
+        alert('A data "De" não pode ser depois da data "Até".');
+        return;
+      }
+
       filtroAtual.busca = document.getElementById('numero').value;
       filtroAtual.status = document.getElementById('status').value;
-      filtroAtual.ano = document.getElementById('ano').value;
+      filtroAtual.dataInicio = dataInicio;
+      filtroAtual.dataFim = dataFim;
+      filtroAtual.pagina = 1;
       carregarChecklists();
     }
 
     function limparFiltros() {
       document.getElementById('numero').value = '';
       document.getElementById('status').value = '';
-      document.getElementById('ano').value = '';
+      document.getElementById('dataInicio').value = '';
+      document.getElementById('dataFim').value = '';
       document.getElementById('limite').value = '10';
       filtroAtual = {
         busca: '',
         status: '',
-        ano: '',
+        dataInicio: '',
+        dataFim: '',
         pagina: 1,
         limite: 10
       };
@@ -1256,6 +1317,35 @@
       });
     }
 
+    // Resume o "item modificado" e a "modificação" das 4 mudanças (MAN/MACHINE/
+    // MATERIAL/METHOD) em uma linha só, pra dar pra ver e pesquisar pelo card.
+    function resumirMudancas4M(mudancas) {
+      if (!Array.isArray(mudancas) || mudancas.length === 0) {
+        return 'N/A';
+      }
+
+      const partes = mudancas
+        .map((m) => {
+          const trechos = [m?.item_modificado, m?.modificacao].filter((v) => String(v || '').trim());
+          if (trechos.length === 0) return null;
+          return `${m.tipo || ''}: ${trechos.join(' — ')}`.trim();
+        })
+        .filter(Boolean);
+
+      return partes.length > 0 ? partes.join(' • ') : 'N/A';
+    }
+
+    function escapeHtml(texto) {
+      return String(texto ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function escapeAttr(texto) {
+      return escapeHtml(texto).replace(/"/g, '&quot;');
+    }
+
     function criarCardChecklist(checklist, index) {
       const card = document.createElement('div');
       card.className = 'checklist-card';
@@ -1271,8 +1361,12 @@
         'aguardando_qualidade':          { cor: '#E65100', bg: 'rgba(230,81,0,.15)',    label: 'Etapa 2 — Qualidade',           icone: 'rule',        etapa: 2 },
         'aguardando_aprovacao_qualidade':{ cor: '#00838F', bg: 'rgba(0,131,143,.15)',   label: 'Etapa 3 — Aprovação Qualidade', icone: 'fact_check',  etapa: 3 },
         'aguardando_aprovacao': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)',  label: 'Etapa 4 — Aprovação', icone: 'verified',    etapa: 4 },
-        'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 5 },
-        'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 5 },
+        'aguardando_aprovacao_engenharia': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)', label: 'Etapa 4 — Aprovação Engenharia', icone: 'verified', etapa: 4 },
+        'aguardando_aprovacao_logistica':  { cor: '#4527A0', bg: 'rgba(69,39,160,.15)',  label: 'Etapa 5 — Aprovação Log. / P.C.', icone: 'verified', etapa: 5 },
+        'aguardando_aprovacao_producao':   { cor: '#283593', bg: 'rgba(40,53,147,.15)',  label: 'Etapa 6 — Aprovação Produção',    icone: 'verified', etapa: 6 },
+        'aguardando_conclusao_qualidade':  { cor: '#1B5E20', bg: 'rgba(27,94,32,.15)',   label: 'Etapa 7 — Conclusão Qualidade',   icone: 'fact_check', etapa: 7 },
+        'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 8 },
+        'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 8 },
       };
       const statusInfo = STATUS_MAP[status] || STATUS_MAP['em_andamento'];
 
@@ -1282,6 +1376,7 @@
 
       const podeDeletar = estaLogado;
       const podeEditar = estaLogado || (!estaLogado && !isConcluido);
+      const modificacaoResumo = resumirMudancas4M(checklist.mudancas_4m);
 
       card.innerHTML = `
     <div class="checklist-header">
@@ -1303,6 +1398,10 @@
       <div class="checklist-info-item">
         <span>Atualizado em</span>
         <span>${formatarData(checklist.data_atualizacao)}</span>
+      </div>
+      <div class="checklist-info-item checklist-info-item-modificacao">
+        <span>Item modificado / Modificação</span>
+        <span title="${escapeAttr(modificacaoResumo)}">${escapeHtml(modificacaoResumo)}</span>
       </div>
     </div>
 

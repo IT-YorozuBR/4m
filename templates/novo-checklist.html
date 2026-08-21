@@ -111,6 +111,35 @@
             font-size: 0.92rem;
             margin-top: 6px;
         }
+
+        .grupo-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .grupo-checkbox input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: #0d99ff;
+        }
+
+        .grupo-checkbox label {
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .grupo-checkbox small {
+            display: block;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 400;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -130,6 +159,14 @@
                 <div id="mensagemErro" class="erro"></div>
             </div>
 
+            <div class="grupo-checkbox">
+                <input id="criadorProgramado" name="criadorProgramado" type="checkbox">
+                <label for="criadorProgramado">
+                    Mudança programada
+                    <small>Se marcado, o checklist passa por 3 etapas extras de aprovação (Engenharia, Log. / P.C. e Produção) antes da conclusão pela Qualidade.</small>
+                </label>
+            </div>
+
             <div class="acoes">
                 <button type="button" class="secundario" id="btnCancelar">Cancelar</button>
                 <button type="submit" class="primario">Continuar</button>
@@ -142,6 +179,7 @@
         const form = document.getElementById('formCriador');
         const inputNome = document.getElementById('criadorNome');
         const inputMatricula = document.getElementById('criadorMatricula');
+        const inputProgramado = document.getElementById('criadorProgramado');
         const mensagemErro = document.getElementById('mensagemErro');
 
         const dadosExistentes = sessionStorage.getItem(chaveSessao);
@@ -150,6 +188,7 @@
                 const dados = JSON.parse(dadosExistentes);
                 inputNome.value = dados.nome || '';
                 inputMatricula.value = dados.matricula || '';
+                inputProgramado.checked = dados.programado === true;
             } catch (_) {
                 sessionStorage.removeItem(chaveSessao);
             }
@@ -172,7 +211,8 @@
 
             sessionStorage.setItem(chaveSessao, JSON.stringify({
                 nome,
-                matricula
+                matricula,
+                programado: inputProgramado.checked
             }));
 
             window.location.href = '/FR0062-formulario.html';

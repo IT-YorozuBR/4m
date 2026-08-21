@@ -44,6 +44,23 @@ body.gerando-pdf .formulario-completo {
     padding-bottom: 25px;
 }
 
+/* Indicador "SE PROGRAMADO" — fora do fluxo (position:absolute), só some
+   quando o checklist não é "se programado". Fica no canto para não
+   disputar espaço com o cabeçalho impresso. */
+.badge-programado {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    background: #6A1B9A;
+    color: #fff;
+    font-size: 8px;
+    font-weight: bold;
+    letter-spacing: 0.4px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    z-index: 2;
+}
+
 .bloco-titulo {
     display: flex;
     flex-direction: column;
@@ -401,6 +418,27 @@ body.gerando-pdf .formulario-completo {
 
 .celula.data-turno span:not(.label-bold) {
     font-weight: bold;
+}
+
+/* Campo de data nativo (calendário do navegador) estilizado para se
+   parecer com os demais .input-line (linha simples, sem caixa de input). */
+.input-date {
+    font-weight: bold;
+    font-family: inherit;
+    font-size: 12px;
+    color: inherit;
+    background: transparent;
+    padding: 0 2px;
+    max-width: 130px;
+}
+
+.input-date::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.65;
+}
+
+.input-date::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .celula.importancia label,
@@ -1181,7 +1219,9 @@ input[type="checkbox"]:checked::after {
         margin: 0;
     }
 
-    body {
+    html, body {
+        height: 297mm !important;
+        overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
         -webkit-print-color-adjust: exact;
@@ -1194,6 +1234,8 @@ input[type="checkbox"]:checked::after {
         transform-origin: top left;
         width: 100% !important;
         page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        overflow: hidden !important;
     }
 }
 
@@ -1357,6 +1399,16 @@ body.gerando-pdf .formulario-completo {
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
+    /* html2canvas (bundlado no html2pdf.js) não interpreta a sintaxe
+       color(...) que o Chrome usa para resolver valores "auto" (ex.:
+       accent-color dos checkboxes). Forçar cores explícitas evita o
+       erro "Attempting to parse an unsupported color function". */
+    color-scheme: light only;
+}
+
+.captura-pdf input[type="checkbox"],
+.captura-pdf input[type="radio"] {
+    accent-color: #000000 !important;
 }
 
 .captura-pdf .formulario-completo {
