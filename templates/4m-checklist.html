@@ -643,7 +643,7 @@
     .card-pipeline {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
       margin: 15px 0;
       padding: 15px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -679,10 +679,13 @@
     }
 
     .pipe-line {
-      width: 16px;
+      /* Encolhe para caber tanto o fluxo de 4 quanto o de 8 bolinhas (se
+         programado) sem quebrar em duas linhas nem estourar a largura do card. */
+      flex: 1 1 6px;
+      min-width: 4px;
+      max-width: 16px;
       height: 2px;
       background: rgba(255, 255, 255, 0.2);
-      flex-shrink: 0;
     }
 
     .pipe-line.pipe-line-ok {
@@ -1406,14 +1409,27 @@
     </div>
 
     <div class="card-pipeline">
-      ${[1,2,3,4].map(n => {
-        const nomes = {1:'Produção',2:'Qualidade',3:'Aprovação',4:'Concluído'};
-        const cores = {1:'#1565C0',2:'#E65100',3:'#6A1B9A',4:'#2E7D32'};
+      ${(() => {
         const etapaAtiva = statusInfo.etapa;
-        const cls = n < etapaAtiva ? 'pipe-ok' : n === etapaAtiva ? 'pipe-ativa' : 'pipe-inativa';
-        return `<div class="pipe-step ${cls}" style="--c:${cores[n]}">
-        </div>${n < 4 ? '<div class="pipe-line ' + (n < etapaAtiva ? 'pipe-line-ok' : '') + '"></div>' : ''}`;
-      }).join('')}
+        // No fluxo "se programado" há 3 etapas extras (Engenharia → Log./P.C. →
+        // Produção) + Conclusão pela Qualidade: a barra do card ganha as bolinhas
+        // dessas etapas (8 no total em vez de 4).
+        const cores = checklist.programado === true
+          ? ['#1565C0','#E65100','#00838F','#6A1B9A','#4527A0','#283593','#1B5E20','#2E7D32']
+          : ['#1565C0','#E65100','#6A1B9A','#2E7D32'];
+        // Posição da bolinha → nº da etapa correspondente no STATUS_MAP.
+        const etapaDoPasso = checklist.programado === true
+          ? [1,2,3,4,5,6,7,8]
+          : [1,2,3,4];
+        return cores.map((cor, i) => {
+          const alvo = etapaDoPasso[i];
+          const cls = alvo < etapaAtiva ? 'pipe-ok' : alvo === etapaAtiva ? 'pipe-ativa' : 'pipe-inativa';
+          const linha = i < cores.length - 1
+            ? '<div class="pipe-line ' + (alvo < etapaAtiva ? 'pipe-line-ok' : '') + '"></div>'
+            : '';
+          return '<div class="pipe-step ' + cls + '" style="--c:' + cor + '"></div>' + linha;
+        }).join('');
+      })()}
     </div>
 
     <div class="checklist-status" style="background:${statusInfo.bg}; border-radius:6px; padding:8px 12px; margin-top:8px;">
