@@ -42,6 +42,7 @@ async function buildApp() {
         const usersCollection = db.collection('users');
         const checklistsCollection = db.collection('checklists');
         const countersCollection = db.collection('counters');
+        const auditLogsCollection = db.collection('audit_logs');
         console.log("✅ Conectado ao MongoDB");
 
         const app = express();
@@ -367,6 +368,7 @@ async function buildApp() {
         await garantirContasEtapas();
         await garantirContadorChecklists();
         await garantirIndiceChecklists();
+        await garantirIndicesAuditoria();
 
         // Middleware de autenticação JWT (OPCIONAL - para admin)
         function autenticarJWT(req, res, next) {
@@ -440,6 +442,134 @@ async function buildApp() {
                 return jwt.verify(token, JWT_SECRET);
             } catch (error) {
                 return null;
+            }
+        }
+
+        // ==================== AUDITORIA (LOGS DE RASTREABILIDADE) ====================
+        // Registra QUEM fez, QUANDO fez e O QUE mudou. Os registros são somente de
+        // leitura pela API (não há rota de edição/remoção) e só o admin consulta.
+        // Regra de ouro: auditoria NUNCA pode quebrar a operação — todo registro é
+        // best-effort e qualquer erro é apenas logado no console.
+        const AUDIT_CAMPOS_SENSIVEIS = ['password', 'senha', 'password_hash', 'token', 'authorization', 'nova_senha'];
+        const AUDIT_MAX_ALTERACOES = 60;
+        const AUDIT_MAX_TEXTO = 300;
+
+        function auditCampoSensivel(campo) {
+            const nome = String(campo || '').toLowerCase();
+            return AUDIT_CAMPOS_SENSIVEIS.some((sensivel) => nome.includes(sensivel));
+        }
+
+        // Resume qualquer valor para algo curto e legível na tabela de auditoria.
+        // Objetos/arrays viram um resumo (não guardamos o documento inteiro duas
+        // vezes por update — isso inflaria a collection sem necessidade).
+        function auditResumirValor(valor) {
+            if (valor === undefined) return null;
+            if (valor === null) return null;
+
+            if (Array.isArray(valor)) {
+                const texto = JSON.stringify(valor);
+                return texto.length > AUDIT_MAX_TEXTO
+                    ? `[${valor.length} item(ns)]`
+                    : texto;
+            }
+
+            if (typeof valor === 'object') {
+                const texto = JSON.stringify(valor);
+                return texto.length > AUDIT_MAX_TEXTO
+                    ? `{${Object.keys(valor).length} campo(s)}`
+                    : texto;
+            }
+
+            const texto = String(valor);
+            return texto.length > AUDIT_MAX_TEXTO ? `${texto.slice(0, AUDIT_MAX_TEXTO)}…` : texto;
+        }
+
+        // Compara o documento antes/depois e devolve só o que realmente mudou.
+        function auditCalcularAlteracoes(antes, depois, ignorar = []) {
+            const alteracoes = [];
+            const ignorados = new Set([
+                '_id', 'data_atualizacao', 'updated_at', 'atualizado_por', 'updated_by',
+                ...ignorar
+            ]);
+
+            const origem = antes && typeof antes === 'object' ? antes : {};
+            const destino = depois && typeof depois === 'object' ? depois : {};
+            const campos = new Set([...Object.keys(origem), ...Object.keys(destino)]);
+
+            for (const campo of campos) {
+                if (ignorados.has(campo)) continue;
+
+                const valorAntigo = origem[campo];
+                const valorNovo = destino[campo];
+
+                // Campo não enviado no update -> não houve alteração
+                if (valorNovo === undefined && !(campo in destino)) continue;
+
+                if (JSON.stringify(valorAntigo ?? null) === JSON.stringify(valorNovo ?? null)) continue;
+
+                if (auditCampoSensivel(campo)) {
+                    alteracoes.push({ campo, de: '***', para: '***' });
+                } else {
+                    alteracoes.push({
+                        campo,
+                        de: auditResumirValor(valorAntigo),
+                        para: auditResumirValor(valorNovo)
+                    });
+                }
+
+                if (alteracoes.length >= AUDIT_MAX_ALTERACOES) {
+                    alteracoes.push({ campo: '…', de: null, para: 'demais alterações omitidas' });
+                    break;
+                }
+            }
+
+            return alteracoes;
+        }
+
+        function auditObterIp(req) {
+            const encaminhado = String(req?.headers?.['x-forwarded-for'] || '').split(',')[0].trim();
+            return encaminhado || req?.socket?.remoteAddress || req?.ip || '';
+        }
+
+        async function garantirIndicesAuditoria() {
+            try {
+                await auditLogsCollection.createIndex({ timestamp: -1 });
+                await auditLogsCollection.createIndex({ usuario: 1, timestamp: -1 });
+                await auditLogsCollection.createIndex({ entidade_id: 1, timestamp: -1 });
+                await auditLogsCollection.createIndex({ acao: 1, timestamp: -1 });
+            } catch (err) {
+                console.error('⚠️ Não foi possível criar índices de auditoria:', err.message);
+            }
+        }
+
+        // Grava um evento de auditoria. Sempre "fire and forget" com try/catch:
+        // se a auditoria falhar, a requisição do usuário continua normalmente.
+        async function registrarAuditoria(req, evento = {}) {
+            try {
+                const agora = new Date();
+                const usuario = evento.usuario || req?.user?.username || 'desconhecido';
+
+                const registro = {
+                    timestamp: agora.toISOString(),
+                    data: agora.toISOString().slice(0, 10),
+                    usuario: String(usuario),
+                    role: normalizarRole(evento.role || req?.user?.role || 'operador'),
+                    acao: String(evento.acao || 'desconhecida'),
+                    categoria: String(evento.categoria || 'geral'),
+                    entidade: String(evento.entidade || ''),
+                    entidade_id: evento.entidade_id ? String(evento.entidade_id) : '',
+                    descricao: String(evento.descricao || ''),
+                    resultado: evento.resultado || 'sucesso',
+                    alteracoes: Array.isArray(evento.alteracoes) ? evento.alteracoes : [],
+                    metodo: req?.method || '',
+                    rota: req?.originalUrl || req?.url || '',
+                    ip: auditObterIp(req),
+                    user_agent: String(req?.headers?.['user-agent'] || '').slice(0, 250)
+                };
+
+                await auditLogsCollection.insertOne(registro);
+            } catch (err) {
+                console.error('⚠️ Falha ao gravar log de auditoria:', err.message);
             }
         }
 
@@ -562,6 +692,15 @@ async function buildApp() {
                     );
 
                     console.log(`✅ Login bem-sucedido para usuário: ${username} (${resultado.user.role})`);
+                    await registrarAuditoria(req, {
+                        usuario: resultado.user.username,
+                        role: resultado.user.role,
+                        acao: 'login',
+                        categoria: 'autenticacao',
+                        entidade: 'sessao',
+                        entidade_id: resultado.user.username,
+                        descricao: `Login realizado com sucesso (perfil ${resultado.user.role})`
+                    });
                     return res.json({
                         success: true,
                         user: resultado.user,
@@ -569,6 +708,16 @@ async function buildApp() {
                     });
                 } else {
                     console.log(`❌ Tentativa de login falha para: ${username}`);
+                    await registrarAuditoria(req, {
+                        usuario: normalizarUsername(username) || 'desconhecido',
+                        role: 'operador',
+                        acao: 'login_falha',
+                        categoria: 'autenticacao',
+                        entidade: 'sessao',
+                        entidade_id: normalizarUsername(username),
+                        descricao: 'Tentativa de login com credenciais inválidas',
+                        resultado: 'negado'
+                    });
                     return res.status(401).json({
                         success: false,
                         message: 'Credenciais inválidas'
@@ -680,6 +829,19 @@ async function buildApp() {
                     created_by: req.user.username
                 });
 
+                await registrarAuditoria(req, {
+                    acao: 'usuario_criar',
+                    categoria: 'usuario',
+                    entidade: 'usuario',
+                    entidade_id: username,
+                    descricao: `Criou o usuário "${username}" com perfil ${roleNormalizado}`,
+                    alteracoes: [
+                        { campo: 'username', de: null, para: username },
+                        { campo: 'role', de: null, para: roleNormalizado },
+                        { campo: 'password', de: null, para: '***' }
+                    ]
+                });
+
                 res.status(201).json({
                     success: true,
                     message: 'Usuário criado com sucesso',
@@ -774,6 +936,29 @@ async function buildApp() {
 
                 await usersCollection.updateOne({ username: alvo }, { $set: set });
 
+                const alteracoesUsuario = [];
+                if (set.role) {
+                    alteracoesUsuario.push({
+                        campo: 'role',
+                        de: normalizarRole(usuarioAlvo.role),
+                        para: set.role
+                    });
+                }
+                if (set.password_hash) {
+                    alteracoesUsuario.push({ campo: 'password', de: '***', para: '***' });
+                }
+
+                await registrarAuditoria(req, {
+                    acao: 'usuario_atualizar',
+                    categoria: 'usuario',
+                    entidade: 'usuario',
+                    entidade_id: alvo,
+                    descricao: `Atualizou o usuário "${alvo}"` +
+                        `${set.role ? ` (perfil → ${set.role})` : ''}` +
+                        `${set.password_hash ? ' (senha redefinida)' : ''}`,
+                    alteracoes: alteracoesUsuario
+                });
+
                 console.log(`🔧 Admin ${req.user.username} atualizou usuário ${alvo}` +
                     `${set.role ? ` (role → ${set.role})` : ''}${set.password_hash ? ' (senha trocada)' : ''}`);
 
@@ -831,6 +1016,20 @@ async function buildApp() {
                 await checklistsCollection.insertOne(dados);
 
                 console.log('✅ Formulário salvo no MongoDB');
+
+                await registrarAuditoria(req, {
+                    acao: 'checklist_criar',
+                    categoria: 'checklist',
+                    entidade: 'checklist',
+                    entidade_id: dados.numero_controle,
+                    descricao: `Criou o checklist ${dados.numero_controle} (criador: ${dados.criador_nome} / matrícula ${dados.criador_matricula})`,
+                    alteracoes: [
+                        { campo: 'status', de: null, para: dados.status },
+                        { campo: 'criador_nome', de: null, para: auditResumirValor(dados.criador_nome) },
+                        { campo: 'criador_matricula', de: null, para: auditResumirValor(dados.criador_matricula) },
+                        { campo: 'programado', de: null, para: String(dados.programado) }
+                    ]
+                });
 
                 res.json({
                     success: true,
@@ -1149,6 +1348,16 @@ async function buildApp() {
                     // Nenhum não-admin edita checklist concluído/finalizado
                     if (statusAtual === 'concluido' || statusAtual === 'finalizado') {
                         console.log(`🚫 Bloqueado: ${user.username} (${userRole}) tentou editar checklist concluído.`);
+                        await registrarAuditoria(req, {
+                            usuario: user.username,
+                            role: userRole,
+                            acao: 'checklist_editar_negado',
+                            categoria: 'checklist',
+                            entidade: 'checklist',
+                            entidade_id: numeroControle,
+                            descricao: `Tentou editar o checklist ${numeroControle} já ${statusAtual}`,
+                            resultado: 'negado'
+                        });
                         return res.status(403).json({
                             success: false,
                             message: 'Não é possível editar um checklist já concluído.'
@@ -1162,6 +1371,16 @@ async function buildApp() {
                         && ['qualidade', 'aprovador_qualidade'].includes(userRole);
 
                     if ((statusNovo === 'concluido' || statusNovo === 'finalizado') && !podeConcluirComoQualidade) {
+                        await registrarAuditoria(req, {
+                            usuario: user.username,
+                            role: userRole,
+                            acao: 'checklist_concluir_negado',
+                            categoria: 'checklist',
+                            entidade: 'checklist',
+                            entidade_id: numeroControle,
+                            descricao: `Tentou concluir o checklist ${numeroControle} sem permissão`,
+                            resultado: 'negado'
+                        });
                         return res.status(403).json({
                             success: false,
                             message: 'Apenas administradores podem concluir checklists.'
@@ -1177,6 +1396,16 @@ async function buildApp() {
 
                     if (!temPermissaoEtapa) {
                         console.log(`🚫 Sem permissão: ${user.username} (${userRole}) na etapa ${statusAtual}`);
+                        await registrarAuditoria(req, {
+                            usuario: user.username,
+                            role: userRole,
+                            acao: 'checklist_editar_negado',
+                            categoria: 'checklist',
+                            entidade: 'checklist',
+                            entidade_id: numeroControle,
+                            descricao: `Sem permissão para editar o checklist ${numeroControle} na etapa ${statusAtual}`,
+                            resultado: 'negado'
+                        });
                         return res.status(403).json({
                             success: false,
                             message: 'Sua conta não tem permissão para editar esta etapa.'
@@ -1200,6 +1429,17 @@ async function buildApp() {
                     const permitidos = transicoesPermitidas[statusAtual] || [statusAtual];
                     if (statusNovo !== statusAtual && !permitidos.includes(statusNovo)) {
                         console.log(`🚫 Transição inválida: ${statusAtual} → ${statusNovo} por ${user.username}`);
+                        await registrarAuditoria(req, {
+                            usuario: user.username,
+                            role: userRole,
+                            acao: 'checklist_transicao_negada',
+                            categoria: 'checklist',
+                            entidade: 'checklist',
+                            entidade_id: numeroControle,
+                            descricao: `Transição de status não permitida: ${statusAtual} → ${statusNovo}`,
+                            resultado: 'negado',
+                            alteracoes: [{ campo: 'status', de: statusAtual, para: statusNovo }]
+                        });
                         return res.status(403).json({
                             success: false,
                             message: `Transição de status '${statusAtual}' para '${statusNovo}' não é permitida.`
@@ -1232,6 +1472,22 @@ async function buildApp() {
                         message: 'Não foi possível encontrar o registro para atualizar.'
                     });
                 }
+
+                const alteracoesChecklist = auditCalcularAlteracoes(formularioAtual, dados);
+                const mudouStatus = statusNovo !== statusAtual;
+
+                await registrarAuditoria(req, {
+                    usuario: user.username,
+                    role: userRole,
+                    acao: mudouStatus ? 'checklist_mudar_status' : 'checklist_atualizar',
+                    categoria: 'checklist',
+                    entidade: 'checklist',
+                    entidade_id: numeroControle,
+                    descricao: mudouStatus
+                        ? `Alterou o status do checklist ${numeroControle}: ${statusAtual} → ${statusNovo}`
+                        : `Editou o checklist ${numeroControle} (${alteracoesChecklist.length} campo(s) alterado(s))`,
+                    alteracoes: alteracoesChecklist
+                });
 
                 res.json({
                     success: true,
@@ -1275,12 +1531,24 @@ async function buildApp() {
                 const usuario = obterUsuarioPorToken(req);
 
                 if (!usuario || usuario.role !== 'admin') {
+                    await registrarAuditoria(req, {
+                        usuario: usuario?.username || 'desconhecido',
+                        role: usuario?.role || 'operador',
+                        acao: 'dashboard_modulos_negado',
+                        categoria: 'dashboard',
+                        entidade: 'dashboard_modules',
+                        entidade_id: 'main',
+                        descricao: 'Tentou alterar os módulos do dashboard sem ser administrador',
+                        resultado: 'negado'
+                    });
                     return res.status(403).json({
                         success: false,
                         message: 'Apenas administradores podem alterar os módulos do dashboard'
                     });
                 }
 
+                const configuracaoAnterior = await db.collection('dashboard_modules').findOne({ key: 'main' });
+                const modulesAnteriores = Array.isArray(configuracaoAnterior?.modules) ? configuracaoAnterior.modules : [];
                 const modules = normalizarDashboardModules(req.body.modules);
                 const agora = new Date().toISOString();
 
@@ -1299,6 +1567,21 @@ async function buildApp() {
                     },
                     { upsert: true }
                 );
+
+                await registrarAuditoria(req, {
+                    usuario: usuario.username,
+                    role: usuario.role,
+                    acao: 'dashboard_modulos_atualizar',
+                    categoria: 'dashboard',
+                    entidade: 'dashboard_modules',
+                    entidade_id: 'main',
+                    descricao: `Atualizou os módulos do dashboard (${modules.length} módulo(s))`,
+                    alteracoes: [{
+                        campo: 'modules',
+                        de: auditResumirValor(modulesAnteriores),
+                        para: auditResumirValor(modules)
+                    }]
+                });
 
                 res.json({
                     success: true,
@@ -1343,6 +1626,16 @@ async function buildApp() {
                 // Apenas ADMIN pode deletar
                 if (user.role !== 'admin') {
                     console.log(`❌ Usuário ${user.username} (${user.role}) tentou deletar ${numeroControle}`);
+                    await registrarAuditoria(req, {
+                        usuario: user.username,
+                        role: user.role,
+                        acao: 'checklist_excluir_negado',
+                        categoria: 'checklist',
+                        entidade: 'checklist',
+                        entidade_id: numeroControle,
+                        descricao: `Tentou excluir o checklist ${numeroControle} sem ser administrador`,
+                        resultado: 'negado'
+                    });
                     return res.status(403).json({
                         success: false,
                         message: 'Apenas administradores podem deletar checklists'
@@ -1350,6 +1643,11 @@ async function buildApp() {
                 }
 
                 console.log(`👑 Admin ${user.username} deletando ${numeroControle}`);
+
+                // Lê antes de apagar para guardar no log o estado do registro excluído.
+                const checklistExcluido = await db.collection('checklists').findOne({
+                    numero_controle: numeroControle
+                });
 
                 const resultado = await db.collection('checklists').deleteOne({
                     numero_controle: numeroControle
@@ -1362,6 +1660,22 @@ async function buildApp() {
                     });
                 }
 
+                await registrarAuditoria(req, {
+                    usuario: user.username,
+                    role: user.role,
+                    acao: 'checklist_excluir',
+                    categoria: 'checklist',
+                    entidade: 'checklist',
+                    entidade_id: numeroControle,
+                    descricao: `Excluiu o checklist ${numeroControle}` +
+                        `${checklistExcluido?.status ? ` (status: ${checklistExcluido.status})` : ''}`,
+                    alteracoes: [
+                        { campo: 'status', de: auditResumirValor(checklistExcluido?.status), para: null },
+                        { campo: 'criador_nome', de: auditResumirValor(checklistExcluido?.criador_nome), para: null },
+                        { campo: 'data_criacao', de: auditResumirValor(checklistExcluido?.data_criacao), para: null }
+                    ]
+                });
+
                 res.json({
                     success: true,
                     message: 'Formulário deletado com sucesso'
@@ -1372,6 +1686,95 @@ async function buildApp() {
                 res.status(500).json({
                     success: false,
                     message: 'Erro ao deletar formulário',
+                    error: error.message
+                });
+            }
+        });
+
+        // ==================== LOGS DE AUDITORIA (APENAS ADMIN) ====================
+        // Somente leitura: não existe rota para editar ou apagar registros de
+        // auditoria — isso é proposital, para que o log sirva como evidência.
+        app.get('/api/admin/audit-logs', autenticarJWT, async (req, res) => {
+            try {
+                if (!isAdminUser(req.user)) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Apenas administradores podem consultar os logs de auditoria'
+                    });
+                }
+
+                const pagina = Math.max(parseInt(req.query.page || req.query.pagina, 10) || 1, 1);
+                const limite = Math.min(Math.max(parseInt(req.query.limit || req.query.limite, 10) || 25, 1), 200);
+
+                const usuario = String(req.query.usuario || '').trim().toLowerCase();
+                const acao = String(req.query.acao || '').trim();
+                const categoria = String(req.query.categoria || '').trim();
+                const resultado = String(req.query.resultado || '').trim();
+                const busca = String(req.query.busca || '').trim();
+                const dataInicio = String(req.query.data_inicio || '').trim();
+                const dataFim = String(req.query.data_fim || '').trim();
+                const DATA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+                const filtro = {};
+
+                if (usuario) filtro.usuario = usuario;
+                if (acao) filtro.acao = acao;
+                if (categoria) filtro.categoria = categoria;
+                if (resultado) filtro.resultado = resultado;
+
+                if (busca) {
+                    const escapado = busca.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                    const regex = new RegExp(escapado, 'i');
+                    filtro.$or = [
+                        { descricao: regex },
+                        { entidade_id: regex },
+                        { usuario: regex },
+                        { ip: regex }
+                    ];
+                }
+
+                // timestamp é ISO string -> comparação lexicográfica funciona.
+                if (DATA_REGEX.test(dataInicio) || DATA_REGEX.test(dataFim)) {
+                    filtro.timestamp = {};
+                    if (DATA_REGEX.test(dataInicio)) filtro.timestamp.$gte = `${dataInicio}T00:00:00.000Z`;
+                    if (DATA_REGEX.test(dataFim)) filtro.timestamp.$lte = `${dataFim}T23:59:59.999Z`;
+                }
+
+                const total = await auditLogsCollection.countDocuments(filtro);
+                const logs = await auditLogsCollection
+                    .find(filtro, { projection: { _id: 0 } })
+                    .sort({ timestamp: -1 })
+                    .skip((pagina - 1) * limite)
+                    .limit(limite)
+                    .toArray();
+
+                // Opções para os selects de filtro do frontend.
+                const [usuarios, acoes, categorias] = await Promise.all([
+                    auditLogsCollection.distinct('usuario'),
+                    auditLogsCollection.distinct('acao'),
+                    auditLogsCollection.distinct('categoria')
+                ]);
+
+                res.json({
+                    success: true,
+                    logs,
+                    paginacao: {
+                        pagina,
+                        limite,
+                        total,
+                        total_paginas: Math.max(Math.ceil(total / limite), 1)
+                    },
+                    opcoes: {
+                        usuarios: usuarios.filter(Boolean).sort(),
+                        acoes: acoes.filter(Boolean).sort(),
+                        categorias: categorias.filter(Boolean).sort()
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Erro ao consultar logs de auditoria:', error);
+                res.status(500).json({
+                    success: false,
+                    message: 'Erro ao consultar logs de auditoria',
                     error: error.message
                 });
             }
@@ -1392,7 +1795,8 @@ async function buildApp() {
                     'GET /api/fr0062': 'Listar todos os formulários (Operador/Admin)',
                     'GET /api/fr0062/:id': 'Buscar formulário específico (Operador/Admin)',
                     'PUT /api/fr0062/:id': 'Atualizar formulário (Operador/Admin com restrições)',
-                    'DELETE /api/fr0062/:id': 'Deletar formulário (Apenas Admin)'
+                    'DELETE /api/fr0062/:id': 'Deletar formulário (Apenas Admin)',
+                    'GET /api/admin/audit-logs': 'Consultar logs de auditoria (Apenas Admin)'
                 }
             });
         });

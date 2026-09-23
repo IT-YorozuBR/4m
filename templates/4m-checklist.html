@@ -1377,7 +1377,9 @@
       const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
       const estaLogado = !!usuarioLogado.username;
 
-      const podeDeletar = estaLogado;
+      // Backend (DELETE /api/fr0062/:numeroControle) só permite role === 'admin'.
+      // O botão precisa seguir a mesma regra — não basta estar logado.
+      const podeDeletar = estaLogado && usuarioLogado.role === 'admin';
       const podeEditar = estaLogado || (!estaLogado && !isConcluido);
       const modificacaoResumo = resumirMudancas4M(checklist.mudancas_4m);
 
@@ -1507,11 +1509,23 @@
 
         const data = await response.json();
 
-        if (response.status === 401 || response.status === 403) {
+        // 401 (sem token) e 403 com token inválido/expirado = sessão morta -> desloga.
+        // 403 "Apenas administradores podem deletar" = token válido, só falta
+        // permissão -> NÃO desloga, apenas avisa (senão um usuário sem permissão
+        // clicando aqui é jogado pra tela de login achando que perdeu a sessão).
+        const sessaoInvalida = response.status === 401 ||
+          (response.status === 403 && /token inválido ou expirado/i.test(data.message || ''));
+
+        if (sessaoInvalida) {
           alert('Sessão expirada. Por favor, faça login novamente.');
           localStorage.removeItem('currentUser');
           localStorage.removeItem('authToken');
           window.location.href = '/login.html';
+          return;
+        }
+
+        if (response.status === 403) {
+          alert(data.message || 'Você não tem permissão para deletar este checklist.');
           return;
         }
 

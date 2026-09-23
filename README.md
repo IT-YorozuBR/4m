@@ -151,6 +151,46 @@ Deletar formulário
 }
 ```
 
+### **GET /api/admin/audit-logs**
+Consultar os logs de auditoria (**apenas admin**, exige token JWT).
+
+Registra automaticamente quem fez, quando fez e o que mudou em: login (sucesso e
+falha), criação/edição de usuários, criação/edição/mudança de status/exclusão de
+checklists, alteração dos módulos do dashboard e tentativas bloqueadas por permissão.
+
+**Query params (todos opcionais):** `page`, `limit` (máx. 200), `usuario`, `acao`,
+`categoria`, `resultado` (`sucesso` | `negado` | `falha`), `busca`, `data_inicio`,
+`data_fim` (formato `AAAA-MM-DD`).
+
+**Response:**
+```json
+{
+  "success": true,
+  "logs": [
+    {
+      "timestamp": "2026-09-23T14:30:00.000Z",
+      "usuario": "admin.ti",
+      "role": "admin",
+      "acao": "checklist_mudar_status",
+      "categoria": "checklist",
+      "entidade_id": "FR0062-000000042",
+      "descricao": "Alterou o status do checklist FR0062-000000042: em_andamento → aguardando_qualidade",
+      "resultado": "sucesso",
+      "alteracoes": [
+        { "campo": "status", "de": "em_andamento", "para": "aguardando_qualidade" }
+      ],
+      "ip": "10.20.30.40"
+    }
+  ],
+  "paginacao": { "pagina": 1, "limite": 25, "total": 1, "total_paginas": 1 },
+  "opcoes": { "usuarios": [], "acoes": [], "categorias": [] }
+}
+```
+
+> Os logs ficam na collection `audit_logs` e são **somente leitura** pela API —
+> não existe rota para editar ou apagar registros. Senhas nunca são gravadas.
+> Interface: `/auditoria.html` (botão **Auditoria** no painel, visível só para admin).
+
 ### **GET /api/status**
 Verificar status da API
 
