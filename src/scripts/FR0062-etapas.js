@@ -60,6 +60,22 @@ const ROLES_ETAPA_ESPECIAL = {
 };
 // ─────────────────────────────────────────────────────────────────
 
+// ─── Prazo da etapa "Em aberto" (espelha o backend) ──────────────
+const PRAZO_EM_ABERTO_DIAS = 30;
+
+// Calcula dias restantes / atraso a partir da data em que entrou em aberto.
+function diasEmAberto(desde) {
+    const inicio = desde ? new Date(desde) : null;
+    if (!inicio || isNaN(inicio.getTime())) return null;
+    const decorridos = Math.floor((Date.now() - inicio.getTime()) / 86400000);
+    const restantes = PRAZO_EM_ABERTO_DIAS - decorridos;
+    return {
+        vencido: restantes < 0,
+        diasRestantes: Math.max(restantes, 0),
+        diasAtraso: Math.max(-restantes, 0)
+    };
+}
+
 class GerenciadorEtapas {
 
     constructor() {
@@ -70,6 +86,9 @@ class GerenciadorEtapas {
         this.nivel = 0;
         this.programado = false;
         this.etapas = [];
+        // Etapa "Em aberto": data de entrada (definida pelo servidor) e etapa de origem
+        this.emAbertoDesde = null;
+        this.statusOrigemAberto = null;
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -97,6 +116,8 @@ class GerenciadorEtapas {
                 window.sistemaChecklist.preencherFormulario = function (dados) {
                     orig(dados);
                     self.programado = dados.programado === true;
+                    self.emAbertoDesde = dados.em_aberto_desde || null;
+                    self.statusOrigemAberto = dados.status_origem_em_aberto || null;
                     self._criarBarraProgresso();
                     self._aplicar(dados.status || 'em_andamento');
                 };
@@ -131,6 +152,12 @@ class GerenciadorEtapas {
     // usam papel específico via ROLES_ETAPA_ESPECIAL. Admin sempre tem acesso.
     _temPermissao(status) {
         if (this.isAdmin) return true;
+        // "Em aberto" herda o acesso da etapa de origem (Aprovação → admin;
+        // Conclusão Qualidade → qualidade / aprovador qualidade)
+        if (status === 'em_aberto') {
+            return this.statusOrigemAberto === 'aguardando_conclusao_qualidade'
+                && ROLES_ETAPA_ESPECIAL.aguardando_conclusao_qualidade.includes(this.role);
+        }
         const rolesEspeciais = ROLES_ETAPA_ESPECIAL[status];
         if (rolesEspeciais) return rolesEspeciais.includes(this.role);
         const nivelNecessario = NIVEL_MINIMO_ETAPA[status] ?? 0;
@@ -142,6 +169,7 @@ class GerenciadorEtapas {
         this._atualizarBarra();
 
         const temPermissao = this._temPermissao(status);
+        this._hide('btnEmAberto');
 
         switch (status) {
             case 'em_andamento':
@@ -168,6 +196,9 @@ class GerenciadorEtapas {
             case 'aguardando_aprovacao':
                 temPermissao ? this._etapa3() : this._bloquearSemPermissao('APROVAÇÃO');
                 break;
+            case 'em_aberto':
+                temPermissao ? this._etapaEmAberto() : this._bloquearSemPermissao('EM ABERTO');
+                break;
 
             case 'concluido':
                 if (!this.isAdmin) {
@@ -184,6 +215,10 @@ class GerenciadorEtapas {
             default:
                 this._etapa1();
         }
+
+        // Reaplica o bloqueio de QTD YAB / QTD CLIENTE (Sakanobori = NÃO) após o
+        // lock/unlock da etapa e depois de o checklist salvo ser carregado.
+        if (typeof window.sincronizarSakanobori === 'function') window.sincronizarSakanobori();
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -366,6 +401,35 @@ class GerenciadorEtapas {
         this._hide('btnAvancarEtapa');
         this._hide('btnVoltarSalvar');
         this._show('btnAprovarFinalizar');
+        this._show('btnEmAberto');
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       EM ABERTO (a partir da última etapa)
+       Mantém o checklist pendente por até 30 dias. Quem atua na etapa de
+       origem pode continuar editando e finalizar a qualquer momento.
+    ════════════════════════════════════════════════════════════ */
+
+    _etapaEmAberto() {
+        // Reaproveita o desbloqueio da etapa de origem
+        if (this.statusOrigemAberto === 'aguardando_conclusao_qualidade') {
+            this._etapaConclusaoQualidade();
+        } else {
+            this._etapa3();
+        }
+        this._hide('btnEmAberto');
+
+        const info = diasEmAberto(this.emAbertoDesde);
+        if (info) {
+            this._badge(
+                info.vencido
+                    ? `⚠ EM ABERTO — VENCIDO HÁ ${info.diasAtraso} DIA(S)`
+                    : `⏳ EM ABERTO — ${info.diasRestantes} DIA(S) RESTANTE(S)`,
+                info.vencido ? '#C62828' : '#F9A825'
+            );
+            const badge = document.getElementById('_status_badge');
+            if (badge && !info.vencido) badge.style.color = '#3E2723';
+        }
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -397,6 +461,7 @@ class GerenciadorEtapas {
         this._hide('btnAvancarEtapa');
         this._hide('btnVoltarSalvar');
         this._show('btnAprovarFinalizar');
+        this._show('btnEmAberto');
     }
 
     /* ════════════════════════════════════════════════════════════
@@ -638,6 +703,16 @@ class GerenciadorEtapas {
         btnAprovar.style.display = 'none';
         btnAprovar.addEventListener('click', () => this._aprovarFinalizar());
         bloco.appendChild(btnAprovar);
+
+        // ─── Deixar em aberto (última etapa) ──────────────────────
+        const btnEmAberto = document.createElement('button');
+        btnEmAberto.id = 'btnEmAberto';
+        btnEmAberto.type = 'button';
+        btnEmAberto.className = 'btn-em-aberto';
+        btnEmAberto.textContent = '⏳ DEIXAR EM ABERTO';
+        btnEmAberto.style.display = 'none';
+        btnEmAberto.addEventListener('click', () => this._deixarEmAberto());
+        bloco.appendChild(btnEmAberto);
     }
 
     _show(id) { const el = document.getElementById(id); if (el) el.style.display = ''; }
@@ -765,6 +840,33 @@ class GerenciadorEtapas {
         } catch (e) { msg?.erro('Erro: ' + e.message); }
     }
 
+    // Deixar em aberto (a partir da última etapa). O prazo de 30 dias é
+    // controlado pelo servidor (em_aberto_desde); aqui só pedimos a mudança de status.
+    async _deixarEmAberto() {
+        const msg = window.sistemaChecklist?.mensagens;
+
+        const ok = await this._modalConfirm(
+            `O checklist ficará <strong>EM ABERTO</strong> com prazo de ${PRAZO_EM_ABERTO_DIAS} dias. ` +
+            'Após esse prazo ele será sinalizado como vencido.<br><br>Confirmar?'
+        );
+        if (!ok) return;
+
+        try {
+            msg?.informacao('Salvando como em aberto…', 0);
+            const dados = window.sistemaChecklist.coletarDados();
+            dados.status = 'em_aberto';
+            dados.data_atualizacao = new Date().toISOString();
+
+            const res = await this._req(dados);
+            if (res.success) {
+                msg?.sucesso('✓ Checklist deixado em aberto!');
+                setTimeout(() => { window.location.href = '/4m-checklist.html'; }, 2000);
+            } else {
+                msg?.erro('Erro ao salvar: ' + (res.message || 'tente novamente.'));
+            }
+        } catch (e) { msg?.erro('Erro: ' + e.message); }
+    }
+
     async _req(dados) {
         const sc = window.sistemaChecklist;
         if (sc && !sc.modoEdicao && !sc.numeroControleAtual) {
@@ -888,6 +990,13 @@ class GerenciadorEtapas {
      * da etapa atual que estão vazios ou incompletos.
      */
     _validarEtapaAtual() {
+        // "Em aberto" valida com as mesmas regras da etapa de origem
+        if (this.statusAtual === 'em_aberto') {
+            const original = this.statusAtual;
+            this.statusAtual = this.statusOrigemAberto || 'aguardando_aprovacao';
+            try { return this._validarEtapaAtual(); } finally { this.statusAtual = original; }
+        }
+
         const erros = [];
 
         const textoVazio = el => !el.textContent.trim();
@@ -1094,11 +1203,7 @@ class GerenciadorEtapas {
                             primeiroLabel || cbOk
                         );
 
-                        const spanGarantia = cel.querySelector('.input-line[style*="margin-top: auto"]')
-                            || cel.querySelector('.input-line:last-child');
-                        if (spanGarantia && isVazio(spanGarantia)) {
-                            erros.push({ el: spanGarantia, msg: 'GARANTIA 200%: Preencha o texto' });
-                        }
+                        // Texto da Garantia 200% (abaixo do resultado) é opcional.
                     }
 
                     // Se NOK estiver marcado
@@ -1295,8 +1400,14 @@ class GerenciadorEtapas {
 
         return [
             ...base,
-            { status: 'aguardando_aprovacao', label: 'APROVAÇÃO', cor: '#1B5E20' }
+            { status: 'aguardando_aprovacao', label: 'APROVAÇÃO', cor: '#F9A825', amarelo: true }
         ];
+    }
+
+    // Converte "#RRGGBB" em rgba() fixo (html2canvas não lê color-mix)
+    _rgba(hex, alfa) {
+        const n = parseInt(hex.slice(1), 16);
+        return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alfa})`;
     }
 
     _criarBarraProgresso() {
@@ -1309,7 +1420,7 @@ class GerenciadorEtapas {
 
         barra.innerHTML = this.etapas.map((e, i) => `
             ${i > 0 ? '<div class="barra-conector" data-after="' + i + '"></div>' : ''}
-            <div class="barra-step" data-n="${i + 1}" style="--cor:${e.cor}">
+            <div class="barra-step${e.amarelo ? ' step-amarelo' : ''}" data-n="${i + 1}" style="--cor:${e.cor};--sombra:${this._rgba(e.cor, e.amarelo ? .35 : .25)}">
                 <div class="barra-circulo"><span class="barra-num">${i + 1}</span></div>
                 <div class="barra-label">${e.label}</div>
             </div>
@@ -1324,7 +1435,11 @@ class GerenciadorEtapas {
         if (!barra) return;
 
         const total = this.etapas.length || 1;
-        const idx = this.etapas.findIndex(e => e.status === this.statusAtual);
+        // "Em aberto" permanece na última etapa da barra
+        const statusBarra = this.statusAtual === 'em_aberto'
+            ? (this.statusOrigemAberto || this.etapas[total - 1]?.status)
+            : this.statusAtual;
+        const idx = this.etapas.findIndex(e => e.status === statusBarra);
         const concluidoOuFinalizado = this.statusAtual === 'concluido' || this.statusAtual === 'finalizado';
         const ativa = concluidoOuFinalizado ? total + 1 : (idx >= 0 ? idx + 1 : 1);
 
@@ -1443,17 +1558,14 @@ class GerenciadorEtapas {
     color: #fff;
 }
 .barra-step.step-ativa .barra-label { color: var(--cor); }
+/* Etapa amarela (Aprovação): texto escuro para manter contraste */
+.barra-step.step-amarelo.step-ativa .barra-circulo { color: #3E2723; }
+.barra-step.step-amarelo.step-ativa .barra-label   { color: #B26A00; }
 
 /* Sombra do círculo ativo em rgba() fixo por etapa — color-mix() é
    serializado pelo Chrome como color(srgb ...) no computed style, e o
    html2canvas (usado no GERAR PDF) não sabe interpretar essa sintaxe. */
-.barra-step[data-n="1"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(21,101,192,.25); }
-.barra-step[data-n="2"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(230,81,0,.25); }
-.barra-step[data-n="3"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(0,131,143,.25); }
-.barra-step[data-n="4"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(27,94,32,.25); }
-.barra-step[data-n="5"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(106,27,154,.25); }
-.barra-step[data-n="6"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(69,39,160,.25); }
-.barra-step[data-n="7"].step-ativa .barra-circulo { box-shadow: 0 0 0 5px rgba(40,53,147,.25); }
+.barra-step.step-ativa .barra-circulo { box-shadow: 0 0 0 5px var(--sombra); }
 
 /* Concluída */
 .barra-step.step-ok .barra-circulo { background: #43A047; color: #fff; }
@@ -1516,6 +1628,24 @@ class GerenciadorEtapas {
 }
 .btn-aprovar:hover  { filter: brightness(1.1); }
 .btn-aprovar:active { transform: scale(.97); }
+
+.btn-em-aberto {
+    padding: 7px 16px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: .4px;
+    margin-top: 4px;
+    white-space: nowrap;
+    color: #3E2723;
+    background: #F9A825;
+    box-shadow: 0 2px 8px rgba(249,168,37,.4);
+    transition: filter .15s, transform .1s;
+}
+.btn-em-aberto:hover  { filter: brightness(1.08); }
+.btn-em-aberto:active { transform: scale(.97); }
 
 /* ── CAMPOS BLOQUEADOS ───────────────────────────────────────────── */
 .etapa-lock {

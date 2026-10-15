@@ -170,6 +170,11 @@ async function buildApp() {
             aguardando_conclusao_qualidade: ['qualidade', 'aprovador_qualidade']
         };
 
+        // Etapa "Em aberto": só pode ser definida a partir da última etapa do fluxo
+        // (Aprovação, ou Conclusão Qualidade no fluxo "se programado"). Prazo em dias.
+        const ETAPAS_ORIGEM_EM_ABERTO = ['aguardando_aprovacao', 'aguardando_conclusao_qualidade'];
+        const PRAZO_EM_ABERTO_DIAS = 30;
+
         function normalizarRole(role) {
             const r = String(role || '').trim().toLowerCase();
             return ROLES_VALIDOS.includes(r) ? r : 'operador';
@@ -1217,6 +1222,7 @@ async function buildApp() {
                     aguardando_qualidade: 0,
                     aguardando_aprovacao_qualidade: 0,
                     aguardando_aprovacao: 0,
+                    em_aberto: 0,
                     concluido: 0
                 };
 
@@ -1225,6 +1231,20 @@ async function buildApp() {
                         stats[item._id] = item.total;
                     }
                 });
+
+                // Checklists em aberto com prazo (30 dias) vencido, separados pela etapa
+                // de origem para que cada perfil veja apenas o que é da sua etapa.
+                // em_aberto_desde é ISO 8601, então a comparação por string é válida.
+                const limiteVencimento = new Date(Date.now() - PRAZO_EM_ABERTO_DIAS * 86400000).toISOString();
+                const filtroVencidos = { ...filtroEstatisticas, status: 'em_aberto', em_aberto_desde: { $lt: limiteVencimento } };
+                const vencidosConclusaoQualidade = await db.collection('checklists').countDocuments({
+                    ...filtroVencidos,
+                    status_origem_em_aberto: 'aguardando_conclusao_qualidade'
+                });
+                const vencidosTotal = await db.collection('checklists').countDocuments(filtroVencidos);
+                stats.em_aberto_vencidos = vencidosTotal;
+                stats.em_aberto_vencidos_qualidade = vencidosConclusaoQualidade;
+                stats.em_aberto_vencidos_aprovacao = vencidosTotal - vencidosConclusaoQualidade;
 
                 console.log(`📄 Listando página ${pagina} de ${totalPaginas} (${limite} itens por página)`);
 
@@ -1337,6 +1357,22 @@ async function buildApp() {
                 const statusAtual = formularioAtual.status || 'em_andamento';
                 const statusNovo = dados.status || statusAtual;
 
+                // Campos controlados só pelo servidor (etapa "Em aberto"): nunca
+                // aceitar valores enviados pelo cliente.
+                delete dados.em_aberto_desde;
+                delete dados.status_origem_em_aberto;
+
+                // "Em aberto" só pode ser definido a partir da última etapa
+                // (ou mantido, se já estiver em aberto) — vale para qualquer role.
+                if (statusNovo === 'em_aberto'
+                    && statusAtual !== 'em_aberto'
+                    && !ETAPAS_ORIGEM_EM_ABERTO.includes(statusAtual)) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Só é possível deixar em aberto a partir da última etapa.'
+                    });
+                }
+
                 // 4. Validação de Regras de Negócio por Role (controle por etapa)
                 const userRole = normalizarRole(user.role);
                 const nivelUser = NIVEL_ROLE[userRole] ?? 0;
@@ -1367,7 +1403,9 @@ async function buildApp() {
                     // Conclusão normal: só admin. Exceção: no fluxo "se programado", a
                     // Qualidade (ou Aprovador Qualidade) conclui a partir da etapa
                     // "aguardando_conclusao_qualidade".
-                    const podeConcluirComoQualidade = statusAtual === 'aguardando_conclusao_qualidade'
+                    const origemEmAberto = formularioAtual.status_origem_em_aberto;
+                    const podeConcluirComoQualidade = (statusAtual === 'aguardando_conclusao_qualidade'
+                        || (statusAtual === 'em_aberto' && origemEmAberto === 'aguardando_conclusao_qualidade'))
                         && ['qualidade', 'aprovador_qualidade'].includes(userRole);
 
                     if ((statusNovo === 'concluido' || statusNovo === 'finalizado') && !podeConcluirComoQualidade) {
@@ -1389,7 +1427,14 @@ async function buildApp() {
 
                     // Nível mínimo (etapas hierárquicas) ou papel específico (etapas
                     // "se programado": Engenharia / Log.PC / Produção / Conclusão Qualidade)
-                    const rolesEspeciais = ROLES_ETAPA_ESPECIAL[statusAtual];
+                    // "Em aberto" herda o acesso da etapa de origem: se veio da Aprovação
+                    // só admin atua (lista vazia aqui); se veio da Conclusão Qualidade,
+                    // qualidade / aprovador qualidade.
+                    const rolesEspeciais = statusAtual === 'em_aberto'
+                        ? (origemEmAberto === 'aguardando_conclusao_qualidade'
+                            ? ROLES_ETAPA_ESPECIAL.aguardando_conclusao_qualidade
+                            : [])
+                        : ROLES_ETAPA_ESPECIAL[statusAtual];
                     const temPermissaoEtapa = rolesEspeciais
                         ? rolesEspeciais.includes(userRole)
                         : nivelUser >= (NIVEL_MINIMO_POR_STATUS[statusAtual] ?? 0);
@@ -1422,8 +1467,9 @@ async function buildApp() {
                         'aguardando_aprovacao_engenharia': ['aguardando_aprovacao_engenharia', 'aguardando_aprovacao_logistica'],
                         'aguardando_aprovacao_logistica': ['aguardando_aprovacao_logistica', 'aguardando_aprovacao_producao'],
                         'aguardando_aprovacao_producao': ['aguardando_aprovacao_producao', 'aguardando_conclusao_qualidade'],
-                        'aguardando_conclusao_qualidade': ['aguardando_conclusao_qualidade', 'concluido'],
-                        'aguardando_aprovacao': ['aguardando_aprovacao'] // avanço para concluido só por admin
+                        'aguardando_conclusao_qualidade': ['aguardando_conclusao_qualidade', 'concluido', 'em_aberto'],
+                        'aguardando_aprovacao': ['aguardando_aprovacao'], // avanço para concluido só por admin
+                        'em_aberto': ['em_aberto', 'concluido']
                     };
 
                     const permitidos = transicoesPermitidas[statusAtual] || [statusAtual];
@@ -1460,6 +1506,13 @@ async function buildApp() {
                 delete dados._id;
                 // data_criacao nunca deve ser sobrescrita em um update
                 delete dados.data_criacao;
+
+                // Etapa "Em aberto": o servidor registra quando e de onde entrou
+                // (início do prazo de 30 dias). Ao concluir/atualizar, o histórico é mantido.
+                if (statusNovo === 'em_aberto' && statusAtual !== 'em_aberto') {
+                    dados.em_aberto_desde = dados.data_atualizacao;
+                    dados.status_origem_em_aberto = statusAtual;
+                }
 
                 const resultado = await db.collection('checklists').updateOne(
                     { numero_controle: numeroControle },

@@ -881,6 +881,7 @@
             <option value="aguardando_aprovacao_logistica">Etapa 5 — Aprovação Log. / P.C. (se programado)</option>
             <option value="aguardando_aprovacao_producao">Etapa 6 — Aprovação Produção (se programado)</option>
             <option value="aguardando_conclusao_qualidade">Etapa 7 — Conclusão Qualidade (se programado)</option>
+            <option value="em_aberto">Em aberto</option>
             <option value="concluido">Concluído</option>
           </select>
         </div>
@@ -918,6 +919,12 @@
       </div>
     </div>
 
+    <div id="alertaEmAbertoVencido" role="alert"
+      style="display:none;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:8px;background:#FFEBEE;border:1px solid #C62828;color:#B71C1C;font-weight:600;">
+      <span class="material-icons">warning</span>
+      <span id="alertaEmAbertoTexto"></span>
+    </div>
+
     <div class="view-controls">
       <div class="view-buttons">
         <button class="view-button" id="viewGrid">
@@ -935,17 +942,21 @@
           <span class="material-icons" style="font-size: 16px;">description</span>
           <span>Total: <strong id="countTotal">0</strong></span>
         </div>
-        <div class="stat-item" style="color:#1976D2">
-          <span class="material-icons" style="font-size: 16px; color:#1976D2">engineering</span>
+        <div class="stat-item" style="color:#1565C0">
+          <span class="material-icons" style="font-size: 16px; color:#1565C0">engineering</span>
           <span>Produção: <strong id="countProducao">0</strong></span>
         </div>
         <div class="stat-item" style="color:#E65100">
           <span class="material-icons" style="font-size: 16px; color:#E65100">rule</span>
           <span>Qualidade: <strong id="countQualidade">0</strong></span>
         </div>
-        <div class="stat-item" style="color:#6A1B9A">
-          <span class="material-icons" style="font-size: 16px; color:#6A1B9A">verified</span>
+        <div class="stat-item" style="color:#B26A00">
+          <span class="material-icons" style="font-size: 16px; color:#B26A00">verified</span>
           <span>Aprovação: <strong id="countAprovacao">0</strong></span>
+        </div>
+        <div class="stat-item" style="color:#B26A00">
+          <span class="material-icons" style="font-size: 16px; color:#B26A00">hourglass_top</span>
+          <span>Em aberto: <strong id="countEmAberto">0</strong></span>
         </div>
         <div class="stat-item" style="color:#2E7D32">
           <span class="material-icons" style="font-size: 16px; color:#2E7D32">check_circle</span>
@@ -1108,7 +1119,36 @@
       document.getElementById('countProducao').textContent = stats?.em_andamento || 0;
       document.getElementById('countQualidade').textContent = stats?.aguardando_qualidade || 0;
       document.getElementById('countAprovacao').textContent = stats?.aguardando_aprovacao || 0;
+      document.getElementById('countEmAberto').textContent = stats?.em_aberto || 0;
       document.getElementById('countAprovados').textContent = stats?.concluido || 0;
+      atualizarAlertaEmAberto(stats);
+    }
+
+    // Aviso na tela principal: checklists em aberto com mais de 30 dias.
+    // Só aparece para quem atua na etapa de origem (admin: Aprovação;
+    // qualidade / aprovador qualidade: Conclusão Qualidade). É apenas visual —
+    // o backend continua sendo a autoridade sobre quem pode agir.
+    function atualizarAlertaEmAberto(stats) {
+      const alerta = document.getElementById('alertaEmAbertoVencido');
+      if (!alerta) return;
+
+      let usuario = {};
+      try { usuario = JSON.parse(localStorage.getItem('currentUser') || '{}'); } catch (_) { /* ignora */ }
+
+      let qtd = 0;
+      if (usuario.role === 'admin') {
+        qtd = stats?.em_aberto_vencidos || 0;
+      } else if (usuario.role === 'qualidade' || usuario.role === 'aprovador_qualidade') {
+        qtd = stats?.em_aberto_vencidos_qualidade || 0;
+      }
+
+      if (qtd > 0) {
+        document.getElementById('alertaEmAbertoTexto').textContent =
+          `${qtd} checklist(s) em aberto há mais de 30 dias. Verifique e finalize.`;
+        alerta.style.display = 'flex';
+      } else {
+        alerta.style.display = 'none';
+      }
     }
 
     async function carregarChecklists() {
@@ -1363,7 +1403,7 @@
         'em_andamento':                  { cor: '#1565C0', bg: 'rgba(21,101,192,.15)',  label: 'Etapa 1 — Produção',            icone: 'engineering', etapa: 1 },
         'aguardando_qualidade':          { cor: '#E65100', bg: 'rgba(230,81,0,.15)',    label: 'Etapa 2 — Qualidade',           icone: 'rule',        etapa: 2 },
         'aguardando_aprovacao_qualidade':{ cor: '#00838F', bg: 'rgba(0,131,143,.15)',   label: 'Etapa 3 — Aprovação Qualidade', icone: 'fact_check',  etapa: 3 },
-        'aguardando_aprovacao': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)',  label: 'Etapa 4 — Aprovação', icone: 'verified',    etapa: 4 },
+        'aguardando_aprovacao': { cor: '#B26A00', bg: 'rgba(249,168,37,.2)',  label: 'Etapa 4 — Aprovação', icone: 'verified',    etapa: 4 },
         'aguardando_aprovacao_engenharia': { cor: '#6A1B9A', bg: 'rgba(106,27,154,.15)', label: 'Etapa 4 — Aprovação Engenharia', icone: 'verified', etapa: 4 },
         'aguardando_aprovacao_logistica':  { cor: '#4527A0', bg: 'rgba(69,39,160,.15)',  label: 'Etapa 5 — Aprovação Log. / P.C.', icone: 'verified', etapa: 5 },
         'aguardando_aprovacao_producao':   { cor: '#283593', bg: 'rgba(40,53,147,.15)',  label: 'Etapa 6 — Aprovação Produção',    icone: 'verified', etapa: 6 },
@@ -1371,7 +1411,19 @@
         'concluido':            { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 8 },
         'finalizado':           { cor: '#2E7D32', bg: 'rgba(46,125,50,.15)',   label: 'Concluído',           icone: 'check_circle',etapa: 8 },
       };
-      const statusInfo = STATUS_MAP[status] || STATUS_MAP['em_andamento'];
+      let statusInfo = STATUS_MAP[status] || STATUS_MAP['em_andamento'];
+
+      // Em aberto: fica na última etapa; amarelo dentro do prazo (30 dias),
+      // vermelho quando vencido.
+      if (status === 'em_aberto') {
+        const inicio = checklist.em_aberto_desde ? new Date(checklist.em_aberto_desde) : null;
+        const decorridos = inicio && !isNaN(inicio) ? Math.floor((Date.now() - inicio.getTime()) / 86400000) : 0;
+        const restantes = 30 - decorridos;
+        const etapaFinal = checklist.programado === true ? 7 : 4;
+        statusInfo = restantes < 0
+          ? { cor: '#C62828', bg: 'rgba(198,40,40,.15)', label: `Em aberto — vencido há ${-restantes} dia(s)`, icone: 'warning', etapa: etapaFinal }
+          : { cor: '#B26A00', bg: 'rgba(249,168,37,.2)', label: `Em aberto — ${restantes} dia(s) restante(s)`, icone: 'hourglass_top', etapa: etapaFinal };
+      }
 
       // Obter usuário logado
       const usuarioLogado = JSON.parse(localStorage.getItem('currentUser') || '{}');
@@ -1418,7 +1470,7 @@
         // dessas etapas (8 no total em vez de 4).
         const cores = checklist.programado === true
           ? ['#1565C0','#E65100','#00838F','#6A1B9A','#4527A0','#283593','#1B5E20','#2E7D32']
-          : ['#1565C0','#E65100','#6A1B9A','#2E7D32'];
+          : ['#1565C0','#E65100','#00838F','#F9A825'];
         // Posição da bolinha → nº da etapa correspondente no STATUS_MAP.
         const etapaDoPasso = checklist.programado === true
           ? [1,2,3,4,5,6,7,8]

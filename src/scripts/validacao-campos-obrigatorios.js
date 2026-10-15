@@ -130,6 +130,30 @@
         return s.textContent.replace(/\s|\*/g, '').toLowerCase() === 'qtd:';
       });
 
+      // Seção logo abaixo do Sakanobori com QTD YAB / QTD CLIENTE (só nas colunas
+      // que a possuem). Fica desabilitada quando Sakanobori = NÃO.
+      const proxima = bloco.nextElementSibling;
+      const camposQtdExtras = (proxima && /QTD\s*YAB/i.test(proxima.textContent))
+        ? Array.from(proxima.querySelectorAll('span.input-line'))
+        : [];
+
+      function atualizarQtdExtras(limpar) {
+        const bloqueado = cbNao.checked;
+        camposQtdExtras.forEach(function (campo) {
+          if (bloqueado) {
+            campo.classList.add('qtd-bloqueado');
+            campo.contentEditable = 'false';
+            if (limpar) campo.textContent = '';
+          } else {
+            campo.classList.remove('qtd-bloqueado');
+            // Respeita o bloqueio por etapa: só reabilita se o checkbox está liberado
+            if (!cbNao.disabled) campo.contentEditable = 'true';
+          }
+        });
+      }
+
+      bloco._sincronizarQtdExtras = function () { atualizarQtdExtras(false); };
+
       function atualizar() {
         if (cbSim.checked) {
           qtdSpan.classList.add('campo-obrigatorio-ativo');
@@ -149,15 +173,26 @@
       cbNao.addEventListener('change', function () {
         if (cbNao.checked) cbSim.checked = false;
         atualizar();
+        atualizarQtdExtras(true);
       });
       cbSim.addEventListener('change', function () {
         if (cbSim.checked) cbNao.checked = false;
         atualizar();
+        atualizarQtdExtras(true);
       });
 
       atualizar();
+      atualizarQtdExtras(false);
     });
   }
+
+  // Reaplica o bloqueio de QTD YAB / QTD CLIENTE (usado após carregar um checklist
+  // salvo e após o gerenciador de etapas liberar/bloquear campos).
+  window.sincronizarSakanobori = function () {
+    document.querySelectorAll('.secao-sakanobori').forEach(function (bloco) {
+      if (typeof bloco._sincronizarQtdExtras === 'function') bloco._sincronizarQtdExtras();
+    });
+  };
 
   // ─────────────────────────────────────────────────────────
   // 1.1 GARANTIA 200%
@@ -333,7 +368,9 @@
       cbNok.checked = false;
       desativarNok();
       atualizarCamposChecklist();
-      alternarCampoTexto(spanGarantia, labelGarantia, true);
+      // Texto da Garantia 200% é opcional: habilita sem asterisco nem destaque
+      alternarCampoTexto(spanGarantia, null, true);
+      if (spanGarantia) spanGarantia.classList.remove('campo-obrigatorio-ativo');
     }
 
     function desativarOk() {
@@ -467,12 +504,7 @@
           valido = false;
         }
 
-        const garantia200 = blocoOk.querySelector('.input-line[style*="margin-top: auto"]')
-          || blocoOk.querySelector('.input-line:last-child');
-        if (garantia200 && isVazio(garantia200)) {
-          marcarErro(garantia200, 'Garantia 200% obrigatória');
-          valido = false;
-        }
+        // Garantia 200% (texto abaixo): opcional — sem validação
       }
 
       // NOK marcado → exige justificativa preenchida
