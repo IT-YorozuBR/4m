@@ -209,6 +209,7 @@ class GerenciadorEtapas {
                 if (!this.isAdmin) {
                     this._bloquearTudo();
                 }
+                else this._unlockAll(); // admin edita qualquer dado após a finalização
                 this._show('btnSalvarEtapa');
                 this._badge('✔ CONCLUÍDO', '#2E7D32');
                 break;
@@ -377,25 +378,10 @@ class GerenciadorEtapas {
     ════════════════════════════════════════════════════════════ */
 
     _etapaConclusaoQualidade() {
-        this._lockAll();
+        // Última etapa: quem tem acesso (Qualidade / Aprovador Qualidade / admin)
+        // pode corrigir qualquer dado do checklist, inclusive em "Em aberto".
+        this._unlockAll();
         this._limparBanners();
-
-        // Libera para correção o que é domínio da QUALIDADE (mesmas áreas que
-        // ela já edita nas etapas anteriores) + as assinaturas finais do
-        // cabeçalho. NÃO libera os campos de Engenharia / Log.PC / Produção
-        // (aprovação) nem container-1/2 — esses já foram confirmados pelos
-        // respectivos setores nas etapas anteriores e são exclusivos deles.
-        this._unlock('.quadro-container-3');
-        this._unlock('.sidebar-acompanhamento');
-        this._unlockCampos([
-            '#solicitadoPor',
-            '#vistoRetencaoQA',
-            '#qualidadeAprovado',
-            '#qualidadeConfirmado',
-            '#qualidadeExecutadoPor',
-            '#recebimentoQA',
-            '#controleAprovado',
-        ]);
 
         this._show('btnSalvarEtapa');
         this._hide('btnAvancarEtapa');
@@ -1649,10 +1635,16 @@ class GerenciadorEtapas {
 
 /* ── CAMPOS BLOQUEADOS ───────────────────────────────────────────── */
 .etapa-lock {
-    background-color: #f4f4f4 !important;
+    background-color: #cfd4da !important;
+    background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.07) 0 4px, transparent 4px 9px) !important;
     cursor: not-allowed  !important;
-    opacity: .9          !important;
-    color: #424242       !important;
+    color: #37474f       !important;
+}
+input[type="checkbox"].etapa-lock,
+input[type="radio"].etapa-lock {
+    outline: 2px solid #90a4ae;
+    outline-offset: 1px;
+    opacity: .55 !important;
 }
 [contenteditable="false"].etapa-lock {
     pointer-events: none;

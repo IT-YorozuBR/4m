@@ -1,0 +1,6 @@
+# Uso local apenas: publica o app no host. Não é carregado automaticamente.
+# docker compose -f docker-compose.yml -f docker-compose.override.yml -f docker-compose.local.yml up -d
+services:
+  app:
+    ports:
+      - "127.0.0.1:3020:3020"
